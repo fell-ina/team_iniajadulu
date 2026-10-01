@@ -1,0 +1,4 @@
+@import "tailwindcss";
+:root{--navy:#021024;--blue:#052659;--mid:#5483B3;--soft:#7DA0CA;--pale:#C1E8FF;--paper:#F4F9FF}*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);font-family:Arial,Helvetica,sans-serif}.display{letter-spacing:-.045em;line-height:.98;font-weight:600}.eyebrow{font-size:10px;font-weight:700;letter-spacing:.22em;text-transform:uppercase}@keyframes marquee{to{transform:translateX(-50%)}}button,a{cursor:pointer}::selection{background:#7DA0CA;color:#021024}
+
+.partner-marquee{animation:partner-marquee 34s linear infinite}@keyframes partner-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}@media (prefers-reduced-motion:reduce){.partner-marquee{animation:none}}
