@@ -8,7 +8,7 @@ import { createClient } from "@supabase/supabase-js";
  * ---------------------------------------------------------------------------
  * Endpoint login. Alur:
  *   1. Validasi input dari front-end
- *   2. Login lewat Supabase Auth (client anon + cookie -> session tertulis)
+ *   2. Login lewat Supabase auth (client anon + cookie -> session tertulis)
  *   3. Ambil role dari tabel 'users' memakai client service role (tanpa cookie)
  *   4. Balas dengan URL tujuan sesuai role
  * ---------------------------------------------------------------------------
