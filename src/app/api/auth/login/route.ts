@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient, type CookieOptions } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 
 /**
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
         getAll() {
           return cookieStore.getAll();
         },
-        setAll(cookiesToSet) {
+        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
               cookieStore.set(name, value, options)
@@ -69,7 +69,6 @@ export async function POST(request: Request) {
   });
 
   if (error || !data.user) {
-    // Pesan disamarkan agar tidak membocorkan akun mana yang terdaftar.
     return NextResponse.json(
       { ok: false, message: "Username atau kata sandi tidak cocok." },
       { status: 401 }
@@ -90,9 +89,6 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   // 4. Tentukan tujuan berdasarkan role -------------------------------------
-  // /dashboard hanya untuk admin & guru. Selain itu (siswa / profil belum ada)
-  // diarahkan ke halaman lain supaya tidak dipantulkan balik oleh guard dashboard.
-  // GANTI "/" dengan halaman siswa jika sudah ada (mis. "/siswa").
   const role = profil?.role;
   const redirectTo = role === "admin" || role === "guru" ? "/dashboard" : "/";
 
