@@ -62,7 +62,7 @@ function CameraRig() {
 
 export default function SchoolBuilding3D({ model }: Props) {
   return (
-    <div className="building-3d-mask relative mx-auto h-[430px] w-full max-w-[1100px] sm:h-[540px] lg:h-[680px]">
+    <div className="building-3d-mask relative mx-auto h-[350px] w-full max-w-[1100px] sm:h-[430px] lg:h-[540px]">
       <Canvas
         camera={{
           position: cameraPosition,

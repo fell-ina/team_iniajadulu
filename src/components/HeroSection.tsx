@@ -3,10 +3,14 @@
 import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  ArrowRight,
   ArrowDown,
   ArrowUpRight,
+  BookOpen,
   ChevronLeft,
   ChevronRight,
+  Cog,
+  Video,
 } from "lucide-react";
 
 const slides = [
@@ -18,10 +22,16 @@ const slides = [
   },
   {
     image: "/images/school/hero-courtyard.jpg",
-    eyebrow: "SCHOOL RIZAL",
+    eyebrow: "SCHOOL LIFE",
     title: "Tumbuh bersama Tunas Harapan.",
     text: "Lingkungan sekolah yang aktif, nyaman, dan memberi ruang untuk mengeksplorasi potensi.",
   },
+  {
+    image: "/images/school/hero-lapangan.jpg",
+    eyebrow: "SCHOOL LIFE",
+    title: "Berkembang di Lingkungan Positif.",
+    text: "Membangun pengalaman belajar yang aktif, kolaboratif, dan mendorong setiap siswa untuk berkembang.",
+  }
 ];
 
 export default function HeroSection() {
@@ -57,7 +67,7 @@ export default function HeroSection() {
         <div className="absolute inset-0 bg-gradient-to-r from-[#021024]/90 via-[#021024]/62 to-[#021024]/28" />
         <div className="absolute inset-0 bg-gradient-to-t from-[#021024]/90 via-[#021024]/10 to-[#021024]/20" />
 
-        <div className="relative z-10 mx-auto flex min-h-[720px] max-w-[1500px] flex-col px-5 pb-7 pt-28 sm:min-h-[760px] sm:px-8 sm:pt-32 lg:min-h-screen lg:px-12">
+        <div className="relative z-10 mx-auto flex min-h-[720px] max-w-[1500px] flex-col px-5 pb-24 pt-28 sm:min-h-[760px] sm:px-8 sm:pt-32 lg:min-h-screen lg:px-12">
           <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-[.25em] text-white/60">
             <span>SMK TELEKOMUNIKASI TUNAS HARAPAN</span>
             <span className="hidden sm:block">Semarang · Jawa Tengah</span>
@@ -156,25 +166,31 @@ export default function HeroSection() {
         </div>
       </section>
 
-      <div className="relative z-20 border-b border-[#021024]/10 bg-[#052659] text-white shadow-sm">
-        <div className="mx-auto flex max-w-7xl snap-x overflow-x-auto px-4 scrollbar-none sm:grid sm:grid-cols-4 sm:overflow-visible">
+      <div className="relative z-20 -mt-12 px-4 sm:px-6">
+        <div className="mx-auto flex max-w-7xl snap-x overflow-x-auto rounded-md bg-[#343A70] shadow-xl sm:grid sm:grid-cols-2 lg:grid-cols-4 lg:overflow-hidden">
           {[
-            ["TEFA", "Teaching Factory", "#fasilitas"],
-            ["TUK", "Tempat Uji Kompetensi", "#fasilitas"],
-            ["TELSA TV", "Televisi Sekolah", "#fasilitas"],
-            ["PPDB", "Portal SPMB", "https://spmb.tunasharapan.info"],
-          ].map(([title, description, href], index) => (
+            { title: "TEFA", description: "Teaching Factory", href: "#fasilitas", icon: Cog },
+            { title: "PERPUSTAKAAN", description: "Pusat Sumber Belajar", href: "#fasilitas", icon: BookOpen },
+            { title: "TELSA TV", description: "Televisi Sekolah", href: "#fasilitas", icon: Video },
+            { title: "PPDB", description: "Portal SPMB", href: "https://spmb.tunasharapan.info", icon: ArrowRight },
+          ].map(({ title, description, href, icon: Icon }, index) => (
             <a
               key={title}
               href={href}
               target={href.startsWith("http") ? "_blank" : undefined}
               rel={href.startsWith("http") ? "noreferrer" : undefined}
-              className={`min-w-[180px] snap-start px-5 py-4 transition hover:bg-white/[.06] sm:min-w-0 sm:px-6 sm:py-5 ${index < 3 ? "border-r border-white/10" : ""}`}
+              className={`group flex min-h-24 min-w-[230px] snap-start items-center gap-4 px-5 py-4 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-[#C1E8FF] sm:min-w-0 sm:px-6 ${index === 3 ? "bg-[#2FC4B2] text-white hover:bg-[#25B4A3]" : "text-white hover:bg-white/[.06] lg:border-r lg:border-white/10"}`}
             >
-              <p className="text-[10px] font-bold uppercase tracking-[.2em] text-[#C1E8FF]/75">
-                {title}
-              </p>
-              <p className="mt-1 text-xs text-white/50">{description}</p>
+              <Icon aria-hidden="true" size={34} strokeWidth={1.5} className={`shrink-0 ${index === 3 ? "text-white" : "text-[#C1E8FF]/75"}`} />
+              <span className="min-w-0 flex-1">
+                <span className={`block text-[10px] font-bold uppercase tracking-[.16em] ${index === 3 ? "text-white/75" : "text-[#C1E8FF]/75"}`}>
+                  {title}
+                </span>
+                <span className={`mt-1 block text-sm leading-5 ${index === 3 ? "text-white" : "text-white/65"}`}>
+                  {description}
+                </span>
+              </span>
+              {index === 3 && <ArrowRight aria-hidden="true" size={27} strokeWidth={1.7} className="shrink-0 transition-transform group-hover:translate-x-1" />}
             </a>
           ))}
         </div>

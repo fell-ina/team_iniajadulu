@@ -44,7 +44,7 @@ const jurusan: Record<Slug, JurusanData> = {
     full: "Teknik Jaringan Komputer dan Telekomunikasi",
     hero: "/images/school/building-main.png",
     activity: "/images/school/hero-courtyard.jpg",
-    model: "/models/tjkt.glb",
+    model: "/models/pakjoko.glb",
     desc: "Mempelajari jaringan komputer, telekomunikasi, infrastruktur, dan teknologi konektivitas.",
     about:
       "TJKT mempelajari bagaimana perangkat komputer dan jaringan saling terhubung, mulai dari infrastruktur jaringan hingga teknologi telekomunikasi.",
@@ -118,7 +118,7 @@ export default function JurusanDetails({
       <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4">
         <div className="mx-auto flex max-w-7xl items-center justify-between rounded-full border border-white/15 bg-[#021024]/80 px-4 py-3 backdrop-blur-xl sm:px-6">
           <Link
-            href="/jurusan"
+            href="/#jurusan"
             className="flex items-center gap-2 text-xs text-white/70 transition hover:text-white"
           >
             <ArrowLeft size={15} />
@@ -170,8 +170,32 @@ export default function JurusanDetails({
       </section>
 
       {/* ================= 3D ================= */}
-      <section className="bg-[#021024]">
-        <SchoolBuilding3D model={d.model} />
+      <section className="bg-[#021024] px-6 py-14 sm:py-20 lg:py-24">
+        <div className="mx-auto grid max-w-7xl items-center gap-8 lg:grid-cols-[1.1fr_.9fr] lg:gap-14">
+          <SchoolBuilding3D model={d.model} />
+          <div className="pb-10 lg:py-12">
+            <p className="eyebrow text-[#7DA0CA]">03 / MENGENAL {d.name}</p>
+            <h2 className="mt-5 max-w-xl text-3xl font-medium leading-tight sm:text-5xl">
+              Kompetensi untuk berkarya.
+            </h2>
+            <p className="mt-6 max-w-xl text-sm leading-7 text-white/60 sm:text-base sm:leading-8">
+              {d.about}
+            </p>
+            <p className="mt-8 text-[10px] font-bold uppercase tracking-[.2em] text-[#7DA0CA]">
+              Yang dipelajari
+            </p>
+            <ul className="mt-4 grid gap-x-6 gap-y-3 sm:grid-cols-2">
+              {d.skills.map((skill) => (
+                <li
+                  key={skill}
+                  className="border-t border-white/10 pt-3 text-sm text-white/75"
+                >
+                  {skill}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
       </section>
 
       {/* ================= ABOUT ================= */}
