@@ -99,7 +99,17 @@ function Facilities(){
 }
 
 function Partners(){
-  const partners=['Sinarmas','Bakti Barito','IFORTE','Indofood','Wings','Agung Sedayu Group','Garudafood','Ciliandra Perkasa','Triputra Agro Persada'];
+  const partners=[
+    { name: 'Sinarmas', file: '/images/partners/sinarmas.png' },
+    { name: 'Bakti Barito', file: '/images/partners/bakti-barito.png' },
+    { name: 'IFORTE', file: '/images/partners/iforte.png' },
+    { name: 'Indofood', file: '/images/partners/indofood.png' },
+    { name: 'Wings', file: '/images/partners/wings.png' },
+    { name: 'Agung Sedayu Group', file: '/images/partners/agung-sedayu-group.png' },
+    { name: 'Garudafood', file: '/images/partners/garudafood.png' },
+    { name: 'Ciliandra Perkasa', file: '/images/partners/ciliandra-perkasa.png' },
+    { name: 'Triputra Agro Persada', file: '/images/partners/triputra-agro-persada.png' },
+  ];
   const logos=[...partners,...partners];
   return <section id="industri" className="overflow-hidden bg-[#052659] py-24 text-white sm:py-32">
     <div className="mx-auto max-w-7xl px-6">
@@ -112,14 +122,12 @@ function Partners(){
       <div className="pointer-events-none absolute inset-y-0 left-0 z-10 w-20 bg-gradient-to-r from-[#052659] to-transparent" />
       <div className="pointer-events-none absolute inset-y-0 right-0 z-10 w-20 bg-gradient-to-l from-[#052659] to-transparent" />
       <div className="partner-marquee flex w-max gap-4">
-        {logos.map((name,index)=><div key={`${name}-${index}`} title={name} className="grid h-24 w-48 shrink-0 place-items-center rounded-2xl border border-white/10 bg-white/[.035] px-8">
-          <div className="grid h-12 w-full place-items-center rounded-xl border border-white/10 bg-white/[.025]">
-            <span className="text-[10px] font-bold uppercase tracking-[.18em] text-white/30">Logo</span>
-          </div>
+        {logos.map((partner,index)=><div key={`${partner.name}-${index}`} title={partner.name} className="h-24 w-48 shrink-0 overflow-hidden rounded-2xl">
+          <img src={partner.file} alt={`Logo ${partner.name}`} className="h-full w-full object-contain" loading="lazy" />
         </div>)}
       </div>
     </div>
-    <div className="mx-auto max-w-7xl px-6"><p className="mt-5 text-[10px] uppercase tracking-[.16em] text-white/25">Slot logo mitra siap diganti dengan aset logo resmi.</p></div>
+    <div className="mx-auto max-w-7xl px-6"><p className="mt-5 text-[10px] uppercase tracking-[.16em] text-white/25">.</p></div>
   </section>
 }
 function Achievements(){return <section id="prestasi" className="bg-[#F4F9FF] px-6 py-24 text-[#021024] sm:py-32"><div className="mx-auto max-w-7xl"><div className="flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow text-[#2F5F8F]">06 / PRESTASI</p><h2 className="display mt-5 max-w-3xl text-4xl sm:text-6xl">Karya siswa yang<br/><span className="text-[#021024]/30">melangkah lebih jauh.</span></h2></div><Trophy className="text-[#052659]/30" size={42} strokeWidth={1.1}/></div><div className="mt-12 grid gap-5 lg:grid-cols-[1.15fr_.85fr]"><div className="overflow-hidden rounded-[1.75rem] bg-[#021024]"><img src="/images/achievements/students-achievement.jpg" alt="Prestasi siswa" className="h-[330px] w-full object-cover opacity-90 sm:h-[470px]"/></div><div className="grid gap-3">{[['01','Karya','Mendorong siswa menghasilkan karya yang dapat ditunjukkan di luar kelas.'],['02','Kompetensi','Mengasah kemampuan melalui praktik, proyek, dan pengalaman nyata.'],['03','Apresiasi','Memberi ruang bagi pencapaian siswa untuk terus berkembang.']].map(([n,title,desc])=><div key={n} className="flex gap-5 rounded-[1.5rem] border border-[#021024]/10 bg-white p-6 sm:p-7"><span className="font-mono text-xs text-[#2F5F8F]/50">{n}</span><div><p className="text-xl font-medium">{title}</p><p className="mt-2 text-sm leading-6 text-[#021024]/50">{desc}</p></div></div>)}</div></div></div></section>}
