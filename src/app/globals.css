@@ -3,4 +3,6 @@
 
 .profile-grid-bg{background-color:var(--paper);background-image:linear-gradient(to right,rgba(2,16,36,.055) 1px,transparent 1px),linear-gradient(to bottom,rgba(2,16,36,.055) 1px,transparent 1px);background-size:54px 54px}
 
+.major-link{--major-accent:#fff}.major-link:hover,.major-link:active,.major-link:focus-visible{background-color:color-mix(in srgb,var(--major-accent) 18%,transparent);box-shadow:inset 3px 0 var(--major-accent)}.major-link:hover h3,.major-link:active h3,.major-link:focus-visible h3,.major-link:hover>svg,.major-link:active>svg,.major-link:focus-visible>svg{color:var(--major-accent)}
+
 .partner-marquee{animation:partner-marquee 34s linear infinite}@keyframes partner-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}@media (prefers-reduced-motion:reduce){.partner-marquee{animation:none}}
