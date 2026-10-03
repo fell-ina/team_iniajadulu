@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { AnimatePresence, animate, motion, useInView, useMotionValue, useTransform } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowUpRight, ChevronDown, Clock3, GraduationCap, Menu, UserRound, UsersRound, X, Handshake, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import HeroSection from '@/components/HeroSection';
@@ -139,49 +139,59 @@ function Partners(){
 }
 function Achievements(){return <section id="prestasi" className="bg-[#F4F9FF] px-6 py-24 text-[#021024] sm:py-32"><div className="mx-auto max-w-7xl"><div className="flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow text-[#2F5F8F]">06 / PRESTASI</p><h2 className="display mt-5 max-w-3xl text-4xl sm:text-6xl">Karya siswa yang<br/><span className="text-[#021024]/30">melangkah lebih jauh.</span></h2></div><Trophy className="text-[#052659]/30" size={42} strokeWidth={1.1}/></div><div className="mt-12 grid gap-5 lg:grid-cols-[1.15fr_.85fr]"><div className="overflow-hidden rounded-[1.75rem] bg-[#021024]"><img src="/images/achievements/students-achievement.jpg" alt="Prestasi siswa" className="h-[330px] w-full object-cover opacity-90 sm:h-[470px]"/></div><div className="grid gap-3">{[['01','Karya','Mendorong siswa menghasilkan karya yang dapat ditunjukkan di luar kelas.'],['02','Kompetensi','Mengasah kemampuan melalui praktik, proyek, dan pengalaman nyata.'],['03','Apresiasi','Memberi ruang bagi pencapaian siswa untuk terus berkembang.']].map(([n,title,desc])=><div key={n} className="flex gap-5 rounded-[1.5rem] border border-[#021024]/10 bg-white p-6 sm:p-7"><span className="font-mono text-xs text-[#2F5F8F]/50">{n}</span><div><p className="text-xl font-medium">{title}</p><p className="mt-2 text-sm leading-6 text-[#021024]/50">{desc}</p></div></div>)}</div></div></div></section>}
 
-function AnimatedCounter({ value, suffix = '' }: { value: number; suffix?: string }) {
-  const counterRef = useRef<HTMLSpanElement>(null);
-  const isVisible = useInView(counterRef, { once: true, amount: 0.75 });
-  const count = useMotionValue(0);
-  const displayValue = useTransform(count, (latest) => `${Math.round(latest).toLocaleString('id-ID')}${suffix}`);
+function AnimatedCounter({ value, suffix = '', isVisible }: { value: number; suffix?: string; isVisible: boolean }) {
+  const [count, setCount] = useState(0);
 
   useEffect(() => {
     if (!isVisible) return;
-    const animation = animate(count, value, { duration: 1.4, ease: 'easeOut' });
-    return () => animation.stop();
-  }, [count, isVisible, value]);
+    const startTime = performance.now();
+    let frame = 0;
+    const update = (now: number) => {
+      const progress = Math.min((now - startTime) / 1400, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setCount(Math.round(value * eased));
+      if (progress < 1) frame = requestAnimationFrame(update);
+    };
+    frame = requestAnimationFrame(update);
+    return () => cancelAnimationFrame(frame);
+  }, [isVisible, value]);
 
-  return <motion.span ref={counterRef}>{displayValue}</motion.span>;
+  return <span>{`${count.toLocaleString('id-ID')}${suffix}`}</span>;
 }
 
 function AnimatedProgressBar({ value, color, metric, year }: { value: number; color: string; metric: string; year: number }) {
-  const progressRef = useRef<HTMLDivElement>(null);
-  const isVisible = useInView(progressRef, { once: true, amount: 0.8 });
-  const progress = useMotionValue(0);
-  const width = useTransform(progress, (latest) => `${latest}%`);
-  const ariaValue = useTransform(progress, (latest) => Math.round(latest * 100) / 100);
-  const displayValue = useTransform(progress, (latest) => {
-    const decimals = Number.isInteger(value) ? 0 : 2;
-    return `${(Math.round(latest * 100) / 100).toLocaleString('id-ID', { minimumFractionDigits: decimals, maximumFractionDigits: 2 })}%`;
-  });
+  const [isVisible, setIsVisible] = useState(false);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     if (!isVisible) return;
-    const animation = animate(progress, value, { duration: 1.25, ease: 'easeOut' });
-    return () => animation.stop();
-  }, [isVisible, progress, value]);
+    const startTime = performance.now();
+    let frame = 0;
+    const update = (now: number) => {
+      const progress = Math.min((now - startTime) / 1250, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      setProgress(value * eased);
+      if (progress < 1) frame = requestAnimationFrame(update);
+    };
+    frame = requestAnimationFrame(update);
+    return () => cancelAnimationFrame(frame);
+  }, [isVisible, value]);
 
-  return <div className="grid grid-cols-[40px_minmax(0,1fr)_58px] items-center gap-3">
+  const decimals = Number.isInteger(value) ? 0 : 2;
+  const displayValue = `${progress.toLocaleString('id-ID', { minimumFractionDigits: decimals, maximumFractionDigits: 2 })}%`;
+
+  return <motion.div className="grid grid-cols-[40px_minmax(0,1fr)_58px] items-center gap-3" onViewportEnter={() => setIsVisible(true)} viewport={{ once: true, amount: 0.25 }}>
     <span className="font-mono text-xs text-[#021024]/55">{year}</span>
-    <div ref={progressRef} className="h-3 overflow-hidden rounded-full bg-[#021024]/8" role="progressbar" aria-label={`${metric}, tahun ${year}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={ariaValue}>
-      <motion.div className="h-full rounded-full" style={{ width, backgroundColor: color }} />
+    <div className="h-3 overflow-hidden rounded-full bg-[#021024]/8" role="progressbar" aria-label={`${metric}, tahun ${year}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progress * 100) / 100}>
+      <div className="h-full rounded-full" style={{ width: `${progress}%`, backgroundColor: color }} />
     </div>
-    <motion.span className="text-right text-sm font-semibold tabular-nums">{displayValue}</motion.span>
-  </div>;
+    <span className="text-right text-sm font-semibold tabular-nums">{displayValue}</span>
+  </motion.div>;
 }
 
 function Future(){
   const [activeAlumni, setActiveAlumni] = useState(0);
+  const [statsVisible, setStatsVisible] = useState(false);
   const outcomes = [
     {
       title: 'Kawal Kerja',
@@ -225,9 +235,9 @@ function Future(){
     },
   ];
   return <section className="bg-[#F4F9FF] px-6 py-28 text-[#021024] sm:py-36"><div className="mx-auto max-w-7xl rounded-[2rem] bg-[#C1E8FF] px-7 pb-0 pt-7 sm:px-12 sm:pt-12 lg:px-14 lg:pt-14"><p className="eyebrow text-[#052659]/60">07 / YOUR NEXT STEP</p><h2 className="display mt-5 max-w-4xl text-4xl sm:text-6xl">Kawal langkahmu setelah lulus.</h2><div className="mt-10 grid gap-4 sm:grid-cols-2">{outcomes.map((outcome) => <article key={outcome.title} className="rounded-3xl bg-white/75 p-6 sm:p-7"><h3 className="text-2xl font-semibold">{outcome.title}</h3><p className="mt-2 text-sm leading-6 text-[#021024]/55">{outcome.description}</p><div className="mt-7 border-t border-[#021024]/10 pt-5"><div className="flex items-center justify-between gap-4"><p className="text-sm font-semibold">{outcome.metric}</p><span className="text-[10px] font-medium uppercase tracking-[.12em] text-[#021024]/40">Skala 0-100%</span></div><div className="mt-5 space-y-4" role="list" aria-label={`${outcome.metric} per tahun`}>{outcome.values.map((value, index) => <AnimatedProgressBar key={2023 + index} value={value} color={outcome.color} metric={outcome.metric} year={2023 + index} />)}</div></div></article>)}</div>
-    <div className="mt-12 grid grid-cols-2 border-y border-[#052659]/20 py-7 sm:grid-cols-4 sm:py-8" aria-label="Statistik sekolah">
-      {schoolStats.map(({ value, suffix, label, icon: Icon }, index) => <div key={label} className={`flex items-center gap-3 py-4 sm:justify-center sm:py-2 ${index % 2 === 0 ? 'pr-3' : 'pl-3'} ${index > 1 ? 'border-t border-[#052659]/15 sm:border-t-0' : ''} ${index > 0 && index % 2 === 1 ? 'border-l border-[#052659]/15' : ''} ${index > 0 ? 'sm:border-l sm:border-[#052659]/15' : ''}`}><Icon aria-hidden="true" size={32} strokeWidth={1.4} className="shrink-0 text-[#052659] sm:size-9"/><div><p className="text-2xl font-medium leading-none tabular-nums sm:text-3xl"><AnimatedCounter value={value} suffix={suffix}/></p><p className="mt-1 text-xs text-[#021024]/60 sm:text-sm">{label}</p></div></div>)}
-    </div>
+    <motion.div onViewportEnter={() => setStatsVisible(true)} viewport={{ once: true, amount: 0.25 }} className="mt-12 grid grid-cols-2 border-y border-[#052659]/20 py-7 sm:grid-cols-4 sm:py-8" aria-label="Statistik sekolah">
+      {schoolStats.map(({ value, suffix, label, icon: Icon }, index) => <div key={label} className={`flex items-center gap-3 py-4 sm:justify-center sm:py-2 ${index % 2 === 0 ? 'pr-3' : 'pl-3'} ${index > 1 ? 'border-t border-[#052659]/15 sm:border-t-0' : ''} ${index > 0 && index % 2 === 1 ? 'border-l border-[#052659]/15' : ''} ${index > 0 ? 'sm:border-l sm:border-[#052659]/15' : ''}`}><Icon aria-hidden="true" size={32} strokeWidth={1.4} className="shrink-0 text-[#052659] sm:size-9"/><div><p className="text-2xl font-medium leading-none tabular-nums sm:text-3xl"><AnimatedCounter value={value} suffix={suffix} isVisible={statsVisible}/></p><p className="mt-1 text-xs text-[#021024]/60 sm:text-sm">{label}</p></div></div>)}
+    </motion.div>
     <div className="mx-auto mt-12 max-w-5xl text-center sm:mt-14">
       <AnimatePresence mode="wait" initial={false}>
         <motion.div key={activeAlumni} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} transition={{ duration: 0.2 }}>
