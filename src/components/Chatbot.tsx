@@ -2,7 +2,19 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Bot, Send, Sparkles, X, Minus, Loader2, Volume2, VolumeX } from "lucide-react";
+import {
+  Bot,
+  Send,
+  Sparkles,
+  X,
+  Minus,
+  Loader2,
+  Volume2,
+  VolumeX,
+  Mic,
+  MicOff,
+  Trash2,
+} from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
 
@@ -19,14 +31,22 @@ const QUICK_REPLIES = [
   "Peluang kerjanya gimana? 🚀",
 ];
 
-// Membersihkan markdown, link, dan emoji agar pembacaan suara Fiska lancar & natural
+const INITIAL_CHAT: ChatMessage[] = [
+  {
+    sender: "bot",
+    text: "Halo! Aku Fiska, asisten sekolah SMK Telekomunikasi Tunas Harapan. Kalau mau nanya sesuatu, ketik aja di bawah ya~~",
+  },
+];
+
 function cleanTextForSpeech(text: string): string {
   return text
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1") // Ubah link [teks](url) jadi "teks"
-    .replace(/[*_~`#]/g, "") // Hapus simbol markdown
-    .replace(/[-*]\s+/g, "") // Hapus bullet points
-    // Hapus emoji & karakter khusus agar tidak terbaca aneh
-    .replace(/([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g, "")
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+    .replace(/[*_~`#]/g, "")
+    .replace(/[-*]\s+/g, "")
+    .replace(
+      /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g,
+      ""
+    )
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -37,31 +57,49 @@ export default function Chatbot() {
   const [isLoading, setIsLoading] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isListening, setIsListening] = useState(false);
   const [indoVoice, setIndoVoice] = useState<SpeechSynthesisVoice | null>(null);
 
-  const [chatHistory, setChatHistory] = useState<ChatMessage[]>([
-    {
-      sender: "bot",
-      text: "Halo! Aku Fiska, asisten sekolah SMK Telekomunikasi Tunas Harapan. Kalau mau nanya sesuatu, ketik aja di bawah ya~~",
-    },
-  ]);
+  const [chatHistory, setChatHistory] = useState<ChatMessage[]>(INITIAL_CHAT);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Mencari & menetapkan suara wanita Bahasa Indonesia
+  // 1. Load Chat History dari LocalStorage saat pertama kali dimuat
+  useEffect(() => {
+    const saved = localStorage.getItem("fiska_chat_history");
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setChatHistory(parsed);
+        }
+      } catch (err) {
+        console.error("Gagal memuat riwayat obrolan:", err);
+      }
+    }
+  }, []);
+
+  // 2. Simpan Chat History ke LocalStorage setiap kali ada perubahan
+  useEffect(() => {
+    if (chatHistory.length > 0) {
+      localStorage.setItem("fiska_chat_history", JSON.stringify(chatHistory));
+    }
+  }, [chatHistory]);
+
+  // Load suara Bahasa Indonesia untuk TTS
   useEffect(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
 
     const loadVoices = () => {
       const voices = window.speechSynthesis.getVoices();
-      
-      // Filter suara beraksen Indonesia (id-ID / id_ID)
       const idVoices = voices.filter(
-        (v) => v.lang.includes("id") || v.lang.includes("ID") || v.lang.toLowerCase().includes("indonesia")
+        (v) =>
+          v.lang.includes("id") ||
+          v.lang.includes("ID") ||
+          v.lang.toLowerCase().includes("indonesia")
       );
 
       if (idVoices.length > 0) {
-        // Cari suara wanita jika tersedia (misal: Google Bahasa Indonesia, Gadis, Siti, Wina, dsb)
         const femaleVoice = idVoices.find((v) =>
           /female|gadis|siti|wina|google bahasa indonesia/i.test(v.name)
         );
@@ -70,18 +108,17 @@ export default function Chatbot() {
     };
 
     loadVoices();
-    // Event listener karena daftar voice di browser sering dimuat secara asinkron
     window.speechSynthesis.onvoiceschanged = loadVoices;
   }, []);
 
-  // Fungsi Text-to-Speech (TTS) Fiska
+  // Text-to-Speech (TTS)
   const speak = useCallback(
     (text: string) => {
       if (!isAudioEnabled || typeof window === "undefined" || !("speechSynthesis" in window)) {
         return;
       }
 
-      window.speechSynthesis.cancel(); // Stop suara sebelumnya jika masih ada
+      window.speechSynthesis.cancel();
 
       const cleanText = cleanTextForSpeech(text);
       if (!cleanText) return;
@@ -89,14 +126,12 @@ export default function Chatbot() {
       const utterance = new SpeechSynthesisUtterance(cleanText);
       utterance.lang = "id-ID";
 
-      // Setel suara wanita Indonesia jika ditemukan
       if (indoVoice) {
         utterance.voice = indoVoice;
       }
 
-      // Setting intonasi & kecepatan agar terdengar ramah & lancar
-      utterance.rate = 1.02; // Sedikit dinaikkan agar bicaranya tidak terlalu kaku/lambat
-      utterance.pitch = 1.15; // Nada suara feminim & ramah
+      utterance.rate = 1.02;
+      utterance.pitch = 1.15;
 
       utterance.onstart = () => setIsSpeaking(true);
       utterance.onend = () => setIsSpeaking(false);
@@ -107,7 +142,51 @@ export default function Chatbot() {
     [isAudioEnabled, indoVoice]
   );
 
-  // Hentikan suara saat modal dilapisi/ditutup
+  // Speech-to-Text (STT / Input Suara Mikrofon)
+  const toggleListening = () => {
+    if (typeof window === "undefined") return;
+
+    const SpeechRecognition =
+      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      alert("Browser kamu belum mendukung Speech Recognition.");
+      return;
+    }
+
+    if (isListening) {
+      setIsListening(false);
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = "id-ID";
+    recognition.interimResults = false;
+
+    recognition.onstart = () => setIsListening(true);
+    recognition.onend = () => setIsListening(false);
+    recognition.onerror = () => setIsListening(false);
+
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript;
+      if (transcript) {
+        setMessage(transcript);
+      }
+    };
+
+    recognition.start();
+  };
+
+  // Reset / Hapus Riwayat Chat
+  const handleClearChat = () => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+      setIsSpeaking(false);
+    }
+    setChatHistory(INITIAL_CHAT);
+    localStorage.removeItem("fiska_chat_history");
+  };
+
   const toggleOpen = () => {
     if (open && typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
@@ -116,7 +195,6 @@ export default function Chatbot() {
     setOpen((prev) => !prev);
   };
 
-  // Keyboard shortcut: ESC untuk menutup chat
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && open) {
@@ -127,7 +205,6 @@ export default function Chatbot() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open]);
 
-  // Auto scroll
   useEffect(() => {
     if (open) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -198,7 +275,17 @@ export default function Chatbot() {
                   )}
                 </div>
                 <div>
-                  <h2 className="font-semibold text-sm tracking-tight text-white">Fiska</h2>
+                  <h2 className="font-semibold text-sm tracking-tight text-white flex items-center gap-2">
+                    Fiska
+                    {/* Audio Waveform Animation saat Fiska Berbicara */}
+                    {isSpeaking && (
+                      <span className="inline-flex items-end gap-0.5 h-3">
+                        <span className="w-0.5 h-full bg-[#C1E8FF] animate-pulse"></span>
+                        <span className="w-0.5 h-2/3 bg-[#C1E8FF] animate-bounce"></span>
+                        <span className="w-0.5 h-full bg-[#C1E8FF] animate-pulse"></span>
+                      </span>
+                    )}
+                  </h2>
                   <p className="text-[11px] text-[#C1E8FF]/70">
                     {isSpeaking ? "Sedang berbicara..." : "Asisten Virtual Sekolah"}
                   </p>
@@ -206,6 +293,17 @@ export default function Chatbot() {
               </div>
 
               <div className="flex items-center gap-1">
+                {/* Reset / Clear Chat */}
+                <button
+                  type="button"
+                  onClick={handleClearChat}
+                  aria-label="Hapus Riwayat Chat"
+                  title="Hapus Riwayat Chat"
+                  className="grid size-9 place-items-center rounded-xl text-white/60 hover:bg-white/10 hover:text-red-400 transition"
+                >
+                  <Trash2 size={16} />
+                </button>
+
                 {/* Toggle Audio TTS */}
                 <button
                   type="button"
@@ -347,12 +445,36 @@ export default function Chatbot() {
                   type="text"
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder={isLoading ? "Tunggu bentar ya..." : "Tanya Fiska sesuatu..."}
+                  placeholder={
+                    isListening
+                      ? "Sedang mendengarkan ucapanmu..."
+                      : isLoading
+                      ? "Tunggu bentar ya..."
+                      : "Tanya Fiska sesuatu..."
+                  }
                   disabled={isLoading}
                   aria-label="Ketik pertanyaan"
                   autoComplete="off"
                   className="min-w-0 flex-1 bg-transparent px-3 text-sm text-white outline-none placeholder:text-white/40 disabled:opacity-50"
                 />
+
+                {/* Tombol Input Mikrofon (Speech-to-Text) */}
+                <button
+                  type="button"
+                  onClick={toggleListening}
+                  disabled={isLoading}
+                  aria-label="Bicara dengan mikrofon"
+                  title={isListening ? "Sedang Merekam..." : "Gunakan Suara"}
+                  className={`grid size-9 shrink-0 place-items-center rounded-xl transition ${
+                    isListening
+                      ? "bg-red-500/80 text-white animate-pulse"
+                      : "text-[#C1E8FF] hover:bg-white/10"
+                  }`}
+                >
+                  {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+                </button>
+
+                {/* Tombol Kirim */}
                 <button
                   type="submit"
                   disabled={isLoading || !message.trim()}
