@@ -30,8 +30,14 @@ function formatTanggal(iso: string | null | undefined): string {
 }
 
 function potong(teks: string, maks = 120): string {
-  if (teks.length <= maks) return teks;
-  return teks.slice(0, maks).trimEnd() + "…";
+  const bersih = (teks || "")
+    .replace(/!\[.*?\]\(.*?\)/g, " ")
+    .replace(/\[([^\]]+)\]\(.*?\)/g, "$1")
+    .replace(/[#*_>`-]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (bersih.length <= maks) return bersih;
+  return bersih.slice(0, maks).trimEnd() + "…";
 }
 
 export default function DaftarBeritaAdmin() {

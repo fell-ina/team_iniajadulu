@@ -1,14 +1,62 @@
-"use client";
-
+import { cookies } from "next/headers";
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { createServerClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import DaftarBeritaAdmin from "@/components/DaftarBeritaAdmin";
 
 /**
  * Halaman /admin/berita — tampilan kelola berita yang sama dengan dashboard.
- * API tetap memverifikasi session + role, jadi user yang belum login akan
- * melihat pesan error saat daftar dimuat dan diarahkan login bila perlu.
+ * Diproteksi server-side: belum login -> /login, role bukan admin/guru -> /.
  */
-export default function AdminBerita() {
+export default async function AdminBerita() {
+  const cookieStore = await cookies();
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet: any) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }: any) =>
+              cookieStore.set(name, value, options)
+            );
+          } catch {
+            // abaikan
+          }
+        },
+      },
+    }
+  );
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login?alasan=tidak-ada-session");
+  }
+
+  const admin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { persistSession: false } }
+  );
+
+  const { data: profil } = await admin
+    .from("users")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  const role = profil?.role;
+
+  if (role !== "admin" && role !== "guru") {
+    redirect("/?alasan=role-ditolak");
+  }
   return (
     <main className="min-h-screen bg-[#F4F9FF] px-4 py-10 text-[#021024] sm:px-6 sm:py-14">
       <div className="mx-auto max-w-6xl">
