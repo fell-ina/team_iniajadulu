@@ -2,7 +2,15 @@ import Groq from "groq-sdk";
 import fs from "fs";
 import path from "path";
 
-const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
+export const dynamic = "force-dynamic";
+
+function getGroq() {
+  const apiKey = process.env.GROQ_API_KEY;
+  if (!apiKey) {
+    throw new Error("GROQ_API_KEY belum di-set di Environment Variable.");
+  }
+  return new Groq({ apiKey });
+}
 
 const MODEL = "qwen/qwen3.8-27b"; 
 const MAX_HISTORY = 6;
@@ -115,6 +123,7 @@ export async function POST(req) {
     const systemPrompt = buatSystemPrompt(knowledge, aturan);
     const history = buatHistory(body.history);
 
+    const groq = getGroq();
     const completion = await groq.chat.completions.create({
       model: MODEL,
       messages: [
