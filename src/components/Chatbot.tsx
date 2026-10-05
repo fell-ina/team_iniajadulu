@@ -51,6 +51,41 @@ function cleanTextForSpeech(text: string): string {
     .trim();
 }
 
+function playFallbackSpeech(text: string, onEnd: () => void) {
+  if (typeof window === "undefined" || !("speechSynthesis" in window)) {
+    onEnd();
+    return;
+  }
+
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = "id-ID";
+  utterance.pitch = 1.15;
+  utterance.rate = 1.0;
+
+  const assignVoiceAndSpeak = () => {
+    const voices = window.speechSynthesis.getVoices();
+    const femaleVoice = voices.find(
+      (v) =>
+        v.lang.includes("id") &&
+        (v.name.toLowerCase().includes("gadis") ||
+          v.name.toLowerCase().includes("female") ||
+          v.name.toLowerCase().includes("google"))
+    );
+    if (femaleVoice) utterance.voice = femaleVoice;
+
+    utterance.onend = onEnd;
+    utterance.onerror = onEnd;
+    window.speechSynthesis.speak(utterance);
+  };
+
+  if (window.speechSynthesis.getVoices().length === 0) {
+    window.speechSynthesis.onvoiceschanged = assignVoiceAndSpeak;
+  } else {
+    assignVoiceAndSpeak();
+  }
+}
+
 export default function Chatbot() {
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState("");
@@ -58,13 +93,15 @@ export default function Chatbot() {
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isListening, setIsListening] = useState(false);
-  const [indoVoice, setIndoVoice] = useState<SpeechSynthesisVoice | null>(null);
 
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>(INITIAL_CHAT);
 
+  const isLoadedRef = useRef(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const recognitionRef = useRef<any>(null);
 
-  // 1. Load Chat History dari LocalStorage saat pertama kali dimuat
+  // Load Chat History
   useEffect(() => {
     const saved = localStorage.getItem("fiska_chat_history");
     if (saved) {
@@ -77,72 +114,82 @@ export default function Chatbot() {
         console.error("Gagal memuat riwayat obrolan:", err);
       }
     }
+    isLoadedRef.current = true;
   }, []);
 
-  // 2. Simpan Chat History ke LocalStorage setiap kali ada perubahan
+  // Simpan Chat History
   useEffect(() => {
-    if (chatHistory.length > 0) {
+    if (isLoadedRef.current) {
       localStorage.setItem("fiska_chat_history", JSON.stringify(chatHistory));
     }
   }, [chatHistory]);
 
-  // Load suara Bahasa Indonesia untuk TTS
-  useEffect(() => {
-    if (typeof window === "undefined" || !("speechSynthesis" in window)) return;
-
-    const loadVoices = () => {
-      const voices = window.speechSynthesis.getVoices();
-      const idVoices = voices.filter(
-        (v) =>
-          v.lang.includes("id") ||
-          v.lang.includes("ID") ||
-          v.lang.toLowerCase().includes("indonesia")
-      );
-
-      if (idVoices.length > 0) {
-        const femaleVoice = idVoices.find((v) =>
-          /female|gadis|siti|wina|google bahasa indonesia/i.test(v.name)
-        );
-        setIndoVoice(femaleVoice || idVoices[0]);
-      }
-    };
-
-    loadVoices();
-    window.speechSynthesis.onvoiceschanged = loadVoices;
+  // Hentikan suara audio jika ada
+  const stopAudio = useCallback(() => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      window.speechSynthesis.cancel();
+    }
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current = null;
+    }
+    setIsSpeaking(false);
   }, []);
 
-  // Text-to-Speech (TTS)
+  // Text-to-Speech Utama
   const speak = useCallback(
-    (text: string) => {
-      if (!isAudioEnabled || typeof window === "undefined" || !("speechSynthesis" in window)) {
-        return;
-      }
+    async (text: string) => {
+      if (!isAudioEnabled) return;
 
-      window.speechSynthesis.cancel();
+      stopAudio();
 
       const cleanText = cleanTextForSpeech(text);
       if (!cleanText) return;
 
-      const utterance = new SpeechSynthesisUtterance(cleanText);
-      utterance.lang = "id-ID";
+      setIsSpeaking(true);
 
-      if (indoVoice) {
-        utterance.voice = indoVoice;
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+        const res = await fetch("/api/tts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: cleanText }),
+          signal: controller.signal,
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!res.ok) {
+          playFallbackSpeech(cleanText, () => setIsSpeaking(false));
+          return;
+        }
+
+        const blob = await res.blob();
+        const audioUrl = URL.createObjectURL(blob);
+        const audio = new Audio(audioUrl);
+        audioRef.current = audio;
+
+        audio.onended = () => {
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+        };
+
+        audio.onerror = () => {
+          URL.revokeObjectURL(audioUrl);
+          playFallbackSpeech(cleanText, () => setIsSpeaking(false));
+        };
+
+        await audio.play();
+      } catch {
+        playFallbackSpeech(cleanText, () => setIsSpeaking(false));
       }
-
-      utterance.rate = 1.02;
-      utterance.pitch = 1.15;
-
-      utterance.onstart = () => setIsSpeaking(true);
-      utterance.onend = () => setIsSpeaking(false);
-      utterance.onerror = () => setIsSpeaking(false);
-
-      window.speechSynthesis.speak(utterance);
     },
-    [isAudioEnabled, indoVoice]
+    [isAudioEnabled, stopAudio]
   );
 
-  // Speech-to-Text (STT / Input Suara Mikrofon)
+  // Speech-to-Text
   const toggleListening = () => {
     if (typeof window === "undefined") return;
 
@@ -155,11 +202,13 @@ export default function Chatbot() {
     }
 
     if (isListening) {
+      recognitionRef.current?.stop();
       setIsListening(false);
       return;
     }
 
     const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
     recognition.lang = "id-ID";
     recognition.interimResults = false;
 
@@ -177,23 +226,18 @@ export default function Chatbot() {
     recognition.start();
   };
 
-  // Reset / Hapus Riwayat Chat
   const handleClearChat = () => {
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
-    }
+    stopAudio();
     setChatHistory(INITIAL_CHAT);
     localStorage.removeItem("fiska_chat_history");
   };
 
-  const toggleOpen = () => {
-    if (open && typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-      setIsSpeaking(false);
+  const toggleOpen = useCallback(() => {
+    if (open) {
+      stopAudio();
     }
     setOpen((prev) => !prev);
-  };
+  }, [open, stopAudio]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -203,7 +247,7 @@ export default function Chatbot() {
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open]);
+  }, [open, toggleOpen]);
 
   useEffect(() => {
     if (open) {
@@ -211,12 +255,18 @@ export default function Chatbot() {
     }
   }, [chatHistory, isLoading, open]);
 
+  // Cleanup saat unmount
+  useEffect(() => {
+    return () => {
+      stopAudio();
+      recognitionRef.current?.stop();
+    };
+  }, [stopAudio]);
+
   const sendMessageToBot = async (userMsg: string) => {
     if (!userMsg.trim() || isLoading) return;
 
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-    }
+    stopAudio();
 
     setMessage("");
     setChatHistory((prev) => [...prev, { sender: "user", text: userMsg }]);
@@ -234,8 +284,7 @@ export default function Chatbot() {
 
       setChatHistory((prev) => [...prev, { sender: "bot", text: botReply }]);
       speak(botReply);
-    } catch (error) {
-      console.error("Chatbot Fetch Error:", error);
+    } catch {
       const errorReply = "Ck, koneksinya putus nih! Coba cek internetmu sendiri deh. 😅";
       setChatHistory((prev) => [...prev, { sender: "bot", text: errorReply }]);
       speak(errorReply);
@@ -277,7 +326,6 @@ export default function Chatbot() {
                 <div>
                   <h2 className="font-semibold text-sm tracking-tight text-white flex items-center gap-2">
                     Fiska
-                    {/* Audio Waveform Animation saat Fiska Berbicara */}
                     {isSpeaking && (
                       <span className="inline-flex items-end gap-0.5 h-3">
                         <span className="w-0.5 h-full bg-[#C1E8FF] animate-pulse"></span>
@@ -293,7 +341,6 @@ export default function Chatbot() {
               </div>
 
               <div className="flex items-center gap-1">
-                {/* Reset / Clear Chat */}
                 <button
                   type="button"
                   onClick={handleClearChat}
@@ -304,13 +351,11 @@ export default function Chatbot() {
                   <Trash2 size={16} />
                 </button>
 
-                {/* Toggle Audio TTS */}
                 <button
                   type="button"
                   onClick={() => {
-                    if (isSpeaking && typeof window !== "undefined") {
-                      window.speechSynthesis.cancel();
-                      setIsSpeaking(false);
+                    if (isSpeaking) {
+                      stopAudio();
                     }
                     setIsAudioEnabled(!isAudioEnabled);
                   }}
@@ -325,7 +370,6 @@ export default function Chatbot() {
                   {isAudioEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
                 </button>
 
-                {/* Tutup Chat */}
                 <button
                   type="button"
                   onClick={toggleOpen}
@@ -337,7 +381,7 @@ export default function Chatbot() {
               </div>
             </div>
 
-            {/* Area Obrolan */}
+            {/* Chat Content */}
             <div
               className="flex-1 space-y-4 overflow-y-auto px-4 py-4 scroll-smooth custom-scrollbar"
               aria-live="polite"
@@ -356,8 +400,8 @@ export default function Chatbot() {
                     <div className="group relative max-w-[85%] rounded-2xl rounded-tl-sm border border-white/10 bg-white/[0.07] px-4 py-3 text-sm leading-relaxed text-white/90">
                       <ReactMarkdown
                         components={{
-                          a: ({ href, children }) => {
-                            const isInternal = href && href.startsWith("/");
+                          a: ({ href = "", children }) => {
+                            const isInternal = href.startsWith("/");
                             if (isInternal) {
                               return (
                                 <Link
@@ -384,7 +428,6 @@ export default function Chatbot() {
                         {chat.text}
                       </ReactMarkdown>
 
-                      {/* Tombol Putar Ulang Suara Per Pesan */}
                       <button
                         type="button"
                         onClick={() => speak(chat.text)}
@@ -423,7 +466,7 @@ export default function Chatbot() {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Quick Replies Bar */}
+            {/* Quick Replies */}
             <div className="flex gap-2 overflow-x-auto px-4 py-2 shrink-0 bg-[#021024]/80 border-t border-white/5 no-scrollbar">
               {QUICK_REPLIES.map((text, i) => (
                 <button
@@ -458,7 +501,6 @@ export default function Chatbot() {
                   className="min-w-0 flex-1 bg-transparent px-3 text-sm text-white outline-none placeholder:text-white/40 disabled:opacity-50"
                 />
 
-                {/* Tombol Input Mikrofon (Speech-to-Text) */}
                 <button
                   type="button"
                   onClick={toggleListening}
@@ -474,7 +516,6 @@ export default function Chatbot() {
                   {isListening ? <MicOff size={16} /> : <Mic size={16} />}
                 </button>
 
-                {/* Tombol Kirim */}
                 <button
                   type="submit"
                   disabled={isLoading || !message.trim()}
@@ -489,7 +530,6 @@ export default function Chatbot() {
         )}
       </AnimatePresence>
 
-      {/* Floating Action Button (FAB) */}
       <motion.button
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
