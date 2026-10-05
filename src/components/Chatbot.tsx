@@ -3,9 +3,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  Bot,
   Send,
-  Sparkles,
   X,
   Minus,
   Loader2,
@@ -17,6 +15,7 @@ import {
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
+import Image from "next/image";
 
 type ChatMessage = {
   sender: "bot" | "user";
@@ -314,10 +313,16 @@ export default function Chatbot() {
             {/* Header */}
             <div className="relative border-b border-white/10 px-5 py-3.5 shrink-0 flex items-center justify-between bg-[#052659]/40">
               <div className="flex items-center gap-3">
-                <div className="relative grid size-10 place-items-center rounded-2xl border border-[#7DA0CA]/30 bg-[#052659] text-[#C1E8FF]">
-                  <Sparkles size={18} />
+                <div className="relative size-10 overflow-hidden rounded-2xl border border-[#7DA0CA]/30 bg-[#052659]">
+                  <Image
+                    src="/images/school/bot.png"
+                    alt="Fiska Avatar"
+                    fill
+                    sizes="40px"
+                    className="object-cover"
+                  />
                   {isSpeaking && (
-                    <span className="absolute -top-1 -right-1 flex size-3">
+                    <span className="absolute -top-1 -right-1 flex size-3 z-10">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#C1E8FF] opacity-75"></span>
                       <span className="relative inline-flex rounded-full size-3 bg-[#5483B3]"></span>
                     </span>
@@ -394,8 +399,14 @@ export default function Chatbot() {
                     key={index}
                     className="flex gap-2.5 items-start"
                   >
-                    <div className="mt-1 grid size-7 shrink-0 place-items-center rounded-full bg-[#5483B3]/20 text-[#C1E8FF]">
-                      <Bot size={14} />
+                    <div className="relative mt-1 size-7 shrink-0 overflow-hidden rounded-full border border-[#7DA0CA]/30 bg-[#052659]">
+                      <Image
+                        src="/images/school/bot.png"
+                        alt="Bot Avatar"
+                        fill
+                        sizes="28px"
+                        className="object-cover"
+                      />
                     </div>
                     <div className="group relative max-w-[85%] rounded-2xl rounded-tl-sm border border-white/10 bg-white/[0.07] px-4 py-3 text-sm leading-relaxed text-white/90">
                       <ReactMarkdown
@@ -546,8 +557,20 @@ export default function Chatbot() {
               <X size={22} />
             </motion.span>
           ) : (
-            <motion.span key="bot" initial={{ rotate: 90 }} animate={{ rotate: 0 }} exit={{ rotate: -90 }}>
-              <Bot size={24} />
+            <motion.span
+              key="bot"
+              initial={{ rotate: 90 }}
+              animate={{ rotate: 0 }}
+              exit={{ rotate: -90 }}
+              className="relative size-8 overflow-hidden rounded-full"
+            >
+              <Image
+                src="/images/school/bot.png"
+                alt="Buka Chat Fiska"
+                fill
+                sizes="32px"
+                className="object-cover"
+              />
             </motion.span>
           )}
         </AnimatePresence>

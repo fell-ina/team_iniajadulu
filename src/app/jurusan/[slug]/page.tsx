@@ -43,7 +43,7 @@ const jurusan: Record<Slug, JurusanData> = {
     name: "TJKT",
     full: "Teknik Jaringan Komputer dan Telekomunikasi",
     hero: "/images/school/building-main.png",
-    activity: "/images/school/hero-courtyard.jpg",
+    activity: "/images/school/tkj1.jpg",
     model: "/models/pakjoko.glb",
     desc: "Mempelajari jaringan komputer, telekomunikasi, infrastruktur, dan teknologi konektivitas.",
     about:
@@ -62,7 +62,7 @@ const jurusan: Record<Slug, JurusanData> = {
     name: "DKV",
     full: "Desain Komunikasi Visual",
     hero: "/images/school/hero-courtyard.jpg",
-    activity: "/images/school/hero-lab.jpg",
+    activity: "/images/school/dkv.jpg",
     model: "/models/miawww-miaw.glb",
     desc: "Mengembangkan kemampuan visual, desain, komunikasi, dan karya kreatif untuk kebutuhan media.",
     about:
@@ -81,7 +81,7 @@ const jurusan: Record<Slug, JurusanData> = {
     name: "TKR",
     full: "Teknik Kendaraan Ringan",
     hero: "/images/school/building-secondary.png",
-    activity: "/images/school/hero-courtyard.jpg",
+    activity: "/images/school/tkr.jpg",
     model: "/models/Tkr_berwarna.glb",
     desc: "Mempelajari perawatan, perbaikan, diagnosis, dan teknologi kendaraan ringan.",
     about:
