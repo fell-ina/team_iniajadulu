@@ -1,36 +1,118 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 🏫 Website Profil Sekolah Interaktif - SMK Telekomunikasi Tunas Harapan
 
-## Getting Started
+> **Proyek Kompetisi Web (Tahap Penyisihan)**  
+> Platform sistem informasi profil sekolah modern berbasis Next.js 16, terintegrasi dengan Asisten Virtual AI "Fiska" dan visualisasi model 3D interaktif.
 
-First, run the development server:
+🌐 **Live Demo:** [https://team-iniajadulu-tthhh.vercel.app/](https://team-iniajadulu-tthhh.vercel.app/)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+---
+
+## 👥 Profil Tim
+
+**Nama Tim:** Ini Aja Dulu  
+**Asal Sekolah:** SMK Telekomunikasi Tunas Harapan  
+**Anggota:**
+1. Royan Felix
+2. Abraham Rainhard
+3. Felix Sutikno
+4. Reyhan Eka
+5. Muhammad Haikal Adzmy
+
+---
+
+## 📌 Fitur Utama
+
+- **🤖 Asisten Virtual AI "Fiska":** Chatbot cerdas berbasis Groq LLM yang memanfaatkan teknik *strict grounding* pada berkas basis pengetahuan lokal untuk menjawab pertanyaan calon siswa/orang tua terkait PPDB, biaya, fasilitas, dan jurusan secara akurat 24/7.
+- **🧊 Visualisasi 3D Interaktif:** Tampilan objek dan fasilitas jurusan 3D interaktif berbasis React Three Fiber & Drei yang dapat dirotasi $360^\circ$ dan di-zoom langsung di peramban.
+- **📰 Portal Berita & CMS Mandiri:** Fitur manajemen berita mandiri (CRUD) khusus admin/guru yang terproteksi dengan autentikasi aman serta sistem penyimpanan *image bucket*.
+- **⚡ Hero Slider & Quick Access:** Tampilan halaman utama responsif (*floating pill navbar*, slider otomatis 7 detik, dan akses cepat ke fasilitas utama seperti TEFA, Telsa TV, dan SPMB).
+- **💼 Tracer Study & Kemitraan DUDI:** Visualisasi statistik kelulusan (*Kawal Kerja & Kawal Kuliah*) serta marquee dinamis untuk 9 mitra industri unggulan.
+- **🔒 Secure Role-Based Authentication:** Pengamanan rute berbasis *Server-Side Rendering* (SSR) dan Supabase Auth menggunakan cookie `httpOnly`.
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend & Backend Framework
+- **Framework:** [Next.js 16](https://nextjs.org/) (App Router)
+- **Library Utama:** React 19 + TypeScript
+- **Styling & Animasi:** Tailwind CSS v4 + Framer Motion
+- **Tipografi:** Geist + Space Grotesk
+
+### Backend Services & Storage
+- **Database & Auth:** Supabase SSR & Supabase Auth
+- **File Storage:** Supabase Storage Bucket (Manajemen Gambar Berita)
+
+### AI & Interactive 3D Engine
+- **AI Chatbot:** Groq Cloud API (Groq LLM Engine)
+- **3D Graphics:** React Three Fiber + Three.js + `@react-three/drei`
+
+---
+
+## 📂 Struktur Rute Halaman
+
+```text
+/                       - Halaman Utama (One-Page 7 Seksi: Profil, Jurusan, Berita, Fasilitas, DUDI, Prestasi, Footer)
+/jurusan/[id]           - Halaman Detail Program Keahlian (PPLG, TJKT, DKV, TKR) & Model 3D Interaktif
+/berita                 - Portal Berita Publik (Grid Berita, Pencarian, & Skeleton Loading)
+/berita/[id]            - Halaman Pembacaan Artikel Berita (Format Markdown)
+/login                  - Portal Autentikasi Login Admin / Guru
+/admin/dashboard        - Panel CMS Admin (Tambah, Edit, & Hapus Berita)
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+---
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## ⚙️ Panduan Pengoperasian Lokal (Local Development)
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 1. Prasyarat System
+- Node.js versi `v18.x` atau lebih baru
+- `npm`, `pnpm`, atau `yarn`
 
-## Learn More
+### 2. Kloning Repositori
+```bash
+git clone https://github.com/username/repository-name.git
+cd repository-name
+```
 
-To learn more about Next.js, take a look at the following resources:
+### 3. Instalasi Dependensi
+```bash
+npm install
+# atau
+pnpm install
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 4. Pengaturan Environment Variable
+Buat berkas `.env.local` di direktori utama dan isi kredensial berikut:
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
 
-## Deploy on Vercel
+GROQ_API_KEY=your_groq_api_key
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 5. Jalankan Server Lokal
+```bash
+npm run dev
+# atau
+pnpm dev
+```
+Buka `http://localhost:3000` pada peramban Anda.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## 🚀 Status Rencana Pengembangan (Roadmap)
+
+- [x] **Tahap I:** Desain UI/UX, arsitektur rute Next.js 16, dan integrasi Supabase.
+- [x] **Tahap II:** Konfigurasi Groq LLM untuk AI Fiska & komponen 3D React Three Fiber.
+- [x] **Tahap III:** Pembuatan panel admin CMS dan Supabase Storage bucket.
+- [x] **Tahap IV:** Deployment penuh ke Vercel dan optimasi responsif.
+- [ ] **Tahap V (Pengembangan Lanjutan):** Melengkapi informasi guru, staf, serta daftar ekstrakurikuler.
+- [ ] **Tahap VI (Penyempurnaan Chatbot):** Integrasi karakter visual Chibi AI Fiska yang animated & interaktif.
+
+---
+
+## 📝 Lisensi & Catatan
+
+Proyek ini dikembangkan khusus untuk mengikuti ajang kompetisi pengembangan web oleh Tim **Ini Aja Dulu** dari **SMK Telekomunikasi Tunas Harapan**.
