@@ -18,7 +18,6 @@ const HISTORY_CHAR_LIMIT = 400;
 const MAX_INPUT_LENGTH = 800;
 
 // ---------- KNOWLEDGE BASE MANAGEMENT ----------
-// Sistem cache dilepas agar perubahan file .md langsung terbaca tanpa perlu restart server
 const KNOWLEDGE_FILES = {
   profil: ["01-profil-sekolah.md"],
   jurusan: ["02-program-keahlian.md"],
@@ -54,10 +53,8 @@ function pilihKnowledge(pesan) {
   const data = loadKnowledge();
   const t = pesan.toLowerCase();
   
-  // Profil sekolah selalu disertakan sebagai basis konteks utama
   const hasil = [data.profil];
   
-  // Penambahan keyword SPP, asrama, biaya, kepsek, dll
   if (/jurusan|pplg|rpl|tjkt|tkj|dkv|tkr|coding|jaringan|desain|otomotif|program/.test(t)) hasil.push(data.jurusan);
   if (/fasilitas|lab|bengkel|asrama|tefa|lapangan|kantin|internet|tinggal/.test(t)) hasil.push(data.fasilitas);
   if (/ppdb|spmb|daftar|pendaftaran|syarat|biaya|gelombang|masuk|spp|uang|harga|bayar/.test(t)) hasil.push(data.ppdb);
@@ -78,17 +75,17 @@ ${aturan}
 2. **KAPAN HARUS DETAIL:** Jika user bertanya info penting (seperti syarat daftar, daftar fasilitas, atau jurusan), JAWAB DENGAN LENGKAP menggunakan **Bullet Points**, tapi tetap RINGKAS. Jangan kurangi poin penting dari data!
 3. **KAPAN HARUS SINGKAT:** Jika user cuma basa-basi (contoh: "halo", "lagi apa?"), jawab dengan 1-2 kalimat yang ramah dan ceria.
 4. **SUMBER DATA:** HANYA BOLEH menjawab berdasarkan informasi di [KNOWLEDGE BASE]. DILARANG mengarang nama perusahaan, alamat, atau biaya.
-5. **FORMAT TAUTAN/LINK:** Jika memberikan link website, WAJIB gunakan format Markdown lengkap seperti ini: [Nama Teks](https://linknya.com). Contoh: [Website Resmi PPDB](https://spmb.tunasharapan.info).
+5. **FORMAT TAUTAN/LINK EXTERNAL:** Jika memberikan link website luar, WAJIB gunakan format Markdown lengkap seperti ini: [Nama Teks](https://linknya.com). Contoh: [Website Resmi PPDB](https://spmb.tunasharapan.info).
 6. **PERTANYAAN NGAWUR/TROLL:** Jika user nanya aneh/mesum/ngawur (contoh: "buka celana", "berisik"), tolak dengan SATU KALIMAT tegas dan sopan. DILARANG menggunakan deskripsi tindakan roleplay seperti *(tersenyum lebar)* atau *(melompat girang)*.
 7. **FORMAT:** Gunakan format Markdown yang rapi. DILARANG menggunakan HTML.
-5. **MENGARAHKAN KE HALAMAN LAIN (HYPERLINK):** Jika user ingin "diantarkan", "pergi", atau "melihat" halaman spesifik di website ini, berikan HYPERLINK menggunakan format Markdown [Teks](/url).
-   - Jurusan PPLG -> [Halaman PPLG](/pplg)
-   - Jurusan DKV -> [Halaman DKV](/dkv)
-   - Jurusan TJKT -> [Halaman TJKT](/tjkt)
-   - Jurusan TKR -> [Halaman TKR](/tkr)
+8. **MENGARAHKAN KE HALAMAN LAIN (HYPERLINK INTERNAL):** Jika user ingin "diantarkan", "pergi", atau "melihat" halaman spesifik di website ini, berikan HYPERLINK menggunakan format Markdown [Teks](/url).
+   - Jurusan PPLG -> [Halaman PPLG](/jurusan/pplg)
+   - Jurusan DKV -> [Halaman DKV](/jurusan/dkv)
+   - Jurusan TJKT -> [Halaman TJKT](/jurusan/tjkt)
+   - Jurusan TKR -> [Halaman TKR](/jurusan/tkr)
    - Fasilitas -> [Halaman Fasilitas](/fasilitas)
    - PPDB Resmi Luar -> [Situs PPDB](https://spmb.tunasharapan.info)
-   Contoh jawaban: "Tentu! Kamu bisa cek info lengkapnya di sini yaa: [Halaman PPLG](/pplg) ✨"
+   Contoh jawaban: "Tentu! Kamu bisa cek info lengkapnya di sini yaa: [Halaman PPLG](/jurusan/pplg) ✨"
 === KNOWLEDGE BASE (DATA RESMI SEKOLAH) ===
 ${knowledge}
 === AKHIR KNOWLEDGE BASE ===`;
