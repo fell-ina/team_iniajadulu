@@ -12,6 +12,8 @@ import {
   Mic,
   MicOff,
   Trash2,
+  Maximize2,
+  Minimize2,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
@@ -23,11 +25,17 @@ type ChatMessage = {
 };
 
 const QUICK_REPLIES = [
-  "Info PPDB 2027 📝",
-  "Ada jurusan apa aja? 🎯",
-  "Biaya SPP & Daftar 💰",
-  "Fasilitas & Asrama 🛏️",
-  "Peluang kerjanya gimana? 🚀",
+  "Info PPDB 2027 🏫",
+  "Syarat Pendaftaran 📋",
+  "Ada jurusan apa aja? 🎓",
+  "Biaya SPP & Pendaftaran 💰",
+  "Info Beasiswa 🎁",
+  "Fasilitas & Lab 💻",
+  "Info Asrama Sekolah 🏠",
+  "Peluang Kerja Lulusan 💼",
+  "Program PKL & Magang 🏢",
+  "Ekstrakurikuler (Ekskul) ⚽",
+  "Lokasi & Kontak Sekolah 📍",
 ];
 
 const INITIAL_CHAT: ChatMessage[] = [
@@ -44,7 +52,7 @@ function cleanTextForSpeech(text: string): string {
     .replace(/[-*]\s+/g, "")
     .replace(
       /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g,
-      ""
+      "",
     )
     .replace(/\s+/g, " ")
     .trim();
@@ -59,7 +67,7 @@ function playFallbackSpeech(text: string, onEnd: () => void) {
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "id-ID";
-  utterance.pitch = 1.15;
+  utterance.pitch = 1.2;
   utterance.rate = 1.0;
 
   const assignVoiceAndSpeak = () => {
@@ -69,7 +77,8 @@ function playFallbackSpeech(text: string, onEnd: () => void) {
         v.lang.includes("id") &&
         (v.name.toLowerCase().includes("gadis") ||
           v.name.toLowerCase().includes("female") ||
-          v.name.toLowerCase().includes("google"))
+          v.name.toLowerCase().includes("indonesia") ||
+          v.name.toLowerCase().includes("google")),
     );
     if (femaleVoice) utterance.voice = femaleVoice;
 
@@ -87,6 +96,7 @@ function playFallbackSpeech(text: string, onEnd: () => void) {
 
 export default function Chatbot() {
   const [open, setOpen] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
@@ -99,6 +109,40 @@ export default function Chatbot() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const recognitionRef = useRef<any>(null);
+
+  // Ref & State untuk Mouse Drag Scroll & Wheel Scroll
+  const quickRepliesRef = useRef<HTMLDivElement>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeftState, setScrollLeftState] = useState(0);
+  const [dragDistance, setDragDistance] = useState(0);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!quickRepliesRef.current) return;
+    setIsDragging(true);
+    setStartX(e.pageX - quickRepliesRef.current.offsetLeft);
+    setScrollLeftState(quickRepliesRef.current.scrollLeft);
+    setDragDistance(0);
+  };
+
+  const handleMouseLeaveOrUp = () => {
+    setIsDragging(false);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!isDragging || !quickRepliesRef.current) return;
+    e.preventDefault();
+    const x = e.pageX - quickRepliesRef.current.offsetLeft;
+    const walk = (x - startX) * 1.5;
+    setDragDistance(Math.abs(walk));
+    quickRepliesRef.current.scrollLeft = scrollLeftState - walk;
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (quickRepliesRef.current && !isFullscreen) {
+      quickRepliesRef.current.scrollLeft += e.deltaY;
+    }
+  };
 
   // Load Chat History
   useEffect(() => {
@@ -149,7 +193,7 @@ export default function Chatbot() {
 
       try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3500);
+        const timeoutId = setTimeout(() => controller.abort(), 12000);
 
         const res = await fetch("/api/tts", {
           method: "POST",
@@ -185,7 +229,7 @@ export default function Chatbot() {
         playFallbackSpeech(cleanText, () => setIsSpeaking(false));
       }
     },
-    [isAudioEnabled, stopAudio]
+    [isAudioEnabled, stopAudio],
   );
 
   // Speech-to-Text
@@ -193,7 +237,8 @@ export default function Chatbot() {
     if (typeof window === "undefined") return;
 
     const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      (window as any).SpeechRecognition ||
+      (window as any).webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
       alert("Browser kamu belum mendukung Speech Recognition.");
@@ -232,21 +277,30 @@ export default function Chatbot() {
   };
 
   const toggleOpen = useCallback(() => {
+    stopAudio();
     if (open) {
-      stopAudio();
+      setIsFullscreen(false); // Reset status fullscreen saat obrolan ditutup/diminimize
     }
     setOpen((prev) => !prev);
   }, [open, stopAudio]);
 
+  const toggleFullscreen = () => {
+    setIsFullscreen((prev) => !prev);
+  };
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && open) {
-        toggleOpen();
+        if (isFullscreen) {
+          setIsFullscreen(false);
+        } else {
+          toggleOpen();
+        }
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, toggleOpen]);
+  }, [open, isFullscreen, toggleOpen]);
 
   useEffect(() => {
     if (open) {
@@ -284,7 +338,8 @@ export default function Chatbot() {
       setChatHistory((prev) => [...prev, { sender: "bot", text: botReply }]);
       speak(botReply);
     } catch {
-      const errorReply = "Ck, koneksinya putus nih! Coba cek internetmu sendiri deh. 😅";
+      const errorReply =
+        "Ck, koneksinya putus nih! Coba cek internetmu sendiri deh. 🙄";
       setChatHistory((prev) => [...prev, { sender: "bot", text: errorReply }]);
       speak(errorReply);
     } finally {
@@ -298,7 +353,13 @@ export default function Chatbot() {
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-[80] sm:bottom-6 sm:right-6">
+    <div
+      className={
+        open && isFullscreen
+          ? "fixed inset-0 z-[80] p-0 sm:p-4 bg-black/60 backdrop-blur-sm flex items-center justify-center transition-all duration-300"
+          : "fixed bottom-4 right-4 z-[80] sm:bottom-6 sm:right-6"
+      }
+    >
       <AnimatePresence>
         {open && (
           <motion.div
@@ -308,7 +369,11 @@ export default function Chatbot() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 15, scale: 0.95 }}
             transition={{ duration: 0.2 }}
-            className="mb-3 w-[calc(100vw-2rem)] sm:w-[400px] h-[75vh] max-h-[600px] min-h-[420px] overflow-hidden rounded-3xl border border-[#7DA0CA]/30 bg-[#021024]/95 text-[#F4F9FF] shadow-2xl backdrop-blur-2xl flex flex-col"
+            className={`overflow-hidden border border-[#7DA0CA]/30 bg-[#021024]/95 text-[#F4F9FF] shadow-2xl backdrop-blur-2xl flex flex-col transition-all duration-300 ${
+              isFullscreen
+                ? "w-full h-full rounded-none sm:rounded-3xl max-h-none"
+                : "mb-3 w-[calc(100vw-2rem)] sm:w-[400px] h-[75vh] max-h-[600px] min-h-[420px] rounded-3xl"
+            }`}
           >
             {/* Header */}
             <div className="relative border-b border-white/10 px-5 py-3.5 shrink-0 flex items-center justify-between bg-[#052659]/40">
@@ -340,7 +405,9 @@ export default function Chatbot() {
                     )}
                   </h2>
                   <p className="text-[11px] text-[#C1E8FF]/70">
-                    {isSpeaking ? "Sedang berbicara..." : "Asisten Virtual Sekolah"}
+                    {isSpeaking
+                      ? "Sedang berbicara..."
+                      : "Asisten Virtual Sekolah"}
                   </p>
                 </div>
               </div>
@@ -364,7 +431,11 @@ export default function Chatbot() {
                     }
                     setIsAudioEnabled(!isAudioEnabled);
                   }}
-                  aria-label={isAudioEnabled ? "Matikan Suara Fiska" : "Aktifkan Suara Fiska"}
+                  aria-label={
+                    isAudioEnabled
+                      ? "Matikan Suara Fiska"
+                      : "Aktifkan Suara Fiska"
+                  }
                   title={isAudioEnabled ? "Suara Fiska Aktif" : "Suara Muted"}
                   className={`grid size-9 place-items-center rounded-xl transition ${
                     isAudioEnabled
@@ -372,7 +443,27 @@ export default function Chatbot() {
                       : "text-white/40 hover:text-white hover:bg-white/10"
                   }`}
                 >
-                  {isAudioEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                  {isAudioEnabled ? (
+                    <Volume2 size={16} />
+                  ) : (
+                    <VolumeX size={16} />
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={toggleFullscreen}
+                  aria-label={
+                    isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"
+                  }
+                  title={isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"}
+                  className="grid size-9 place-items-center rounded-xl text-white/60 hover:bg-white/10 hover:text-white transition"
+                >
+                  {isFullscreen ? (
+                    <Minimize2 size={16} />
+                  ) : (
+                    <Maximize2 size={16} />
+                  )}
                 </button>
 
                 <button
@@ -388,7 +479,7 @@ export default function Chatbot() {
 
             {/* Chat Content */}
             <div
-              className="flex-1 space-y-4 overflow-y-auto px-4 py-4 scroll-smooth custom-scrollbar"
+              className="flex-1 min-h-0 space-y-4 overflow-y-auto px-4 py-4 scroll-smooth custom-scrollbar"
               aria-live="polite"
             >
               {chatHistory.map((chat, index) =>
@@ -460,7 +551,7 @@ export default function Chatbot() {
                   >
                     {chat.text}
                   </motion.div>
-                )
+                ),
               )}
 
               {isLoading && (
@@ -478,14 +569,30 @@ export default function Chatbot() {
             </div>
 
             {/* Quick Replies */}
-            <div className="flex gap-2 overflow-x-auto px-4 py-2 shrink-0 bg-[#021024]/80 border-t border-white/5 no-scrollbar">
+            <div
+              ref={quickRepliesRef}
+              onWheel={handleWheel}
+              onMouseDown={handleMouseDown}
+              onMouseLeave={handleMouseLeaveOrUp}
+              onMouseUp={handleMouseLeaveOrUp}
+              onMouseMove={handleMouseMove}
+              className={`flex gap-2 px-4 py-2 shrink-0 bg-[#021024]/80 border-t border-white/5 select-none [&::-webkit-scrollbar]:hidden [scrollbar-width:none] [-ms-overflow-style:none] ${
+                isFullscreen
+                  ? "flex-wrap justify-center max-h-36 overflow-y-auto"
+                  : "overflow-x-auto cursor-grab active:cursor-grabbing"
+              }`}
+            >
               {QUICK_REPLIES.map((text, i) => (
                 <button
                   key={i}
                   type="button"
                   disabled={isLoading}
-                  onClick={() => sendMessageToBot(text)}
-                  className="whitespace-nowrap rounded-xl border border-[#7DA0CA]/30 bg-[#052659]/60 px-3 py-1.5 text-xs font-medium text-[#C1E8FF] transition hover:bg-[#7DA0CA]/30 hover:text-white disabled:opacity-50"
+                  onClick={() => {
+                    if (dragDistance < 5) {
+                      sendMessageToBot(text);
+                    }
+                  }}
+                  className="whitespace-nowrap rounded-xl border border-[#7DA0CA]/30 bg-[#052659]/60 px-3 py-1.5 text-xs font-medium text-[#C1E8FF] transition hover:bg-[#7DA0CA]/30 hover:text-white disabled:opacity-50 shrink-0"
                 >
                   {text}
                 </button>
@@ -493,7 +600,10 @@ export default function Chatbot() {
             </div>
 
             {/* Form Input */}
-            <form onSubmit={handleFormSubmit} className="border-t border-white/10 p-3 shrink-0 bg-[#021024]">
+            <form
+              onSubmit={handleFormSubmit}
+              className="border-t border-white/10 p-3 shrink-0 bg-[#021024]"
+            >
               <div className="flex items-center gap-2 rounded-2xl border border-white/15 bg-black/40 p-1.5 focus-within:border-[#C1E8FF]/60 transition-colors">
                 <input
                   type="text"
@@ -503,8 +613,8 @@ export default function Chatbot() {
                     isListening
                       ? "Sedang mendengarkan ucapanmu..."
                       : isLoading
-                      ? "Tunggu bentar ya..."
-                      : "Tanya Fiska sesuatu..."
+                        ? "Tunggu bentar ya..."
+                        : "Tanya Fiska sesuatu..."
                   }
                   disabled={isLoading}
                   aria-label="Ketik pertanyaan"
@@ -541,40 +651,47 @@ export default function Chatbot() {
         )}
       </AnimatePresence>
 
-      <motion.button
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={toggleOpen}
-        aria-label={open ? "Tutup Chat" : "Buka Obrolan Fiska"}
-        className="relative ml-auto grid size-14 place-items-center rounded-full border border-[#C1E8FF]/50 bg-[#052659] text-[#C1E8FF] shadow-lg transition hover:border-[#C1E8FF]"
-      >
-        {!open && (
-          <span className="absolute inset-0 rounded-full border border-[#7DA0CA]/50 animate-ping [animation-duration:3s]" />
-        )}
-        <AnimatePresence mode="wait" initial={false}>
-          {open ? (
-            <motion.span key="close" initial={{ rotate: -90 }} animate={{ rotate: 0 }} exit={{ rotate: 90 }}>
-              <X size={22} />
-            </motion.span>
-          ) : (
-            <motion.span
-              key="bot"
-              initial={{ rotate: 90 }}
-              animate={{ rotate: 0 }}
-              exit={{ rotate: -90 }}
-              className="relative size-8 overflow-hidden rounded-full"
-            >
-              <Image
-                src="/images/school/bot.png"
-                alt="Buka Chat Fiska"
-                fill
-                sizes="32px"
-                className="object-cover"
-              />
-            </motion.span>
+      {!isFullscreen && (
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={toggleOpen}
+          aria-label={open ? "Tutup Chat" : "Buka Obrolan Fiska"}
+          className="relative ml-auto grid size-14 place-items-center rounded-full border border-[#C1E8FF]/50 bg-[#052659] text-[#C1E8FF] shadow-lg transition hover:border-[#C1E8FF]"
+        >
+          {!open && (
+            <span className="absolute inset-0 rounded-full border border-[#7DA0CA]/50 animate-ping [animation-duration:3s]" />
           )}
-        </AnimatePresence>
-      </motion.button>
+          <AnimatePresence mode="wait" initial={false}>
+            {open ? (
+              <motion.span
+                key="close"
+                initial={{ rotate: -90 }}
+                animate={{ rotate: 0 }}
+                exit={{ rotate: 90 }}
+              >
+                <X size={22} />
+              </motion.span>
+            ) : (
+              <motion.span
+                key="bot"
+                initial={{ rotate: 90 }}
+                animate={{ rotate: 0 }}
+                exit={{ rotate: -90 }}
+                className="relative size-8 overflow-hidden rounded-full"
+              >
+                <Image
+                  src="/images/school/bot.png"
+                  alt="Buka Chat Fiska"
+                  fill
+                  sizes="32px"
+                  className="object-cover"
+                />
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.button>
+      )}
     </div>
   );
 }

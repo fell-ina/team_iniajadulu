@@ -10,11 +10,14 @@ export async function POST(req: Request) {
     }
 
     const tts = new MsEdgeTTS();
+
+    // Set metadata ke suara cewek Indonesia (id-ID-GadisNeural)
     await tts.setMetadata(
       "id-ID-GadisNeural",
-      OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3
+      OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3,
     );
 
+    // Panggil toStream murni tanpa opsi parameter tambahan agar tidak crash
     const { audioStream } = await tts.toStream(text);
 
     const chunks: Uint8Array[] = [];
@@ -27,14 +30,15 @@ export async function POST(req: Request) {
       headers: {
         "Content-Type": "audio/mpeg",
         "Content-Length": audioBuffer.length.toString(),
-        "Cache-Control": "public, max-age=86400, s-maxage=86400",
+        "Cache-Control":
+          "no-store, no-cache, must-revalidate, proxy-revalidate",
       },
     });
   } catch (error) {
-    console.error("Edge TTS Error:", error);
+    console.error("Edge TTS Internal Error:", error);
     return NextResponse.json(
       { error: "Gagal memproses audio dari Edge TTS" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
