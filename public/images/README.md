@@ -10,10 +10,12 @@
 
 ## majors/
 Tambahkan nanti:
-- `pplg.jpg`
+-op `pplg.jpg`
 - `tjkt.jpg`
 - `dkv.jpg`
 - `tkr.jpg`
 
 ## facilities/
 Folder disiapkan untuk foto fasilitas.
+
+~hihsuhashsasishia

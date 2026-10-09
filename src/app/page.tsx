@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowUpRight, ChevronDown, Clock3, GraduationCap, Menu, UserRound, UsersRound, X, Handshake, Trophy } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, Clock3, GraduationCap, Menu, UserRound, UsersRound, X, Handshake, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import HeroSection from '@/components/HeroSection';
 import Chatbot from '@/components/Chatbot';
@@ -27,7 +27,8 @@ const tanggalFallback:Record<string,string>=Object.fromEntries(newsFallback.map(
 return <section id="berita" className="bg-[#F4F9FF] px-6 py-28 text-[#021024] sm:py-36"><div className="mx-auto max-w-7xl"><div className="flex items-end justify-between gap-6"><div><p className="eyebrow text-[#2F5F8F]">03 / BERITA</p><h2 className="display mt-5 text-4xl sm:text-6xl">Berita terbaru.</h2></div><Link href="/berita" className="hidden rounded-full border border-[#021024]/15 px-5 py-3 text-[10px] font-bold uppercase tracking-[.15em] sm:inline-flex">Lihat semua berita <ArrowUpRight size={14}/></Link></div><div className="mt-14 grid gap-6 md:grid-cols-3">{tampil.slice(0,3).map((b,i)=>{const isDb=daftar!==null&&(daftar as BeritaPublik[]).length>0;const slug=String(b.id);const img=b.gambar_url||'/images/school/hero-lab.jpg';const date=isDb?formatTanggalBerita(b.created_at,'Baru saja'):(tanggalFallback[slug]??'');const desc=b.subjudul||b.konten.slice(0,120);return <motion.article key={slug} initial={{opacity:0,y:30}} whileInView={{opacity:1,y:0}} viewport={{once:true}} transition={{delay:i*.08}} className="group overflow-hidden rounded-[1.6rem] border border-[#021024]/8 bg-white"><Link href={`/berita/${slug}`}><div className="aspect-[16/10] overflow-hidden bg-[#052659]/5"><img src={img} alt="" className="h-full w-full object-cover transition duration-700 group-hover:scale-105"/></div><div className="p-6"><p className="eyebrow text-[#2F5F8F]/60">{date}</p><h3 className="mt-3 line-clamp-2 text-2xl font-medium tracking-tight">{b.judul}</h3><p className="mt-3 line-clamp-3 text-sm leading-6 text-[#021024]/55">{desc}</p></div></Link></motion.article>})}</div><Link href="/berita" className="mt-8 inline-flex rounded-full border border-[#021024]/15 px-5 py-3 text-[10px] font-bold uppercase tracking-[.15em] sm:hidden">Lihat semua berita <ArrowUpRight size={14}/></Link></div></section>}
 
 function Facilities(){
-  const [expanded, setExpanded] = useState<number | null>(null);
+  const [active, setActive] = useState(0);
+  const [direction, setDirection] = useState(1);
   const items = [
     {
       title: 'TEFA',
@@ -60,49 +61,117 @@ function Facilities(){
     },
   ];
 
-  return <section id="fasilitas" className="bg-white px-6 py-28 text-[#021024] sm:py-36"><div className="mx-auto max-w-7xl"><p className="eyebrow text-[#2F5F8F]">04 / FASILITAS</p><div className="mt-5 grid gap-10 lg:grid-cols-[1fr_1.2fr]"><h2 className="display text-4xl sm:text-6xl">Ruang untuk<br/><span className="text-[#021024]/30">bertumbuh.</span></h2><motion.div layout className="overflow-hidden rounded-3xl bg-[#021024]/10">
-        <AnimatePresence mode="wait" initial={false}>
-          {expanded === null ? (
-            <motion.div key="facility-grid" layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid gap-px sm:grid-cols-2">
-              {items.map((item, index) => (
-                <motion.button
-                  layout
-                  key={item.title}
-                  type="button"
-                  aria-expanded={false}
-                  onClick={() => setExpanded(index)}
-                  className="min-h-36 bg-[#F4F9FF] p-7 text-left transition-colors hover:bg-[#EAF4FC] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2F5F8F] active:bg-[#E1EFFA] sm:p-8"
-                >
-                  <span className="block text-3xl font-semibold">{item.title}</span>
-                  <span className="mt-3 block text-sm text-[#021024]/50">{item.subtitle}</span>
-                  <span className="mt-5 inline-flex items-center gap-2 text-[10px] font-bold uppercase tracking-[.15em] text-[#2F5F8F]">
-                    Lihat informasi <ArrowUpRight size={13} />
-                  </span>
-                </motion.button>
-              ))}
-            </motion.div>
-          ) : (
-            <motion.div key={`facility-detail-${expanded}`} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="grid bg-[#F4F9FF] md:h-[328px] md:grid-cols-[1.05fr_.95fr]">
-              <div className="relative min-h-56 overflow-hidden sm:min-h-72 md:min-h-0">
-                <img src={items[expanded].image} alt={items[expanded].imageAlt} className="absolute inset-0 h-full w-full object-cover" />
-              </div>
-              <div className="flex flex-col items-start justify-center p-7 sm:p-10">
-                <button type="button" aria-expanded="true" aria-controls="facility-detail" onClick={() => setExpanded(null)} className="flex w-full items-start justify-between gap-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F5F8F]">
-                  <span>
-                    <span className="block text-3xl font-semibold">{items[expanded].title}</span>
-                    <span className="mt-2 block text-sm text-[#021024]/50">{items[expanded].subtitle}</span>
-                  </span>
-                  <ChevronDown size={19} aria-hidden="true" className="mt-1 shrink-0 rotate-180 text-[#2F5F8F]" />
-                </button>
-                <div id="facility-detail">
-                  <p className="mt-6 text-sm leading-7 text-[#021024]/70">{items[expanded].detail}</p>
-                  {items[expanded].href && <a href={items[expanded].href} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 text-xs font-bold text-[#2F5F8F] hover:text-[#021024]">Kunjungi kanal <ArrowUpRight size={14} /></a>}
-                </div>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div></div></div></section>;
+  const count = items.length;
+  const goTo = (index: number, dir?: number) => {
+    const next = ((index % count) + count) % count;
+    setDirection(dir ?? (next > active ? 1 : -1));
+    setActive(next);
+  };
+  const goNext = () => goTo(active + 1, 1);
+  const goPrev = () => goTo(active - 1, -1);
+
+  return <section id="fasilitas" className="relative overflow-hidden bg-white px-6 py-28 text-[#021024] sm:py-36">
+    <motion.div aria-hidden="true" className="pointer-events-none absolute -left-28 top-24 hidden w-80 opacity-90 lg:block xl:w-96" animate={{ y: [0, -12, 0], rotate: [-8, -5, -8] }} transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}>
+      <svg viewBox="0 0 260 220" fill="none" className="h-auto w-full">
+        <motion.path d="M-6 206 L118 30 L252 206" stroke="#A6D81C" strokeWidth="38" strokeLinecap="round" strokeLinejoin="round" initial={{ pathLength: 0, opacity: 0.25 }} animate={{ pathLength: 1, opacity: [0.25, 1, 0.25] }} transition={{ duration: 4.8, repeat: Infinity, ease: 'easeInOut' }} />
+        <motion.path d="M48 206 L128 108 L196 206" stroke="#F04A3A" strokeWidth="22" strokeLinecap="round" strokeLinejoin="round" initial={{ pathLength: 0, opacity: 0.25 }} animate={{ pathLength: 1, opacity: [0.25, 1, 0.25] }} transition={{ duration: 1.3, repeat: Infinity, ease: 'easeInOut', delay: 0.6 }} />
+        <motion.path d="M-6 30 L118 206 L252 30" stroke="#2E9BD0" strokeWidth="13" strokeLinecap="round" strokeLinejoin="round" initial={{ pathLength: 0, opacity: 0.25 }} animate={{ pathLength: 1, opacity: [0.25, 1, 0.25] }} transition={{ duration: 3.4, repeat: Infinity, ease: 'easeInOut', delay: 1.4 }} />
+      </svg>
+    </motion.div>
+    <motion.div aria-hidden="true" className="pointer-events-none absolute -right-20 bottom-6 hidden w-60 opacity-90 lg:block xl:w-72" animate={{ y: [0, 12, 0], rotate: [10, 7, 10] }} transition={{ duration: 6.2, repeat: Infinity, ease: 'easeInOut' }}>
+      <svg viewBox="0 0 260 220" fill="none" className="h-auto w-full -scale-x-100">
+        <motion.path d="M-6 30 L118 206 L252 30" stroke="#2E9BD0" strokeWidth="34" strokeLinecap="round" strokeLinejoin="round" initial={{ pathLength: 0, opacity: 0.25 }} animate={{ pathLength: 1, opacity: [0.25, 1, 0.25] }} transition={{ duration: 5.4, repeat: Infinity, ease: 'easeInOut', delay: 0.9 }} />
+        <motion.path d="M60 206 L132 116 L190 206" stroke="#A6D81C" strokeWidth="18" strokeLinecap="round" strokeLinejoin="round" initial={{ pathLength: 0, opacity: 0.25 }} animate={{ pathLength: 1, opacity: [0.25, 1, 0.25] }} transition={{ duration: 1.1, repeat: Infinity, ease: 'easeInOut', delay: 0.2 }} />
+        <motion.path d="M150 206 L170 178 L190 206" stroke="#F04A3A" strokeWidth="11" strokeLinecap="round" strokeLinejoin="round" initial={{ pathLength: 0, opacity: 0.25 }} animate={{ pathLength: 1, opacity: [0.25, 1, 0.25] }} transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut', delay: 1.8 }} />
+      </svg>
+    </motion.div>
+    <motion.div aria-hidden="true" className="pointer-events-none absolute right-4 top-6 w-24 opacity-80 sm:w-28 lg:w-36" animate={{ y: [0, -8, 0], rotate: [14, 10, 14] }} transition={{ duration: 7.5, repeat: Infinity, ease: 'easeInOut' }}>
+      <svg viewBox="0 0 260 220" fill="none" className="h-auto w-full">
+        <motion.path d="M-6 30 L118 206 L252 30" stroke="#F04A3A" strokeWidth="36" strokeLinecap="round" strokeLinejoin="round" initial={{ pathLength: 0, opacity: 0.25 }} animate={{ pathLength: 1, opacity: [0.25, 1, 0.25] }} transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut', delay: 1.1 }} />
+        <motion.path d="M96 206 L140 150 L176 206" stroke="#2E9BD0" strokeWidth="15" strokeLinecap="round" strokeLinejoin="round" initial={{ pathLength: 0, opacity: 0.25 }} animate={{ pathLength: 1, opacity: [0.25, 1, 0.25] }} transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }} />
+      </svg>
+    </motion.div>
+    <motion.div aria-hidden="true" className="pointer-events-none absolute bottom-24 left-6 w-16 opacity-60 sm:w-20 lg:w-24" animate={{ y: [0, 8, 0], rotate: [-14, -10, -14] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}>
+      <svg viewBox="0 0 260 220" fill="none" className="h-auto w-full">
+        <motion.path d="M60 206 L132 116 L190 206" stroke="#A6D81C" strokeWidth="24" strokeLinecap="round" strokeLinejoin="round" initial={{ pathLength: 0, opacity: 0.25 }} animate={{ pathLength: 1, opacity: [0.25, 1, 0.25] }} transition={{ duration: 3.1, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }} />
+        <motion.path d="M118 30 L148 70 L176 30" stroke="#2E9BD0" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round" initial={{ pathLength: 0, opacity: 0.25 }} animate={{ pathLength: 1, opacity: [0.25, 1, 0.25] }} transition={{ duration: 1.9, repeat: Infinity, ease: 'easeInOut', delay: 1.6 }} />
+      </svg>
+    </motion.div>
+    <motion.div aria-hidden="true" className="pointer-events-none absolute left-[6%] top-[22%] hidden md:block" animate={{ y: [0, -18, 0], x: [0, 10, 0], rotate: [0, 10, 0] }} transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}>
+      <div className="relative size-28">
+        <svg viewBox="0 0 100 92" className="absolute inset-0 h-full w-full opacity-50 blur-md" fill="url(#holoTri1)"><defs><linearGradient id="holoTri1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#67e8f9"/><stop offset=".4" stopColor="#c4b5fd"/><stop offset=".65" stopColor="#f9a8d4"/><stop offset="1" stopColor="#a3e635"/></linearGradient></defs><polygon points="50,4 96,88 4,88" /></svg>
+        <svg viewBox="0 0 100 92" className="absolute inset-0 h-full w-full" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.65)" strokeWidth="1.5"><polygon points="50,4 96,88 4,88" /><polygon points="50,4 96,88 4,88" fill="url(#holoTri1)" opacity=".55" /></svg>
+        <motion.div className="absolute inset-x-5 top-6 h-6 bg-gradient-to-r from-transparent via-white/80 to-transparent" style={{ clipPath: 'polygon(50% 0, 100% 100%, 0 100%)' }} animate={{ opacity: [0.1, 0.7, 0.1], x: ['-30%', '30%', '-30%'] }} transition={{ duration: 3.7, repeat: Infinity, ease: 'easeInOut' }} />
+      </div>
+    </motion.div>
+    <motion.div aria-hidden="true" className="pointer-events-none absolute bottom-[14%] right-[7%] hidden md:block" animate={{ y: [0, 16, 0], x: [0, -12, 0], rotate: [0, -8, 0] }} transition={{ duration: 10.5, repeat: Infinity, ease: 'easeInOut' }}>
+      <div className="relative h-24 w-20">
+        <svg viewBox="0 0 100 92" className="absolute inset-0 h-full w-full -scale-y-100 opacity-50 blur-md" fill="url(#holoTri2)"><defs><linearGradient id="holoTri2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stopColor="#a3e635"/><stop offset=".45" stopColor="#67e8f9"/><stop offset=".75" stopColor="#c4b5fd"/><stop offset="1" stopColor="#f9a8d4"/></linearGradient></defs><polygon points="50,4 96,88 4,88" /></svg>
+        <svg viewBox="0 0 100 92" className="absolute inset-0 h-full w-full -scale-y-100" fill="rgba(255,255,255,.18)" stroke="rgba(255,255,255,.6)" strokeWidth="1.5"><polygon points="50,4 96,88 4,88" /><polygon points="50,4 96,88 4,88" fill="url(#holoTri2)" opacity=".55" /></svg>
+        <motion.div className="absolute inset-x-4 top-2 h-8 bg-gradient-to-b from-white/90 to-transparent" style={{ clipPath: 'polygon(50% 0, 100% 100%, 0 100%)' }} animate={{ opacity: [0.15, 0.8, 0.15] }} transition={{ duration: 2.3, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }} />
+      </div>
+    </motion.div>
+    <motion.div aria-hidden="true" className="pointer-events-none absolute right-[16%] top-[30%] hidden lg:block" animate={{ y: [0, -10, 0], rotate: [0, 12, 0], opacity: [0.35, 0.7, 0.35] }} transition={{ duration: 4.4, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}>
+      <svg viewBox="0 0 100 92" className="size-14 opacity-70 blur-[1px]" fill="url(#holoTri3)"><defs><linearGradient id="holoTri3" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stopColor="#f9a8d4"/><stop offset=".5" stopColor="#67e8f9"/><stop offset="1" stopColor="#a3e635"/></linearGradient></defs><polygon points="50,4 96,88 4,88" stroke="rgba(255,255,255,.5)" strokeWidth="2" /></svg>
+    </motion.div>
+    <div className="relative mx-auto max-w-7xl"><p className="eyebrow text-[#2F5F8F]">04 / FASILITAS</p>
+    <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+      <h2 className="display text-4xl sm:text-6xl">Ruang untuk<br/><span className="text-[#021024]/30">bertumbuh.</span></h2>
+      <p className="max-w-md text-sm leading-7 text-[#021024]/55">Tumpukan kartu fasilitas — kartu belakang tetap terlihat samar. Gunakan tombol kiri / kanan di sisi kartu untuk mengganti kartu paling atas.</p>
+    </div>
+    <div className="mt-12 flex items-center gap-3 sm:gap-6">
+      <button type="button" onClick={goPrev} aria-label="Kartu sebelumnya" className="grid size-11 shrink-0 place-items-center rounded-full border border-[#021024]/15 bg-white text-[#021024] shadow-sm transition hover:bg-[#021024] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F5F8F] active:scale-95 sm:size-14"><ArrowLeft size={20}/></button>
+      <div className="relative mx-auto h-[560px] w-full max-w-[520px] flex-1 sm:h-[600px]" role="region" aria-roledescription="carousel" aria-label="Kartu fasilitas">
+        {items.map((item, index) => {
+          const pos = ((index - active) % count + count) % count;
+          const xMap = [0, 56, -56, 0];
+          const yMap = [0, 22, 44, 66];
+          const rotateMap = [0, 5, -5, 0];
+          const x = xMap[Math.min(pos, 3)];
+          const y = yMap[Math.min(pos, 3)];
+          const rotate = rotateMap[Math.min(pos, 3)];
+          return <motion.article
+            key={item.title}
+            initial={false}
+            animate={{ x, y, rotate, scale: 1 - Math.min(pos, 3) * 0.06, opacity: pos === 0 ? 1 : pos === 1 ? 0.85 : pos === 2 ? 0.7 : 0, filter: pos === 0 ? 'brightness(1)' : `brightness(${Math.max(0.72, 0.94 - pos * 0.08)})` }}
+            transition={{ type: 'spring', stiffness: 240, damping: 28 }}
+            style={{ zIndex: count - pos }}
+            aria-hidden={pos !== 0}
+            className={`absolute inset-x-8 top-0 overflow-hidden rounded-[1.75rem] border border-[#021024]/8 bg-[#F4F9FF] sm:inset-x-12 ${pos !== 0 ? 'pointer-events-none' : 'shadow-[0_32px_70px_-28px_rgba(2,16,36,.4)]'} ${pos > 2 ? 'invisible' : ''}`}
+          >
+            <div className="relative h-60 overflow-hidden bg-[#052659]/10 sm:h-72">
+              <AnimatePresence mode="wait" initial={false}>
+                {pos === 0 && <motion.img key={item.image} src={item.image} alt={item.imageAlt} initial={{ opacity: 0, x: 48 * direction }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -48 * direction }} transition={{ duration: 0.35 }} className="absolute inset-0 h-full w-full object-cover" />}
+                {pos !== 0 && <img src={item.image} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />}
+              </AnimatePresence>
+              {pos !== 0 && <div aria-hidden="true" className="absolute inset-0 bg-[#F4F9FF]/55" />}
+              <span className="absolute left-5 top-5 rounded-full bg-white/90 px-3 py-1.5 font-mono text-[11px] tracking-[.18em] text-[#021024] backdrop-blur">{String(index + 1).padStart(2, '0')}</span>
+            </div>
+            <div className="relative p-7 sm:p-8">
+              {pos !== 0 && <div aria-hidden="true" className="absolute inset-0 bg-[#F4F9FF]/55" />}
+              <AnimatePresence mode="wait" initial={false}>
+                {pos === 0 ? <motion.div key={`text-${active}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.25 }}>
+                  <p className="eyebrow text-[#2F5F8F]/70">{item.subtitle}</p>
+                  <h3 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">{item.title}</h3>
+                  <p className="mt-3 min-h-14 text-sm leading-7 text-[#021024]/60">{item.detail}</p>
+                  {item.href
+                    ? <a href={item.href} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.15em] text-[#E86A17] hover:text-[#B64F0C]">Lihat informasi <ArrowUpRight size={14} /></a>
+                    : <span className="mt-5 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.15em] text-[#E86A17]">{item.subtitle} <ArrowUpRight size={14} /></span>}
+                </motion.div> : <div key={`static-${item.title}`}><p className="eyebrow text-[#2F5F8F]/60">{item.subtitle}</p><h3 className="mt-3 text-3xl font-semibold tracking-tight text-[#021024]/80 sm:text-4xl">{item.title}</h3></div>}
+              </AnimatePresence>
+            </div>
+          </motion.article>;
+        })}
+      </div>
+      <button type="button" onClick={goNext} aria-label="Kartu berikutnya" className="grid size-11 shrink-0 place-items-center rounded-full bg-[#021024] text-white shadow-sm transition hover:bg-[#2F5F8F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F5F8F] focus-visible:ring-offset-2 active:scale-95 sm:size-14"><ArrowRight size={20}/></button>
+    </div>
+    <div className="mt-10 flex items-center justify-center gap-4">
+      <span className="font-mono text-xs tracking-[.2em] text-[#021024]/50" aria-live="polite">{String(active + 1).padStart(2, '0')} / {String(count).padStart(2, '0')}</span>
+      <div className="flex gap-2" role="tablist" aria-label="Pilih fasilitas">
+        {items.map((item, i) => <button key={item.title} role="tab" aria-selected={i === active} aria-label={item.title} type="button" onClick={() => goTo(i)} className={`h-1.5 rounded-full transition-all duration-300 ${i === active ? 'w-10 bg-[#021024]' : 'w-5 bg-[#021024]/15 hover:bg-[#021024]/30'}`} />)}
+      </div>
+    </div>
+  </div></section>;
 }
 
 function Partners(){
