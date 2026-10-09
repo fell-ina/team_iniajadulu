@@ -117,7 +117,7 @@ function Facilities(){
     <div className="relative mx-auto max-w-7xl"><p className="eyebrow text-[#2F5F8F]">04 / FASILITAS</p>
     <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
       <h2 className="display text-4xl sm:text-6xl">Ruang untuk<br/><span className="text-[#021024]/30">bertumbuh.</span></h2>
-      <p className="max-w-md text-sm leading-7 text-[#021024]/55">Tumpukan kartu fasilitas — kartu belakang tetap terlihat samar. Gunakan tombol kiri / kanan di sisi kartu untuk mengganti kartu paling atas.</p>
+      <p className="max-w-md text-sm leading-7 text-[#021024]/55"></p>
     </div>
     <div className="mt-12 flex items-center gap-3 sm:gap-6">
       <button type="button" onClick={goPrev} aria-label="Kartu sebelumnya" className="grid size-11 shrink-0 place-items-center rounded-full border border-[#021024]/15 bg-white text-[#021024] shadow-sm transition hover:bg-[#021024] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F5F8F] active:scale-95 sm:size-14"><ArrowLeft size={20}/></button>
