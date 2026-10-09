@@ -58,6 +58,66 @@ function cleanTextForSpeech(text: string): string {
     .trim();
 }
 
+// ---------- SUARA CEWEK KONSISTEN (FALLBACK) ----------
+const FEMALE_MARKERS = ["gadis", "female", "wanita", "perempuan", "google bahasa indonesia"];
+const MALE_MARKERS = ["ardi", "david", "andrew", "brandon", "pria", "guy"];
+
+function isFemaleName(name: string): boolean {
+  const n = name.toLowerCase();
+  return FEMALE_MARKERS.some((m) => n.includes(m));
+}
+
+function isMaleName(name: string): boolean {
+  const n = name.toLowerCase();
+  // "female" juga mengandung kata "male", jadi harus dicek dulu
+  if (n.includes("female")) return false;
+  return MALE_MARKERS.some((m) => n.includes(m));
+}
+
+function isIndonesian(v: SpeechSynthesisVoice): boolean {
+  return v.lang?.toLowerCase().startsWith("id") ?? false;
+}
+
+function pickFemaleVoice(
+  voices: SpeechSynthesisVoice[],
+): SpeechSynthesisVoice | null {
+  // 1. Voice Indonesia dengan penanda cewek (paling pasti)
+  let picked =
+    voices.find((v) => isIndonesian(v) && isFemaleName(v.name) && !isMaleName(v.name)) ?? null;
+  if (picked) return picked;
+  // 2. Voice Indonesia apa pun asal bukan penanda cowok
+  picked = voices.find((v) => isIndonesian(v) && !isMaleName(v.name)) ?? null;
+  if (picked) return picked;
+  // 3. Voice bahasa lain yang jelas penanda cewek
+  picked = voices.find((v) => isFemaleName(v.name) && !isMaleName(v.name)) ?? null;
+  return picked;
+}
+
+// Voice cewek yang sudah terpilih dikunci di sini supaya
+// semua pesan selalu memakai voice yang sama persis.
+let cachedFemaleVoice: SpeechSynthesisVoice | null = null;
+
+function getVoicesWhenReady(onReady: (voices: SpeechSynthesisVoice[]) => void) {
+  const synth = window.speechSynthesis;
+  const existing = synth.getVoices();
+  if (existing.length > 0) {
+    onReady(existing);
+    return;
+  }
+
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    synth.onvoiceschanged = null;
+    window.clearTimeout(safetyTimer);
+    onReady(synth.getVoices());
+  };
+
+  const safetyTimer = window.setTimeout(finish, 2000);
+  synth.onvoiceschanged = finish;
+}
+
 function playFallbackSpeech(text: string, onEnd: () => void) {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) {
     onEnd();
@@ -67,31 +127,34 @@ function playFallbackSpeech(text: string, onEnd: () => void) {
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "id-ID";
-  utterance.pitch = 1.2;
-  utterance.rate = 1.0;
+  utterance.rate = 0.95;
+  utterance.pitch = 1.15;
 
-  const assignVoiceAndSpeak = () => {
-    const voices = window.speechSynthesis.getVoices();
-    const femaleVoice = voices.find(
-      (v) =>
-        v.lang.includes("id") &&
-        (v.name.toLowerCase().includes("gadis") ||
-          v.name.toLowerCase().includes("female") ||
-          v.name.toLowerCase().includes("indonesia") ||
-          v.name.toLowerCase().includes("google")),
-    );
-    if (femaleVoice) utterance.voice = femaleVoice;
-
-    utterance.onend = onEnd;
-    utterance.onerror = onEnd;
-    window.speechSynthesis.speak(utterance);
+  let finished = false;
+  const finish = () => {
+    if (finished) return;
+    finished = true;
+    onEnd();
   };
 
-  if (window.speechSynthesis.getVoices().length === 0) {
-    window.speechSynthesis.onvoiceschanged = assignVoiceAndSpeak;
-  } else {
-    assignVoiceAndSpeak();
-  }
+  getVoicesWhenReady((voices) => {
+    const voice =
+      cachedFemaleVoice && voices.includes(cachedFemaleVoice)
+        ? cachedFemaleVoice
+        : pickFemaleVoice(voices);
+
+    if (voice) {
+      cachedFemaleVoice = voice;
+      utterance.voice = voice;
+      utterance.lang = voice.lang;
+    }
+
+    utterance.onend = finish;
+    utterance.onerror = finish;
+    // Jaga-jaga: kalau event tidak pernah datang, tetap akhiri state bicara
+    window.setTimeout(finish, 60000);
+    window.speechSynthesis.speak(utterance);
+  });
 }
 
 export default function Chatbot() {
@@ -192,19 +255,27 @@ export default function Chatbot() {
       setIsSpeaking(true);
 
       try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 12000);
+        // Coba request TTS sampai 2x dengan timeout 20 detik
+        // supaya jarang jatuh ke suara browser (fallback).
+        let res: Response | null = null;
+        for (let attempt = 0; attempt < 2 && !res; attempt++) {
+          try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 20000);
+            const r = await fetch("/api/tts", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ text: cleanText }),
+              signal: controller.signal,
+            });
+            clearTimeout(timeoutId);
+            if (r.ok) res = r;
+          } catch {
+            // gagal -> coba lagi di iterasi berikutnya
+          }
+        }
 
-        const res = await fetch("/api/tts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: cleanText }),
-          signal: controller.signal,
-        });
-
-        clearTimeout(timeoutId);
-
-        if (!res.ok) {
+        if (!res) {
           playFallbackSpeech(cleanText, () => setIsSpeaking(false));
           return;
         }

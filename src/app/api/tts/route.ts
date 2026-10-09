@@ -17,8 +17,11 @@ export async function POST(req: Request) {
       OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3,
     );
 
-    // Panggil toStream murni tanpa opsi parameter tambahan agar tidak crash
-    const { audioStream } = await tts.toStream(text);
+    // Prosodi lembut: sedikit lebih pelan & halus (karakter lemah lembut)
+    const { audioStream } = await tts.toStream(text, {
+      rate: 0.95,
+      pitch: "+5%",
+    });
 
     const chunks: Uint8Array[] = [];
     for await (const chunk of audioStream) {
