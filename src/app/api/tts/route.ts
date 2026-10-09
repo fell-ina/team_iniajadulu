@@ -1,26 +1,55 @@
 import { NextResponse } from "next/server";
 import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
 
+// Batas teks agar tidak terlalu panjang diproses server.
+const MAX_CHARS = 2000;
+
+// Edge TTS hanya menyediakan 2 suara native Indonesia:
+//   - id-ID-ArdiNeural  (laki-laki)
+//   - id-ID-GadisNeural (perempuan)
+// Jadi GadisNeural adalah satu-satunya suara cewek native yang tersedia.
+const VOICE = process.env.TTS_VOICE || "id-ID-GadisNeural";
+
+// Karakter suara Fiska: perempuan Indonesia yang bicara pelan dan lembut.
+// Override lewat .env.local bila ingin bereksperimen tanpa ubah kode:
+//   TTS_RATE, TTS_PITCH, TTS_VOLUME
+const RATE = process.env.TTS_RATE || "-10%"; // lebih pelan -> terdengar tenang
+const PITCH = process.env.TTS_PITCH || "+8Hz"; // naik tipis -> tetap feminin & natural
+const VOLUME = process.env.TTS_VOLUME || "-8%"; // lebih pelan -> tidak menusuk
+
+// msedge-tts menyisipkan teks apa adanya ke dalam SSML (XML) tanpa escaping.
+// Tanpa escaping, karakter "&" (mis. "Biaya SPP & Pendaftaran") membuat
+// dokumen SSML tidak valid => Edge TTS menolak request =>
+// suara Fiska jatuh ke fallback browser yang terdengar jauh lebih robotik.
+function escapeSsml(text: string): string {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
 export async function POST(req: Request) {
+  let tts: MsEdgeTTS | null = null;
+
   try {
     const { text } = await req.json();
 
-    if (!text || text.trim() === "") {
+    if (!text || typeof text !== "string" || text.trim() === "") {
       return NextResponse.json({ error: "Teks kosong" }, { status: 400 });
     }
 
-    const tts = new MsEdgeTTS();
+    const cleanText = text.slice(0, MAX_CHARS);
 
-    // Set metadata ke suara cewek Indonesia (id-ID-GadisNeural)
-    await tts.setMetadata(
-      "id-ID-GadisNeural",
-      OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3,
-    );
+    tts = new MsEdgeTTS();
 
-    // Prosodi lembut: sedikit lebih pelan & halus (karakter lemah lembut)
-    const { audioStream } = await tts.toStream(text, {
-      rate: 0.95,
-      pitch: "+5%",
+    await tts.setMetadata(VOICE, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3);
+
+    const { audioStream } = tts.toStream(escapeSsml(cleanText), {
+      rate: RATE,
+      pitch: PITCH,
+      volume: VOLUME,
     });
 
     const chunks: Uint8Array[] = [];
@@ -43,5 +72,8 @@ export async function POST(req: Request) {
       { error: "Gagal memproses audio dari Edge TTS" },
       { status: 500 },
     );
+  } finally {
+    // Tutup koneksi WebSocket setelah selesai, sukses maupun gagal.
+    tts?.close();
   }
 }
