@@ -120,7 +120,7 @@ function Facilities(){
       <p className="max-w-md text-sm leading-7 text-[#021024]/55"></p>
     </div>
     <div className="mt-12 flex items-center gap-3 sm:gap-6">
-      <button type="button" onClick={goPrev} aria-label="Kartu sebelumnya" className="grid size-11 shrink-0 place-items-center rounded-full border border-[#021024]/15 bg-white text-[#021024] shadow-sm transition hover:bg-[#021024] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F5F8F] active:scale-95 sm:size-14"><ArrowLeft size={20}/></button>
+      <button type="button" onClick={goPrev} aria-label="Kartu sebelumnyaopeop" className="grid size-11 shrink-0 place-items-center rounded-full border border-[#021024]/15 bg-white text-[#021024] shadow-sm transition hover:bg-[#021024] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F5F8F] active:scale-95 sm:size-14"><ArrowLeft size={20}/></button>
       <div className="relative mx-auto h-[560px] w-full max-w-[520px] flex-1 sm:h-[600px]" role="region" aria-roledescription="carousel" aria-label="Kartu fasilitas">
         {items.map((item, index) => {
           const pos = ((index - active) % count + count) % count;

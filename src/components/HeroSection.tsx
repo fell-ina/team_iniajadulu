@@ -179,7 +179,7 @@ export default function HeroSection() {
               href={href}
               target={href.startsWith("http") ? "_blank" : undefined}
               rel={href.startsWith("http") ? "noreferrer" : undefined}
-              className={`group flex min-h-24 min-w-[230px] snap-start items-center gap-4 px-5 py-4 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-[#C1E8FF] sm:min-w-0 sm:px-6 ${index === 3 ? "bg-[#2FC4B2] text-white hover:bg-[#25B4A3]" : "text-white hover:bg-white/[.06] lg:border-r lg:border-white/10"}`}
+              className={`group flex min-h-24 min-w-[230px] snap-start items-center gap-4 px-5 py-4 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-[#C1E8FF] sm:min-w-0 sm:px-6 ${index === 3 ? "bg-[#C2410C] text-white hover:bg-[#9A3412]" : "text-white hover:bg-white/[.06] lg:border-r lg:border-white/10"}`}
             >
               <Icon aria-hidden="true" size={34} strokeWidth={1.5} className={`shrink-0 ${index === 3 ? "text-white" : "text-[#C1E8FF]/75"}`} />
               <span className="min-w-0 flex-1">
