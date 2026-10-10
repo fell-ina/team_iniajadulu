@@ -1,14 +1,14 @@
 # Fasilitas, Layanan & Bidang di SMK TTH
 
 ## Asrama Siswa
-- Berada di lingkungan internal sekolah; terpisah asrama putra dan putri (putri terbagi beberapa ruangan). Lingkungan hijau dan asri; ada ruang makan.
+- Berada di lingkungan internal sekolah; terpisah asrama putra dan putri. Asrama putra berupa gedung; asrama putri berbentuk komplek perumahan dengan banyak unit yang terbagi beberapa ruangan. Lingkungan hijau dan asri; ada ruang makan.
 - Kelas peminatan malam: fotografi, web desain, pemrograman komputer, troubleshooting, jurnalistik, mathclass.
 - Olahraga: basket, sepak bola, pencak silat.
 - Pembinaan: penjagaan ketat, disiplin waktu; pengajian (Islam) dan bimbingan rohani (non-Muslim) 2x seminggu.
 - Untuk info akurat (biaya dll) pengunjung diminta datang/hubungi sekolah. Biaya tidak dipublikasikan di website.
 
 ## Sarana Prasarana
-- Fasilitas: masjid, asrama, aula, perpustakaan, RPS (Ruang Praktik Siswa), bengkel/gedung TKR, lab GameLab, ruang belajar modern.
+- Fasilitas: masjid, asrama putra (gedung), asrama putri (komplek perumahan), aula, perpustakaan, RPS (Ruang Praktik Siswa), bengkel/gedung TKR, lab GameLab, ruang belajar modern, kantin, UKS, lapangan basket beratap, lapangan rumput, toilet, parkiran.
 - Mendukung PPLG, TJKT, DKV, TKR dengan konsep TEFA dan Deep Learning.
 
 ## Teaching Factory (TEFA)

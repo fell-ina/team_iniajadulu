@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { ArrowLeft, ArrowRight, ArrowUpRight, Clock3, GraduationCap, Menu, UserRound, UsersRound, X, Handshake, Trophy } from 'lucide-react';
 import Link from 'next/link';
@@ -29,6 +29,19 @@ return <section id="berita" className="bg-[#F4F9FF] px-6 py-28 text-[#021024] sm
 function Facilities(){
   const [active, setActive] = useState(0);
   const [direction, setDirection] = useState(1);
+  const [selected, setSelected] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (selected === null) return;
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setSelected(null); };
+    document.addEventListener('keydown', onKey);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', onKey);
+      document.body.style.overflow = prev;
+    };
+  }, [selected]);
   const items = [
     {
       title: 'TEFA',
@@ -53,20 +66,102 @@ function Facilities(){
       imageAlt: 'Telsa TV, televisi sekolah',
     },
     {
-      title: 'Asrama',
+      title: 'Asrama Putra',
       subtitle: 'Lingkungan tinggal siswa',
-      detail: 'Asrama berada di lingkungan sekolah, dengan area putra dan putri terpisah, ruang makan, pembinaan, serta kegiatan minat dan olahraga. Informasi biaya dapat ditanyakan langsung kepada pihak sekolah.',
+      detail: 'Asrama putra berupa gedung di lingkungan sekolah yang hijau dan asri. Dilengkapi ruang makan, pembinaan dan pengawasan ketat, serta kegiatan minat dan olahraga. Informasi biaya dapat ditanyakan langsung kepada pihak sekolah.',
       image: '/images/school/asrama.jpeg',
-      imageAlt: 'Asrama siswa SMK Tunas Harapan',
+      imageAlt: 'Gedung asrama putra SMK Tunas Harapan',
+    },
+    {
+      title: 'Asrama Putri',
+      subtitle: 'Lingkungan tinggal siswi',
+      detail: 'Asrama putri berbentuk komplek perumahan dengan banyak unit yang terbagi dalam beberapa ruangan. Dilengkapi ruang makan, pembinaan dan pengawasan ketat, serta kegiatan minat dan olahraga. Informasi biaya dapat ditanyakan langsung kepada pihak sekolah.',
+      // TODO: ganti dengan foto asli komplek asrama putri
+      image: '/images/facilities/placeholder.svg',
+      imageAlt: 'Asrama putri (foto segera hadir)',
+    },
+    {
+      title: 'Lapangan Basket Atap',
+      subtitle: 'Area Olahraga',
+      detail: 'Lapangan basket beratap yang dapat digunakan untuk latihan, pertandingan, dan kegiatan olahraga siswa dalam segala cuaca.',
+      // TODO: ganti dengan foto asli lapangan basket beratap
+      image: '/images/school/hero-lapangan.jpg',
+      imageAlt: 'Lapangan basket beratap (foto sementara)',
+    },
+    {
+      title: 'Lapangan Rumput',
+      subtitle: 'Area Olahraga & Upacara',
+      detail: 'Lapangan rumput serbaguna untuk sepak bola, upacara bendera, dan berbagai kegiatan luar ruang sekolah.',
+      // TODO: ganti dengan foto asli lapangan rumput
+      image: '/images/school/hero-courtyard.jpg',
+      imageAlt: 'Lapangan rumput (foto sementara)',
+    },
+    {
+      title: 'Masjid',
+      subtitle: 'Tempat Ibadah',
+      detail: 'Masjid sekolah sebagai pusat ibadah dan pembinaan rohani warga sekolah dalam lingkungan yang nyaman.',
+      // TODO: ganti dengan foto asli masjid
+      image: '/images/school/building-main.png',
+      imageAlt: 'Masjid sekolah (foto sementara)',
+    },
+    {
+      title: 'Toilet',
+      subtitle: 'Sanitasi Siswa',
+      detail: 'Fasilitas toilet yang bersih dan terawat untuk menunjang kenyamanan siswa selama beraktivitas di sekolah.',
+      // TODO: ganti dengan foto asli toilet
+      image: '/images/school/building-secondary.png',
+      imageAlt: 'Toilet sekolah (foto sementara)',
+    },
+    {
+      title: 'Parkiran',
+      subtitle: 'Area Parkir',
+      detail: 'Area parkir yang tertata untuk kendaraan siswa, guru, dan tamu di lingkungan sekolah.',
+      // TODO: ganti dengan foto asli parkiran
+      image: '/images/school/tkr.jpg',
+      imageAlt: 'Parkiran sekolah (foto sementara)',
+    },
+    {
+      title: 'Aula',
+      subtitle: 'Gedung Serbaguna',
+      detail: 'Ruang serbaguna untuk berbagai acara dan kegiatan besar sekolah, seperti wisuda, seminar, dan pentas seni.',
+      // TODO: ganti dengan foto asli aula
+      image: '/images/facilities/placeholder.svg',
+      imageAlt: 'Aula sekolah (foto segera hadir)',
+    },
+    {
+      title: 'Lab & Bengkel Praktik',
+      subtitle: 'Praktik Kejuruan',
+      detail: 'Ruang Praktik Siswa (RPS), bengkel/gedung TKR, dan GameLab untuk pembelajaran praktik sesuai bidang keahlian.',
+      // TODO: ganti dengan foto asli lab/bengkel (saat ini foto lab komputer)
+      image: '/images/school/hero-lab.jpg',
+      imageAlt: 'Lab dan bengkel praktik (foto sementara)',
+    },
+    {
+      title: 'Kantin',
+      subtitle: 'Kuliner Sekolah',
+      detail: 'Area kantin dengan beragam pilihan makanan dan minuman untuk siswa selama waktu istirahat.',
+      // TODO: ganti dengan foto asli kantin
+      image: '/images/facilities/placeholder.svg',
+      imageAlt: 'Kantin sekolah (foto segera hadir)',
+    },
+    {
+      title: 'UKS',
+      subtitle: 'Kesehatan Siswa',
+      detail: 'Layanan kesehatan dasar dan pertolongan pertama bagi siswa yang membutuhkan selama beraktivitas di sekolah.',
+      // TODO: ganti dengan foto asli ruang UKS
+      image: '/images/facilities/placeholder.svg',
+      imageAlt: 'Ruang UKS (foto segera hadir)',
     },
   ];
 
   const count = items.length;
+  const dragMoved = useRef(false);
   const goTo = (index: number, dir?: number) => {
     const next = ((index % count) + count) % count;
     setDirection(dir ?? (next > active ? 1 : -1));
     setActive(next);
   };
+  const peekTo = (index: number) => { if (!dragMoved.current) goTo(index); };
   const goNext = () => goTo(active + 1, 1);
   const goPrev = () => goTo(active - 1, -1);
 
@@ -119,59 +214,111 @@ function Facilities(){
       <h2 className="display text-4xl sm:text-6xl">Ruang untuk<br/><span className="text-[#021024]/30">bertumbuh.</span></h2>
       <p className="max-w-md text-sm leading-7 text-[#021024]/55"></p>
     </div>
-    <div className="mt-12 flex items-center gap-3 sm:gap-6">
-      <button type="button" onClick={goPrev} aria-label="Kartu sebelumnya" className="grid size-11 shrink-0 place-items-center rounded-full border border-[#021024]/15 bg-white text-[#021024] shadow-sm transition hover:bg-[#021024] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F5F8F] active:scale-95 sm:size-14"><ArrowLeft size={20}/></button>
-      <div className="relative mx-auto h-[560px] w-full max-w-[520px] flex-1 sm:h-[600px]" role="region" aria-roledescription="carousel" aria-label="Kartu fasilitas">
+    <div className="mt-12 flex items-center gap-2 sm:gap-6">
+      <button type="button" onClick={goPrev} aria-label="Kartu sebelumnya" className="grid size-10 shrink-0 place-items-center rounded-full border border-[#021024]/15 bg-white text-[#021024] shadow-sm transition hover:bg-[#021024] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F5F8F] active:scale-95 sm:size-14"><ArrowLeft size={20}/></button>
+      <motion.div
+        className="relative mx-auto h-[440px] w-full max-w-[520px] flex-1 touch-pan-y sm:h-[470px]"
+        role="region" aria-roledescription="carousel" aria-label="Kartu fasilitas. Geser untuk pindah, ketuk kartu untuk detail."
+        drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.6} dragMomentum={false}
+        onDragEnd={(_, info) => { if (Math.abs(info.offset.x) > 10) { dragMoved.current = true; window.setTimeout(() => { dragMoved.current = false; }, 150); } if (info.offset.x < -60) goNext(); else if (info.offset.x > 60) goPrev(); }}
+      >
         {items.map((item, index) => {
           const pos = ((index - active) % count + count) % count;
-          const xMap = [0, 56, -56, 0];
-          const yMap = [0, 22, 44, 66];
+          const xMap = [0, 40, -40, 0];
+          const yMap = [0, 18, 36, 54];
           const rotateMap = [0, 5, -5, 0];
           const x = xMap[Math.min(pos, 3)];
           const y = yMap[Math.min(pos, 3)];
           const rotate = rotateMap[Math.min(pos, 3)];
+          const baseScale = 1 - Math.min(pos, 3) * 0.06;
+          const isPeekable = pos === 1 || pos === 2;
+          const peekX = pos === 1 ? -14 : 14;
           return <motion.article
             key={item.title}
             initial={false}
-            animate={{ x, y, rotate, scale: 1 - Math.min(pos, 3) * 0.06, opacity: pos === 0 ? 1 : pos === 1 ? 0.85 : pos === 2 ? 0.7 : 0, filter: pos === 0 ? 'brightness(1)' : `brightness(${Math.max(0.72, 0.94 - pos * 0.08)})` }}
+            animate={{ x, y, rotate, scale: baseScale, opacity: pos === 0 ? 1 : pos === 1 ? 0.85 : pos === 2 ? 0.7 : 0, filter: pos === 0 ? 'brightness(1)' : `brightness(${Math.max(0.72, 0.94 - pos * 0.08)})` }}
+            whileHover={pos === 0 ? { y: -6, scale: 1.015 } : isPeekable ? { x: x + peekX, y: y - 6, scale: baseScale + 0.03, filter: 'brightness(1)' } : undefined}
+            whileTap={pos <= 2 ? { scale: baseScale - 0.015 } : undefined}
             transition={{ type: 'spring', stiffness: 240, damping: 28 }}
             style={{ zIndex: count - pos }}
             aria-hidden={pos !== 0}
-            className={`absolute inset-x-8 top-0 overflow-hidden rounded-[1.75rem] border border-[#021024]/8 bg-[#F4F9FF] sm:inset-x-12 ${pos !== 0 ? 'pointer-events-none' : 'shadow-[0_32px_70px_-28px_rgba(2,16,36,.4)]'} ${pos > 2 ? 'invisible' : ''}`}
+            onClick={isPeekable ? () => peekTo(index) : undefined}
+            title={isPeekable ? `Tampilkan ${item.title}` : undefined}
+            className={`absolute inset-x-1 top-0 overflow-hidden rounded-[1.75rem] border border-[#021024]/8 bg-[#F4F9FF] transition-shadow duration-300 sm:inset-x-12 ${pos === 0 ? 'shadow-[0_32px_70px_-28px_rgba(2,16,36,.4)] hover:shadow-[0_44px_90px_-28px_rgba(2,16,36,.55)]' : isPeekable ? 'cursor-pointer hover:shadow-[0_24px_50px_-24px_rgba(2,16,36,.45)]' : 'pointer-events-none'} ${pos > 2 ? 'invisible' : ''}`}
           >
-            <div className="relative h-60 overflow-hidden bg-[#052659]/10 sm:h-72">
-              <AnimatePresence mode="wait" initial={false}>
-                {pos === 0 && <motion.img key={item.image} src={item.image} alt={item.imageAlt} initial={{ opacity: 0, x: 48 * direction }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -48 * direction }} transition={{ duration: 0.35 }} className="absolute inset-0 h-full w-full object-cover" />}
-                {pos !== 0 && <img src={item.image} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />}
-              </AnimatePresence>
-              {pos !== 0 && <div aria-hidden="true" className="absolute inset-0 bg-[#F4F9FF]/55" />}
-              <span className="absolute left-5 top-5 rounded-full bg-white/90 px-3 py-1.5 font-mono text-[11px] tracking-[.18em] text-[#021024] backdrop-blur">{String(index + 1).padStart(2, '0')}</span>
-            </div>
-            <div className="relative p-7 sm:p-8">
-              {pos !== 0 && <div aria-hidden="true" className="absolute inset-0 bg-[#F4F9FF]/55" />}
-              <AnimatePresence mode="wait" initial={false}>
-                {pos === 0 ? <motion.div key={`text-${active}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.25 }}>
-                  <p className="eyebrow text-[#2F5F8F]/70">{item.subtitle}</p>
-                  <h3 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">{item.title}</h3>
-                  <p className="mt-3 min-h-14 text-sm leading-7 text-[#021024]/60">{item.detail}</p>
-                  {item.href
-                    ? <a href={item.href} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.15em] text-[#E86A17] hover:text-[#B64F0C]">Lihat informasi <ArrowUpRight size={14} /></a>
-                    : <span className="mt-5 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.15em] text-[#E86A17]">{item.subtitle} <ArrowUpRight size={14} /></span>}
-                </motion.div> : <div key={`static-${item.title}`}><p className="eyebrow text-[#2F5F8F]/60">{item.subtitle}</p><h3 className="mt-3 text-3xl font-semibold tracking-tight text-[#021024]/80 sm:text-4xl">{item.title}</h3></div>}
-              </AnimatePresence>
-            </div>
+            {pos === 0
+              ? <button type="button" onClick={() => setSelected(index)} aria-label={`Lihat detail ${item.title}`} className="group block w-full cursor-pointer text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2F5F8F]">
+                <div className="relative aspect-[16/10] overflow-hidden bg-[#052659]/10">
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.img key={item.image} src={item.image} alt={item.imageAlt} initial={{ opacity: 0, x: 48 * direction }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -48 * direction }} transition={{ duration: 0.35 }} className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" draggable={false} />
+                  </AnimatePresence>
+                  <span aria-hidden="true" className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/35 to-transparent transition-transform duration-700 ease-out group-hover:translate-x-full" />
+                  <span className="absolute left-5 top-5 rounded-full bg-white/90 px-3 py-1.5 font-mono text-[11px] tracking-[.18em] text-[#021024] backdrop-blur transition-transform duration-300 group-hover:scale-105">{String(index + 1).padStart(2, '0')}</span>
+                </div>
+                <div className="relative p-6 sm:p-7">
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.div key={`text-${active}`} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -12 }} transition={{ duration: 0.25 }}>
+                      <p className="eyebrow text-[#2F5F8F]/70">{item.subtitle}</p>
+                      <h3 className="mt-3 text-3xl font-semibold tracking-tight transition-colors duration-300 group-hover:text-[#052659] sm:text-4xl">{item.title}</h3>
+                      <span className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#E86A17]/30 px-4 py-2 text-[11px] font-bold uppercase tracking-[.15em] text-[#E86A17] transition-all duration-300 group-hover:border-[#E86A17] group-hover:bg-[#E86A17] group-hover:text-white">Ketuk untuk detail <ArrowUpRight size={14} className="transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" /></span>
+                    </motion.div>
+                  </AnimatePresence>
+                </div>
+              </button>
+              : <div>
+                <div className="relative aspect-[16/10] overflow-hidden bg-[#052659]/10">
+                  <img src={item.image} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" draggable={false} />
+                  <div aria-hidden="true" className="absolute inset-0 bg-[#F4F9FF]/55" />
+                  <span className="absolute left-5 top-5 rounded-full bg-white/90 px-3 py-1.5 font-mono text-[11px] tracking-[.18em] text-[#021024] backdrop-blur">{String(index + 1).padStart(2, '0')}</span>
+                </div>
+                <div className="relative p-6 sm:p-7">
+                  <div aria-hidden="true" className="absolute inset-0 bg-[#F4F9FF]/55" />
+                  <p className="eyebrow text-[#2F5F8F]/60">{item.subtitle}</p>
+                  <h3 className="mt-3 text-3xl font-semibold tracking-tight text-[#021024]/80 sm:text-4xl">{item.title}</h3>
+                </div>
+              </div>}
           </motion.article>;
         })}
-      </div>
-      <button type="button" onClick={goNext} aria-label="Kartu berikutnya" className="grid size-11 shrink-0 place-items-center rounded-full bg-[#021024] text-white shadow-sm transition hover:bg-[#2F5F8F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F5F8F] focus-visible:ring-offset-2 active:scale-95 sm:size-14"><ArrowRight size={20}/></button>
+      </motion.div>
+      <button type="button" onClick={goNext} aria-label="Kartu berikutnya" className="grid size-10 shrink-0 place-items-center rounded-full bg-[#021024] text-white shadow-sm transition hover:bg-[#2F5F8F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F5F8F] focus-visible:ring-offset-2 active:scale-95 sm:size-14"><ArrowRight size={20}/></button>
     </div>
-    <div className="mt-10 flex items-center justify-center gap-4">
+    <div className="mt-8 flex items-center justify-center gap-4 sm:mt-10">
       <span className="font-mono text-xs tracking-[.2em] text-[#021024]/50" aria-live="polite">{String(active + 1).padStart(2, '0')} / {String(count).padStart(2, '0')}</span>
       <div className="flex gap-2" role="tablist" aria-label="Pilih fasilitas">
         {items.map((item, i) => <button key={item.title} role="tab" aria-selected={i === active} aria-label={item.title} type="button" onClick={() => goTo(i)} className={`h-1.5 rounded-full transition-all duration-300 ${i === active ? 'w-10 bg-[#021024]' : 'w-5 bg-[#021024]/15 hover:bg-[#021024]/30'}`} />)}
       </div>
     </div>
-  </div></section>;
+    <p className="mt-4 text-center text-xs text-[#021024]/40">Arahkan kursor ke kartu belakang, geser, atau ketuk kartu untuk menjelajah.</p>
+  </div>
+  <AnimatePresence>
+    {selected !== null && items[selected] && <motion.div key="facility-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[80] flex items-end justify-center bg-[#021024]/60 backdrop-blur-sm sm:items-center sm:p-6" onClick={() => setSelected(null)}>
+      <motion.div
+        key={`facility-dialog-${selected}`}
+        role="dialog" aria-modal="true" aria-label={`Detail ${items[selected].title}`}
+        initial={{ y: 80, opacity: 0, scale: 0.98 }} animate={{ y: 0, opacity: 1, scale: 1 }} exit={{ y: 60, opacity: 0, scale: 0.98 }}
+        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+        drag="y" dragConstraints={{ top: 0, bottom: 0 }} dragElastic={{ top: 0, bottom: 0.6 }} dragMomentum={false}
+        onDragEnd={(_, info) => { if (info.offset.y > 90) setSelected(null); }}
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[85vh] w-full overflow-y-auto rounded-t-[1.5rem] bg-white text-left shadow-2xl sm:max-w-lg sm:rounded-[1.75rem]"
+      >
+        <div className="relative aspect-[16/9] overflow-hidden bg-[#052659]/10">
+          <img src={items[selected].image} alt={items[selected].imageAlt} className="h-full w-full object-cover" />
+          <button type="button" onClick={() => setSelected(null)} aria-label="Tutup detail" className="absolute right-4 top-4 grid size-10 place-items-center rounded-full bg-[#021024]/70 text-white backdrop-blur transition hover:bg-[#021024] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"><X size={18} /></button>
+        </div>
+        <div className="p-6 sm:p-8">
+          <div className="mx-auto mb-5 h-1 w-12 rounded-full bg-[#021024]/10 sm:hidden" aria-hidden="true" />
+          <p className="eyebrow text-[#2F5F8F]/70">{items[selected].subtitle}</p>
+          <h3 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">{items[selected].title}</h3>
+          <p className="mt-3 text-sm leading-7 text-[#021024]/60">{items[selected].detail}</p>
+          {items[selected].href
+            ? <a href={items[selected].href} target="_blank" rel="noreferrer" className="mt-5 inline-flex items-center gap-2 text-[11px] font-bold uppercase tracking-[.15em] text-[#E86A17] hover:text-[#B64F0C]">Lihat informasi <ArrowUpRight size={14} /></a>
+            : null}
+          <button type="button" onClick={() => setSelected(null)} className="mt-7 w-full rounded-full bg-[#021024] px-5 py-3.5 text-[11px] font-bold uppercase tracking-[.15em] text-white transition hover:bg-[#2F5F8F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2F5F8F] focus-visible:ring-offset-2">Tutup</button>
+        </div>
+      </motion.div>
+    </motion.div>}
+  </AnimatePresence></section>;
 }
 
 function Partners(){

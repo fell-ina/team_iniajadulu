@@ -16,22 +16,22 @@ import {
 const slides = [
   {
     image: "/images/school/hero-lab.jpg",
-    eyebrow: "SCHOOL LIFE",
+    eyebrow: "SAFETY AND TECHNOLOGY",
     title: "Belajar. Berkarya. Berkembang.",
     text: "Ruang belajar vokasi yang dekat dengan teknologi, karakter, dan dunia industri.",
   },
   {
     image: "/images/school/hero-courtyard.jpg",
-    eyebrow: "SCHOOL LIFE",
+    eyebrow: "ACTIVE LEARNING AND GROWTH",
     title: "Tumbuh bersama Tunas Harapan.",
     text: "Lingkungan sekolah yang aktif, nyaman, dan memberi ruang untuk mengeksplorasi potensi.",
   },
   {
     image: "/images/school/hero-lapangan.jpg",
-    eyebrow: "SCHOOL LIFE",
+    eyebrow: "COLLABORATIVE EXPERIENCE",
     title: "Berkembang di Lingkungan Positif.",
     text: "Membangun pengalaman belajar yang aktif, kolaboratif, dan mendorong setiap siswa untuk berkembang.",
-  }
+  },
 ];
 
 export default function HeroSection() {
@@ -169,28 +169,64 @@ export default function HeroSection() {
       <div className="relative z-20 -mt-12 px-4 sm:px-6">
         <div className="mx-auto flex max-w-7xl snap-x overflow-x-auto rounded-md bg-[#343A70] shadow-xl sm:grid sm:grid-cols-2 lg:grid-cols-4 lg:overflow-hidden">
           {[
-            { title: "TEFA", description: "Teaching Factory", href: "#fasilitas", icon: Cog },
-            { title: "PERPUSTAKAAN", description: "Pusat Sumber Belajar", href: "#fasilitas", icon: BookOpen },
-            { title: "TELSA TV", description: "Televisi Sekolah", href: "#fasilitas", icon: Video },
-            { title: "PPDB", description: "Portal SPMB", href: "https://spmb.tunasharapan.info", icon: ArrowRight },
+            {
+              title: "TEFA",
+              description: "Teaching Factory",
+              href: "#fasilitas",
+              icon: Cog,
+            },
+            {
+              title: "PERPUSTAKAAN",
+              description: "Pusat Sumber Belajar",
+              href: "#fasilitas",
+              icon: BookOpen,
+            },
+            {
+              title: "TELSA TV",
+              description: "Televisi Sekolah",
+              href: "#fasilitas",
+              icon: Video,
+            },
+            {
+              title: "PPDB",
+              description: "Portal SPMB",
+              href: "https://spmb.tunasharapan.info",
+              icon: ArrowRight,
+            },
           ].map(({ title, description, href, icon: Icon }, index) => (
             <a
               key={title}
               href={href}
               target={href.startsWith("http") ? "_blank" : undefined}
               rel={href.startsWith("http") ? "noreferrer" : undefined}
-              className={`group flex min-h-24 min-w-[230px] snap-start items-center gap-4 px-5 py-4 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-[#C1E8FF] sm:min-w-0 sm:px-6 ${index === 3 ? "bg-[#2FC4B2] text-white hover:bg-[#25B4A3]" : "text-white hover:bg-white/[.06] lg:border-r lg:border-white/10"}`}
+              className={`group flex min-h-24 min-w-[230px] snap-start items-center gap-4 px-5 py-4 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-[#C1E8FF] sm:min-w-0 sm:px-6 ${index === 3 ? "bg-[#C2410C] text-white hover:bg-[#9A3412]" : "text-white hover:bg-white/[.06] lg:border-r lg:border-white/10"}`}
             >
-              <Icon aria-hidden="true" size={34} strokeWidth={1.5} className={`shrink-0 ${index === 3 ? "text-white" : "text-[#C1E8FF]/75"}`} />
+              <Icon
+                aria-hidden="true"
+                size={34}
+                strokeWidth={1.5}
+                className={`shrink-0 ${index === 3 ? "text-white" : "text-[#C1E8FF]/75"}`}
+              />
               <span className="min-w-0 flex-1">
-                <span className={`block text-[10px] font-bold uppercase tracking-[.16em] ${index === 3 ? "text-white/75" : "text-[#C1E8FF]/75"}`}>
+                <span
+                  className={`block text-[10px] font-bold uppercase tracking-[.16em] ${index === 3 ? "text-white/75" : "text-[#C1E8FF]/75"}`}
+                >
                   {title}
                 </span>
-                <span className={`mt-1 block text-sm leading-5 ${index === 3 ? "text-white" : "text-white/65"}`}>
+                <span
+                  className={`mt-1 block text-sm leading-5 ${index === 3 ? "text-white" : "text-white/65"}`}
+                >
                   {description}
                 </span>
               </span>
-              {index === 3 && <ArrowRight aria-hidden="true" size={27} strokeWidth={1.7} className="shrink-0 transition-transform group-hover:translate-x-1" />}
+              {index === 3 && (
+                <ArrowRight
+                  aria-hidden="true"
+                  size={27}
+                  strokeWidth={1.7}
+                  className="shrink-0 transition-transform group-hover:translate-x-1"
+                />
+              )}
             </a>
           ))}
         </div>
