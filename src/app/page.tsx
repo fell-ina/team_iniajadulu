@@ -9,7 +9,91 @@ import Chatbot from '@/components/Chatbot';
 
 const nav = [['Profil','#profil'],['Jurusan','#jurusan'],['Berita','#berita'],['Fasilitas','#fasilitas'],['Mitra Industri','#industri'],['Prestasi','#prestasi']];
 
-function Nav(){const [open,setOpen]=useState(false);return <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6"><div className="mx-auto flex max-w-7xl items-center justify-between rounded-full border border-white/15 bg-[#021024]/78 px-4 py-3 text-white shadow-xl backdrop-blur-xl sm:px-6"><a href="#top" className="flex items-center gap-3"><span className="grid size-9 overflow-hidden rounded-full bg-white p-1"><img src="/images/school/logo-transparent.png" className="h-full w-full object-contain" alt="Logo"/></span><span className="hidden text-xs font-semibold tracking-[.15em] sm:block">TUNAS HARAPAN</span></a><nav className="hidden gap-1 md:flex">{nav.map(([n,h])=><a key={h} href={h} className="rounded-full px-4 py-2 text-xs text-white/65 hover:bg-white/10 hover:text-white">{n}</a>)}</nav><div className="hidden md:block"><a href="https://spmb.tunasharapan.info" target="_blank" rel="noreferrer" className="rounded-full bg-white px-4 py-2 text-[10px] font-bold uppercase tracking-[.15em] text-[#021024]">PPDB / SPMB</a></div><button className="grid size-9 place-items-center md:hidden" onClick={()=>setOpen(!open)}>{open?<X size={18}/>:<Menu size={18}/>}</button></div>{open&&<div className="mx-auto mt-2 max-w-7xl rounded-3xl border border-white/10 bg-[#021024]/95 p-3 text-white backdrop-blur-xl md:hidden">{nav.map(([n,h])=><a key={h} href={h} onClick={()=>setOpen(false)} className="block rounded-2xl px-4 py-3 text-sm text-white/70">{n}</a>)}<a href="https://spmb.tunasharapan.info" target="_blank" rel="noreferrer" className="mt-2 block rounded-2xl bg-white px-4 py-3 text-center text-sm font-semibold text-[#021024]">PPDB / SPMB</a></div>}</header>}
+function Nav() {
+  const [open, setOpen] = useState(false);
+  const [hovered, setHovered] = useState<string | null>(null);
+  const [activeSection, setActiveSection] = useState<string>('#profil');
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const sections = nav.map(([, h]) => h.replace('#', ''));
+      const scrollPosition = window.scrollY + 200;
+      for (const section of [...sections].reverse()) {
+        const el = document.getElementById(section);
+        if (el && el.offsetTop <= scrollPosition) {
+          setActiveSection(`#${section}`);
+          break;
+        }
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const active = hovered ?? activeSection;
+
+  return (
+    <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6">
+      <div className="mx-auto flex max-w-7xl items-center justify-between rounded-full border border-white/15 bg-[#021024]/78 px-4 py-3 text-white shadow-xl backdrop-blur-xl sm:px-6">
+        <a href="#top" className="flex items-center gap-3">
+          <span className="grid size-9 overflow-hidden rounded-full bg-white p-1">
+            <img src="/images/school/logo-transparent.png" className="h-full w-full object-contain" alt="Logo" />
+          </span>
+          <span className="hidden text-xs font-semibold tracking-[.15em] sm:block">TUNAS HARAPAN</span>
+        </a>
+
+        <nav className="hidden gap-1 md:flex" onMouseLeave={() => setHovered(null)}>
+          {nav.map(([n, h]) => {
+            const isSelected = active === h;
+            return (
+              <a
+                key={h}
+                href={h}
+                onMouseEnter={() => setHovered(h)}
+                onClick={() => setActiveSection(h)}
+                className={`relative rounded-full px-4 py-2 text-xs transition-colors duration-200 ${
+                  isSelected ? 'text-white font-medium' : 'text-white/65 hover:text-white'
+                }`}
+              >
+                {isSelected && (
+                  <motion.div
+                    layoutId="nav-pill"
+                    className="absolute inset-0 rounded-full bg-white/15 border border-white/20 shadow-sm"
+                    transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+                  />
+                )}
+                <span className="relative z-10">{n}</span>
+              </a>
+            );
+          })}
+        </nav>
+
+        <div className="hidden md:block">
+          <a href="https://spmb.tunasharapan.info" target="_blank" rel="noreferrer" className="rounded-full bg-white px-4 py-2 text-[10px] font-bold uppercase tracking-[.15em] text-[#021024]">
+            PPDB / SPMB
+          </a>
+        </div>
+
+        <button className="grid size-9 place-items-center md:hidden" onClick={() => setOpen(!open)}>
+          {open ? <X size={18} /> : <Menu size={18} />}
+        </button>
+      </div>
+
+      {open && (
+        <div className="mx-auto mt-2 max-w-7xl rounded-3xl border border-white/10 bg-[#021024]/95 p-3 text-white backdrop-blur-xl md:hidden">
+          {nav.map(([n, h]) => (
+            <a key={h} href={h} onClick={() => { setOpen(false); setActiveSection(h); }} className={`block rounded-2xl px-4 py-3 text-sm ${activeSection === h ? 'bg-white/15 text-white font-medium' : 'text-white/70'}`}>
+              {n}
+            </a>
+          ))}
+          <a href="https://spmb.tunasharapan.info" target="_blank" rel="noreferrer" className="mt-2 block rounded-2xl bg-white px-4 py-3 text-center text-sm font-semibold text-[#021024]">
+            PPDB / SPMB
+          </a>
+        </div>
+      )}
+    </header>
+  );
+}
 
 function Profile(){return <section id="profil" className="profile-grid-bg relative isolate overflow-hidden px-6 py-28 text-[#021024] sm:py-36"><div aria-hidden="true" className="profile-shards pointer-events-none absolute inset-0 z-0"><img src="/images/polygon/Group%2019.png" alt="" className="profile-shard absolute -left-5 top-[-30px] h-44 w-52 object-contain sm:left-4 sm:top-[-42px] sm:h-56 sm:w-64"/><img src="/images/polygon/Group%2018.png" alt="" className="profile-shard absolute left-[42%] top-[7%] h-16 w-24 object-contain sm:left-[44%] sm:top-[8%] sm:h-20 sm:w-32"/><img src="/images/polygon/Group%2034.png" alt="" className="profile-shard absolute left-[27%] top-[38%] h-12 w-16 object-contain sm:left-[29%] sm:top-[40%]"/><img src="/images/polygon/Group%2033.png" alt="" className="profile-shard absolute right-[8%] top-[5%] h-24 w-16 object-contain sm:right-[12%] sm:top-[7%] sm:h-32 sm:w-20"/><img src="/images/polygon/Group%2016.png" alt="" className="profile-shard absolute right-[2%] top-[38%] h-10 w-20 object-contain sm:right-[5%] sm:top-[36%] sm:h-12 sm:w-24"/><img src="/images/polygon/Group%209.png" alt="" className="profile-shard absolute bottom-[-34px] left-[7%] h-32 w-40 object-contain sm:bottom-[-42px] sm:left-[9%] sm:h-44 sm:w-52"/><img src="/images/polygon/Group%2015.png" alt="" className="profile-shard absolute bottom-[-14px] left-[37%] h-16 w-28 object-contain sm:bottom-[-20px] sm:left-[36%] sm:h-20 sm:w-36"/><img src="/images/polygon/Group%2017.png" alt="" className="profile-shard absolute bottom-[5%] right-[22%] h-12 w-16 object-contain sm:bottom-[8%] sm:right-[20%] sm:h-16 sm:w-20"/><img src="/images/polygon/Group%2010.png" alt="" className="profile-shard absolute bottom-[2%] -right-8 h-28 w-20 object-contain sm:bottom-[4%] sm:right-[-20px] sm:h-40 sm:w-28"/></div><div className="relative z-10 mx-auto grid max-w-7xl gap-14 lg:grid-cols-[.8fr_1.2fr] lg:items-end"><motion.div initial={{opacity:0,x:-30}} whileInView={{opacity:1,x:0}} viewport={{once:true}}><p className="eyebrow text-[#2F5F8F]">01 / PROFIL</p><h2 className="display mt-5 max-w-xl text-4xl sm:text-6xl">Sekolah yang bergerak bersama masa depan.</h2></motion.div><motion.div initial={{opacity:0,x:30}} whileInView={{opacity:1,x:0}} viewport={{once:true}} className="grid gap-8 sm:grid-cols-2"><div><p className="eyebrow text-[#2F5F8F]/60">TENTANG KAMI</p><p className="mt-4 text-lg leading-8 text-[#021024]/65">SMK Telekomunikasi Tunas Harapan membangun lingkungan belajar vokasi yang dekat dengan teknologi, karakter, dan kebutuhan industri.</p></div><div><p className="eyebrow text-[#2F5F8F]/60">ARAH</p><p className="mt-4 text-lg leading-8 text-[#021024]/65">Pembelajaran diarahkan untuk membentuk kompetensi, karya, dan kesiapan siswa menghadapi dunia nyata.</p></div></motion.div></div></section>}
 

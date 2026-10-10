@@ -43,7 +43,7 @@ export default function HeroSection() {
   useEffect(() => {
     const timer = setInterval(() => go(1), 7000);
     return () => clearInterval(timer);
-  }, []);
+  }, [active]);
 
   return (
     <>
@@ -121,21 +121,42 @@ export default function HeroSection() {
 
           <div className="grid items-end gap-5 border-t border-white/15 pt-5 lg:grid-cols-[1fr_auto_1fr]">
             <div className="flex items-center gap-3">
-              {slides.map((item, index) => (
-                <button
-                  key={item.image}
-                  onClick={() => setActive(index)}
-                  aria-label={`Slide ${index + 1}`}
-                  className="flex items-center gap-2"
-                >
-                  <span
-                    className={`h-1 rounded-full transition-all ${active === index ? "w-12 bg-white" : "w-5 bg-white/30"}`}
-                  />
-                  <span className="font-mono text-[10px] text-white/40">
-                    0{index + 1}
-                  </span>
-                </button>
-              ))}
+              {slides.map((item, index) => {
+                const isActive = active === index;
+                return (
+                  <button
+                    key={item.image}
+                    onClick={() => setActive(index)}
+                    aria-label={`Slide ${index + 1}`}
+                    className="group flex items-center gap-2"
+                  >
+                    <span className="relative h-1 overflow-hidden rounded-full bg-white/20 transition-all duration-300">
+                      {isActive ? (
+                        <span className="relative block h-full w-12">
+                          <motion.span
+                            key={active}
+                            initial={{ width: "0%" }}
+                            animate={{ width: "100%" }}
+                            transition={{ duration: 7, ease: "linear" }}
+                            className="absolute inset-y-0 left-0 rounded-full bg-white"
+                          />
+                        </span>
+                      ) : (
+                        <span className="block h-full w-5 bg-white/30 transition-colors group-hover:bg-white/50" />
+                      )}
+                    </span>
+                    <span
+                      className={`font-mono text-[10px] transition-colors ${
+                        isActive
+                          ? "text-white"
+                          : "text-white/40 group-hover:text-white/70"
+                      }`}
+                    >
+                      0{index + 1}
+                    </span>
+                  </button>
+                );
+              })}
             </div>
             <div className="hidden gap-2 lg:flex">
               <button
