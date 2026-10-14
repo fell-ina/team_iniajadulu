@@ -305,6 +305,23 @@
   line-height: 1.4;
 }
 
+.footerText {
+  margin-top: 22px;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
+.footerLink {
+  color: var(--blue);
+  font-weight: 600;
+  text-decoration: none;
+  margin-left: 4px;
+}
+.footerLink:hover {
+  text-decoration: underline;
+}
+
 /* ---------- Mobile / tablet ---------- */
 @media (max-width: 900px) {
   .page {
