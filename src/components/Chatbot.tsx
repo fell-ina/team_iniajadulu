@@ -20,6 +20,7 @@ import {
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
 import Image from "next/image";
+import { cleanTextForSpeech, splitIntoSpeechChunks } from "@/lib/speech";
 
 type ChatMessage = {
   sender: "bot" | "user";
@@ -47,89 +48,38 @@ const INITIAL_CHAT: ChatMessage[] = [
   },
 ];
 
-function cleanTextForSpeech(text: string): string {
-  return text
-    .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
-    .replace(/[*_~`#]/g, "")
-    .replace(/[-*]\s+/g, "")
-    .replace(
-      /([\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF])/g,
-      "",
-    )
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-const SPEECH_CHUNK_TARGET = 220;
-const SPEECH_CHUNK_MAX = 320;
 const TTS_TIMEOUT_MS = 12000;
 const TTS_MAX_ATTEMPTS = 2;
 const AUDIO_CACHE_LIMIT = 24;
 
-function splitIntoSpeechChunks(text: string): string[] {
-  const parts = text
-    .split(/(?<=[.!?…])\s+|\n+/)
-    .map((s) => s.trim())
-    .filter(Boolean);
-
-  const chunks: string[] = [];
-  let current = "";
-
-  const hardSplit = (sentence: string) => {
-    let part = "";
-    for (const word of sentence.split(/\s+/)) {
-      const candidate = part ? `${part} ${word}` : word;
-      if (candidate.length > SPEECH_CHUNK_MAX && part) {
-        chunks.push(part);
-        part = word;
-      } else {
-        part = candidate;
-      }
-    }
-    if (part.trim()) chunks.push(part.trim());
-  };
-
-  for (const sentence of parts) {
-    if (sentence.length > SPEECH_CHUNK_MAX) {
-      if (current) {
-        chunks.push(current);
-        current = "";
-      }
-      hardSplit(sentence);
-      continue;
-    }
-
-    const candidate = current ? `${current} ${sentence}` : sentence;
-    if (candidate.length > SPEECH_CHUNK_TARGET && current) {
-      chunks.push(current);
-      current = sentence;
-    } else {
-      current = candidate;
-    }
-  }
-
-  if (current) chunks.push(current);
-  return chunks.length > 0 ? chunks : [text];
-}
-
-const FEMALE_MARKERS = [
-  "gadis",
-  "female",
-  "wanita",
-  "perempuan",
-  "google bahasa indonesia",
-];
-const MALE_MARKERS = ["ardi", "david", "andrew", "brandon", "pria", "guy"];
-
+// Suara browser diutamakan, urut dari yang paling natural. Urutannya tetap
+// supaya perangkat yang menyediakan suara sama selalu memilih suara yang sama.
+// Kunci dibandingkan dalam bentuk lowercase tanpa spasi.
 const PREFERRED_FEMALE_VOICES = [
   "id-id-gadisneural",
   "id-id-ayuneural",
   "id-id-sitineural",
   "id-id-dewineural",
   "id-id-indahneural",
+  "microsoftgadisonline(natural)-indonesian(indonesia)",
+  "googlebahasaindonesia",
 ];
 
-const NATURAL_MARKERS = ["neural", "natural", "online", "premium", "enhanced"];
+const MALE_MARKERS = ["ardi", "david", "andrew", "brandon", "pria", "guy"];
+const FEMALE_MARKERS = [
+  "gadis",
+  "female",
+  "wanita",
+  "perempuan",
+  "ayu",
+  "siti",
+  "dewi",
+  "indah",
+];
+
+function isIndonesian(v: SpeechSynthesisVoice): boolean {
+  return v.lang?.toLowerCase().startsWith("id") ?? false;
+}
 
 function isFemaleName(name: string): boolean {
   const n = name.toLowerCase();
@@ -142,43 +92,34 @@ function isMaleName(name: string): boolean {
   return MALE_MARKERS.some((m) => n.includes(m));
 }
 
-function isIndonesian(v: SpeechSynthesisVoice): boolean {
-  return v.lang?.toLowerCase().startsWith("id") ?? false;
-}
-
-function isNaturalVoice(name: string): boolean {
-  const n = name.toLowerCase();
-  return NATURAL_MARKERS.some((m) => n.includes(m));
-}
-
-function pickFemaleVoice(
+/**
+ * Pilih suara perempuan Indonesia secara deterministik: pakai daftar prioritas
+ * tetap lebih dulu, lalu fallback ke suara id-ID (bukan nama pria) yang
+ * diurutkan alfabetis. Tidak ada pemilihan acak, jadi suara konsisten.
+ */
+function pickIndonesianFemaleVoice(
   voices: SpeechSynthesisVoice[],
 ): SpeechSynthesisVoice | null {
+  const byNormalized = new Map<string, SpeechSynthesisVoice>();
+  for (const v of voices) {
+    byNormalized.set(v.name.toLowerCase().replace(/\s+/g, ""), v);
+  }
+
   for (const wanted of PREFERRED_FEMALE_VOICES) {
-    const hit = voices.find(
-      (v) => v.name.toLowerCase().replace(/\s+/g, "") === wanted,
-    );
+    const hit = byNormalized.get(wanted);
     if (hit) return hit;
   }
 
-  const safe = voices.filter((v) => !isMaleName(v.name));
-
-  const idFemale = safe.filter((v) => isIndonesian(v) && isFemaleName(v.name));
-  if (idFemale.length > 0) {
-    return idFemale.find((v) => isNaturalVoice(v.name)) ?? idFemale[0];
-  }
-
-  const idAny = safe.filter((v) => isIndonesian(v));
-  if (idAny.length > 0) {
-    return idAny.find((v) => isNaturalVoice(v.name)) ?? idAny[0];
-  }
-
-  const anyFemale = safe.filter((v) => isFemaleName(v.name));
-  if (anyFemale.length > 0) {
-    return anyFemale.find((v) => isNaturalVoice(v.name)) ?? anyFemale[0];
-  }
-
-  return null;
+  return (
+    voices
+      .filter((v) => isIndonesian(v) && !isMaleName(v.name))
+      .sort((a, b) => {
+        const femaleA = isFemaleName(a.name) ? 0 : 1;
+        const femaleB = isFemaleName(b.name) ? 0 : 1;
+        if (femaleA !== femaleB) return femaleA - femaleB;
+        return a.name.localeCompare(b.name);
+      })[0] ?? null
+  );
 }
 
 let cachedFemaleVoice: SpeechSynthesisVoice | null = null;
@@ -213,8 +154,8 @@ function playFallbackSpeech(text: string, onEnd: () => void) {
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "id-ID";
-  utterance.rate = 0.92;
-  utterance.pitch = 1.1;
+  utterance.rate = 0.95;
+  utterance.pitch = 1;
   utterance.volume = 1;
 
   let finished = false;
@@ -230,7 +171,7 @@ function playFallbackSpeech(text: string, onEnd: () => void) {
     const voice =
       cachedFemaleVoice && voices.includes(cachedFemaleVoice)
         ? cachedFemaleVoice
-        : pickFemaleVoice(voices);
+        : pickIndonesianFemaleVoice(voices);
 
     if (voice) {
       cachedFemaleVoice = voice;
@@ -555,7 +496,12 @@ export default function Chatbot() {
   }, []);
 
   const fetchTtsBlob = useCallback(
-    async (cleanText: string, signal: AbortSignal): Promise<Blob | null> => {
+    async (
+      cleanText: string,
+      signal: AbortSignal,
+      provider?: "elevenlabs" | "edge",
+      key?: 1 | 2,
+    ): Promise<Blob | null> => {
       const cached = audioBlobCacheRef.current.get(cleanText);
       if (cached) return cached;
 
@@ -574,7 +520,7 @@ export default function Chatbot() {
           const res = await fetch("/api/tts", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: cleanText }),
+            body: JSON.stringify({ text: cleanText, provider, key }),
             signal: controller.signal,
           });
 
@@ -657,11 +603,40 @@ export default function Chatbot() {
 
       const chunks = splitIntoSpeechChunks(cleanText);
 
+      // Tentukan SATU suara untuk seluruh jawaban (preflight sisa kuota
+      // ElevenLabs) supaya suara tidak berpindah ke key/voice lain di tengah
+      // jawaban.
+      let provider: "elevenlabs" | "edge" | undefined;
+      let key: 1 | 2 | undefined;
+      try {
+        const probe = await fetch(
+          `/api/tts?chars=${encodeURIComponent(cleanText.length)}`,
+          { signal: controller.signal, cache: "no-store" },
+        );
+        if (probe.ok) {
+          const data = (await probe.json()) as {
+            provider?: "elevenlabs" | "edge";
+            key?: 1 | 2;
+          };
+          provider = data.provider;
+          key = data.key === 2 ? 2 : data.key === 1 ? 1 : undefined;
+        }
+      } catch {
+        provider = undefined;
+        key = undefined;
+      }
+      if (!isActive()) return;
+
       const pending: Array<Promise<Blob | null> | undefined> = [];
       const ensure = (index: number): Promise<Blob | null> | undefined => {
         if (index >= chunks.length) return undefined;
         if (!pending[index]) {
-          pending[index] = fetchTtsBlob(chunks[index], controller.signal);
+          pending[index] = fetchTtsBlob(
+            chunks[index],
+            controller.signal,
+            provider,
+            key,
+          );
         }
         return pending[index];
       };
@@ -676,8 +651,9 @@ export default function Chatbot() {
           const blob = await ensure(i);
           if (!isActive()) return;
 
+          // Prefetch hanya 1 chunk di depan agar tidak memicu rate-limit
+          // ElevenLabs (yang membuat sebagian suara jatuh ke Edge TTS).
           ensure(i + 1);
-          ensure(i + 2);
 
           if (!blob) {
             if (i === 0) {
