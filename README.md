@@ -3,7 +3,7 @@
 > **Proyek Kompetisi Web (Tahap Penyisihan)**  
 > Platform sistem informasi profil sekolah modern berbasis Next.js 16, terintegrasi dengan Asisten Virtual AI "Fiska" dan visualisasi model 3D interaktif.
 
-🌐 **Live Demo:** [https://team-iniajadulu-tthhh.vercel.app/](https://team-iniajadulu-tthhh.vercel.app/)
+🌐 **Live Demo:** [https://team-iniajadulu.vercel.app/](https://team-iniajadulu.vercel.app/)
 
 ---
 

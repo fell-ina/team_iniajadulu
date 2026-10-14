@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500">
+  <rect width="800" height="500" fill="#052659"/>
+  <g fill="none" stroke="#C1E8FF" stroke-opacity="0.18" stroke-width="2">
+    <rect x="60" y="60" width="680" height="380" rx="24"/>
+    <circle cx="400" cy="200" r="56"/>
+    <path d="M340 300l45-60 35 42 30-32 50 50z"/>
+  </g>
+  <text x="400" y="395" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" letter-spacing="6" fill="#F4F9FF" fill-opacity="0.85">FOTO SEGERA HADIR</text>
+</svg>

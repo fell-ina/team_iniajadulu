@@ -1,79 +1,104 @@
 import { NextResponse } from "next/server";
+import { ElevenLabsClient } from "elevenlabs";
 import { MsEdgeTTS, OUTPUT_FORMAT } from "msedge-tts";
 
-// Batas teks agar tidak terlalu panjang diproses server.
-const MAX_CHARS = 2000;
+// 1. Inisialisasi Dua Klien ElevenLabs (Utama & Cadangan)
+const elevenlabs1 = process.env.ELEVENLABS_API_KEY
+  ? new ElevenLabsClient({ apiKey: process.env.ELEVENLABS_API_KEY })
+  : null;
 
-// Edge TTS hanya menyediakan 2 suara native Indonesia:
-//   - id-ID-ArdiNeural  (laki-laki)
-//   - id-ID-GadisNeural (perempuan)
-// Jadi GadisNeural adalah satu-satunya suara cewek native yang tersedia.
-const VOICE = process.env.TTS_VOICE || "id-ID-GadisNeural";
+const elevenlabs2 = process.env.ELEVENLABS_API_KEY_2
+  ? new ElevenLabsClient({ apiKey: process.env.ELEVENLABS_API_KEY_2 })
+  : null;
 
-// Karakter suara Fiska: perempuan Indonesia yang bicara pelan dan lembut.
-// Override lewat .env.local bila ingin bereksperimen tanpa ubah kode:
-//   TTS_RATE, TTS_PITCH, TTS_VOLUME
-const RATE = process.env.TTS_RATE || "-10%"; // lebih pelan -> terdengar tenang
-const PITCH = process.env.TTS_PITCH || "+8Hz"; // naik tipis -> tetap feminin & natural
-const VOLUME = process.env.TTS_VOLUME || "-8%"; // lebih pelan -> tidak menusuk
+// Fungsi pembuat audio ElevenLabs dengan klien tertentu
+async function generateElevenLabsAudio(client: ElevenLabsClient, text: string) {
+  const voiceId = process.env.ELEVENLABS_VOICE_ID || "EXAVITQu4vr4xnSDxMaL";
 
-// msedge-tts menyisipkan teks apa adanya ke dalam SSML (XML) tanpa escaping.
-// Tanpa escaping, karakter "&" (mis. "Biaya SPP & Pendaftaran") membuat
-// dokumen SSML tidak valid => Edge TTS menolak request =>
-// suara Fiska jatuh ke fallback browser yang terdengar jauh lebih robotik.
-function escapeSsml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
+  const audioStream = await client.generate({
+    voice: voiceId,
+    text: text,
+    model_id: "eleven_multilingual_v2",
+    voice_settings: {
+      stability: 0.35,
+      similarity_boost: 0.8,
+      style: 0.35,
+      use_speaker_boost: true,
+    },
+  });
+
+  const chunks: Uint8Array[] = [];
+  for await (const chunk of audioStream) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
 }
 
-export async function POST(req: Request) {
-  let tts: MsEdgeTTS | null = null;
+// Fungsi Cadangan Edge TTS
+async function generateEdgeTTSAudio(text: string) {
+  const tts = new MsEdgeTTS();
+  await tts.setMetadata(
+    "id-ID-GadisNeural",
+    OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3,
+  );
+  const { audioStream } = await tts.toStream(text);
 
+  const chunks: Uint8Array[] = [];
+  for await (const chunk of audioStream) {
+    chunks.push(chunk);
+  }
+  return Buffer.concat(chunks);
+}
+
+// Endpoint Utama dengan 3 Lapisan Pertahanan
+export async function POST(req: Request) {
   try {
     const { text } = await req.json();
 
-    if (!text || typeof text !== "string" || text.trim() === "") {
+    if (!text || text.trim() === "") {
       return NextResponse.json({ error: "Teks kosong" }, { status: 400 });
     }
 
-    const cleanText = text.slice(0, MAX_CHARS);
+    let audioBuffer: any = null;
 
-    tts = new MsEdgeTTS();
-
-    await tts.setMetadata(VOICE, OUTPUT_FORMAT.AUDIO_24KHZ_96KBITRATE_MONO_MP3);
-
-    const { audioStream } = tts.toStream(escapeSsml(cleanText), {
-      rate: RATE,
-      pitch: PITCH,
-      volume: VOLUME,
-    });
-
-    const chunks: Uint8Array[] = [];
-    for await (const chunk of audioStream) {
-      chunks.push(chunk);
+    // LAPISAN 1: Coba pakai API Key Pertama
+    if (elevenlabs1) {
+      try {
+        audioBuffer = await generateElevenLabsAudio(elevenlabs1, text);
+      } catch (err1) {
+        console.warn("API Key 1 habis/error, mencoba API Key 2...", err1);
+      }
     }
-    const audioBuffer = Buffer.concat(chunks);
+
+    // LAPISAN 2: Jika Lapisan 1 gagal, coba pakai API Key Kedua
+    if (!audioBuffer && elevenlabs2) {
+      try {
+        audioBuffer = await generateElevenLabsAudio(elevenlabs2, text);
+      } catch (err2) {
+        console.warn(
+          "API Key 2 juga habis/error, beralih ke Edge TTS...",
+          err2,
+        );
+      }
+    }
+
+    // LAPISAN 3: Jika dua-duanya gagal, pakai Edge TTS gratisan
+    if (!audioBuffer) {
+      audioBuffer = await generateEdgeTTSAudio(text);
+    }
 
     return new NextResponse(audioBuffer, {
       headers: {
         "Content-Type": "audio/mpeg",
         "Content-Length": audioBuffer.length.toString(),
-        "Cache-Control":
-          "no-store, no-cache, must-revalidate, proxy-revalidate",
+        "Cache-Control": "no-store, no-cache, must-revalidate",
       },
     });
   } catch (error) {
-    console.error("Edge TTS Internal Error:", error);
+    console.error("Seluruh layanan Voice TTS gagal total:", error);
     return NextResponse.json(
-      { error: "Gagal memproses audio dari Edge TTS" },
+      { error: "Gagal memproses audio dari seluruh layanan TTS" },
       { status: 500 },
     );
-  } finally {
-    // Tutup koneksi WebSocket setelah selesai, sukses maupun gagal.
-    tts?.close();
   }
 }

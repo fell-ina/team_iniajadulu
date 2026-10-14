@@ -15,6 +15,7 @@ import {
   Maximize2,
   Minimize2,
   ChevronDown,
+  Square,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import Link from "next/link";
@@ -59,23 +60,75 @@ function cleanTextForSpeech(text: string): string {
     .trim();
 }
 
-// ---------- SUARA CEWEK KONSISTEN (FALLBACK) ----------
-const FEMALE_MARKERS = ["gadis", "female", "wanita", "perempuan", "google bahasa indonesia"];
+const SPEECH_CHUNK_TARGET = 220;
+const SPEECH_CHUNK_MAX = 320;
+const TTS_TIMEOUT_MS = 12000;
+const TTS_MAX_ATTEMPTS = 2;
+const AUDIO_CACHE_LIMIT = 24;
+
+function splitIntoSpeechChunks(text: string): string[] {
+  const parts = text
+    .split(/(?<=[.!?…])\s+|\n+/)
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const chunks: string[] = [];
+  let current = "";
+
+  const hardSplit = (sentence: string) => {
+    let part = "";
+    for (const word of sentence.split(/\s+/)) {
+      const candidate = part ? `${part} ${word}` : word;
+      if (candidate.length > SPEECH_CHUNK_MAX && part) {
+        chunks.push(part);
+        part = word;
+      } else {
+        part = candidate;
+      }
+    }
+    if (part.trim()) chunks.push(part.trim());
+  };
+
+  for (const sentence of parts) {
+    if (sentence.length > SPEECH_CHUNK_MAX) {
+      if (current) {
+        chunks.push(current);
+        current = "";
+      }
+      hardSplit(sentence);
+      continue;
+    }
+
+    const candidate = current ? `${current} ${sentence}` : sentence;
+    if (candidate.length > SPEECH_CHUNK_TARGET && current) {
+      chunks.push(current);
+      current = sentence;
+    } else {
+      current = candidate;
+    }
+  }
+
+  if (current) chunks.push(current);
+  return chunks.length > 0 ? chunks : [text];
+}
+
+const FEMALE_MARKERS = [
+  "gadis",
+  "female",
+  "wanita",
+  "perempuan",
+  "google bahasa indonesia",
+];
 const MALE_MARKERS = ["ardi", "david", "andrew", "brandon", "pria", "guy"];
 
-// Prioritas suara cewek Indonesia untuk fallback browser.
-// Catatan: di Edge TTS hanya id-ID-GadisNeural yang tersedia untuk Indonesia
-// (dicek langsung ke daftar voice Microsoft). Nama lain di bawah ini mungkin
-// ditemukan di browser yang mengekspos lebih banyak suara Indonesia.
 const PREFERRED_FEMALE_VOICES = [
-  "id-id-gadisneural", // satu-satunya cewek native Indonesia di Edge TTS
+  "id-id-gadisneural",
   "id-id-ayuneural",
   "id-id-sitineural",
   "id-id-dewineural",
   "id-id-indahneural",
 ];
 
-// Penanda kualitas suara yang terdengar "mulus" (bukan robot).
 const NATURAL_MARKERS = ["neural", "natural", "online", "premium", "enhanced"];
 
 function isFemaleName(name: string): boolean {
@@ -85,7 +138,6 @@ function isFemaleName(name: string): boolean {
 
 function isMaleName(name: string): boolean {
   const n = name.toLowerCase();
-  // "female" juga mengandung kata "male", jadi harus dicek dulu
   if (n.includes("female")) return false;
   return MALE_MARKERS.some((m) => n.includes(m));
 }
@@ -102,38 +154,33 @@ function isNaturalVoice(name: string): boolean {
 function pickFemaleVoice(
   voices: SpeechSynthesisVoice[],
 ): SpeechSynthesisVoice | null {
-  // 1. Cocok persis dengan daftar suara cewek Indonesia terbaik
   for (const wanted of PREFERRED_FEMALE_VOICES) {
-    const hit = voices.find((v) => v.name.toLowerCase().replace(/\s+/g, "") === wanted);
+    const hit = voices.find(
+      (v) => v.name.toLowerCase().replace(/\s+/g, "") === wanted,
+    );
     if (hit) return hit;
   }
 
   const safe = voices.filter((v) => !isMaleName(v.name));
 
-  // 2. Voice Indonesia cewek (yang neural/ditingkatkan diutamakan)
   const idFemale = safe.filter((v) => isIndonesian(v) && isFemaleName(v.name));
   if (idFemale.length > 0) {
     return idFemale.find((v) => isNaturalVoice(v.name)) ?? idFemale[0];
   }
 
-  // 3. Voice Indonesia apa pun asal bukan penanda cowok
   const idAny = safe.filter((v) => isIndonesian(v));
   if (idAny.length > 0) {
     return idAny.find((v) => isNaturalVoice(v.name)) ?? idAny[0];
   }
 
-  // 4. Voice bahasa lain yang jelas penanda cewek
   const anyFemale = safe.filter((v) => isFemaleName(v.name));
   if (anyFemale.length > 0) {
     return anyFemale.find((v) => isNaturalVoice(v.name)) ?? anyFemale[0];
   }
 
-  // 5. Kalau tetap tidak ada, andalkan default browser
   return null;
 }
 
-// Voice cewek yang sudah terpilih dikunci di sini supaya
-// semua pesan selalu memakai voice yang sama persis.
 let cachedFemaleVoice: SpeechSynthesisVoice | null = null;
 
 function getVoicesWhenReady(onReady: (voices: SpeechSynthesisVoice[]) => void) {
@@ -166,16 +213,16 @@ function playFallbackSpeech(text: string, onEnd: () => void) {
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "id-ID";
-  // Prosodi lembut: sedikit lebih pelan supaya terdengar tenang dan feminine,
-  // tapi pitch tidak terlalu tinggi agar tidak terdengar "cilik".
   utterance.rate = 0.92;
   utterance.pitch = 1.1;
   utterance.volume = 1;
 
   let finished = false;
+  let safetyTimer: number | null = null;
   const finish = () => {
     if (finished) return;
     finished = true;
+    if (safetyTimer !== null) window.clearTimeout(safetyTimer);
     onEnd();
   };
 
@@ -193,23 +240,19 @@ function playFallbackSpeech(text: string, onEnd: () => void) {
 
     utterance.onend = finish;
     utterance.onerror = finish;
-    // Jaga-jaga: kalau event tidak pernah datang, tetap akhiri state bicara
-    window.setTimeout(finish, 60000);
+    safetyTimer = window.setTimeout(finish, 60000);
     window.speechSynthesis.speak(utterance);
   });
 }
 
-// ---------- PENGHALUS SUARA (WEB AUDIO) ----------
-// Audio dari server (id-ID-GadisNeural) dil poloskan lewat rantai filter supaya
-// terdengar lebih mulus & lembut: bersih dari gemeram, tidak berat di "//dangdut",
-// dan puncaknya tidak tajam. Kalau Web Audio tidak tersedia / gagal, pemutar
-// tetap jatuh ke <audio> biasa sehingga suara tetap keluar.
 let sharedAudioCtx: AudioContext | null = null;
 
 function getAudioContext(): AudioContext | null {
   if (typeof window === "undefined") return null;
   const Ctor =
-    window.AudioContext ?? (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    window.AudioContext ??
+    (window as unknown as { webkitAudioContext?: typeof AudioContext })
+      .webkitAudioContext;
   if (!Ctor) return null;
 
   if (!sharedAudioCtx || sharedAudioCtx.state === "closed") {
@@ -222,10 +265,9 @@ function getAudioContext(): AudioContext | null {
   return sharedAudioCtx;
 }
 
-// Fungsi ini mengembalikan true kalau audio berhasil Playing lewat Web Audio.
 async function playSoftAudio(
   blob: Blob,
-  onEnd: () => void,
+  isActive: () => boolean,
   registerSource: (source: AudioBufferSourceNode | null) => void,
   registerTimer: (timer: number | null) => void,
 ): Promise<boolean> {
@@ -233,36 +275,33 @@ async function playSoftAudio(
   if (!ctx) return false;
 
   try {
-    // Beberapa browser memulai context dalam keadaan suspended.
     if (ctx.state === "suspended") {
       await ctx.resume();
     }
 
     const arrayBuffer = await blob.arrayBuffer();
+    if (!isActive()) return true;
     const buffer = await ctx.decodeAudioData(arrayBuffer);
+    if (!isActive()) return true;
 
     const source = ctx.createBufferSource();
     source.buffer = buffer;
 
-    // 1. Buang gemeram / bass yang bikin suara terasa berat
     const highpass = ctx.createBiquadFilter();
     highpass.type = "highpass";
     highpass.frequency.value = 180;
     highpass.Q.value = 0.7;
 
-    // 2. Kurangi berat di range rendah-middle supaya tidak sounding berat
     const warmth = ctx.createBiquadFilter();
     warmth.type = "lowshelf";
     warmth.frequency.value = 300;
     warmth.gain.value = -2.5;
 
-    // 3. Haluskan bagian atas supaya tidak meringang / tajam
     const soften = ctx.createBiquadFilter();
     soften.type = "highshelf";
     soften.frequency.value = 5500;
     soften.gain.value = -5;
 
-    // 4. Kompres dinamika -> volume lebih rata, tidak ada lonjakan tajam
     const compressor = ctx.createDynamicsCompressor();
     compressor.threshold.value = -22;
     compressor.knee.value = 20;
@@ -276,33 +315,34 @@ async function playSoftAudio(
     soften.connect(compressor);
     compressor.connect(ctx.destination);
 
-    let finished = false;
-    const finish = () => {
-      if (finished) return;
-      finished = true;
-      registerTimer(null);
-      registerSource(null);
-      onEnd();
-    };
+    return await new Promise<boolean>((resolve) => {
+      let finished = false;
+      const finish = () => {
+        if (finished) return;
+        finished = true;
+        registerTimer(null);
+        registerSource(null);
+        resolve(true);
+      };
 
-    source.onended = finish;
-    registerSource(source);
-
-    // Jaga-jaga kalau event onended tidak pernah datang.
-    registerTimer(
-      window.setTimeout(finish, (buffer.duration + 1.5) * 1000),
-    );
-
-    source.start();
-    return true;
+      source.onended = finish;
+      registerSource(source);
+      registerTimer(window.setTimeout(finish, (buffer.duration + 1.5) * 1000));
+      source.start();
+    });
   } catch {
     return false;
   }
 }
 
-// ---------- STYLE MARKDOWN (AGAR NYAMAN DIBACA DI HP & DESKTOP) ----------
 const MARKDOWN_COMPONENTS = {
-  a: ({ href = "", children }: { href?: string; children?: React.ReactNode }) => {
+  a: ({
+    href = "",
+    children,
+  }: {
+    href?: string;
+    children?: React.ReactNode;
+  }) => {
     const isInternal = href.startsWith("/");
     const className =
       "font-medium text-[#7DA0CA] underline decoration-[#7DA0CA]/40 underline-offset-2 transition-colors hover:text-[#C1E8FF] hover:decoration-[#C1E8FF]";
@@ -315,12 +355,16 @@ const MARKDOWN_COMPONENTS = {
       );
     }
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className={className}>
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className={className}
+      >
         {children}
       </a>
     );
   },
-  // Tabel jawaban PPDB sering lebar -> bungkus biar bisa di-scroll, bukan meluber
   table: ({ children }: { children?: React.ReactNode }) => (
     <div className="my-2 w-full overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
       <table className="w-full min-w-[18rem] border-collapse text-left text-[0.85em]">
@@ -334,7 +378,9 @@ const MARKDOWN_COMPONENTS = {
     </th>
   ),
   td: ({ children }: { children?: React.ReactNode }) => (
-    <td className="border-b border-white/5 px-2 py-1.5 align-top">{children}</td>
+    <td className="border-b border-white/5 px-2 py-1.5 align-top">
+      {children}
+    </td>
   ),
 };
 
@@ -353,7 +399,6 @@ const MARKDOWN_WRAPPER =
   "[&_blockquote]:my-2 [&_blockquote]:border-l-2 [&_blockquote]:border-[#7DA0CA]/60 [&_blockquote]:pl-3 [&_blockquote]:text-white/70 " +
   "[&_hr]:my-3 [&_hr]:border-white/10";
 
-// Scrollbar custom (didefinisikan langsung di sini, bukan di globals.css)
 const SCROLLBAR =
   "[scrollbar-width:thin] [scrollbar-color:#5483B3_transparent] " +
   "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent " +
@@ -366,6 +411,7 @@ export default function Chatbot() {
   const [isLoading, setIsLoading] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isVoiceLoading, setIsVoiceLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [isScrolledUp, setIsScrolledUp] = useState(false);
   const [isCoarsePointer, setIsCoarsePointer] = useState(false);
@@ -381,16 +427,22 @@ export default function Chatbot() {
   const recognitionRef = useRef<any>(null);
   const isScrolledUpRef = useRef(false);
 
-  // Ref & State untuk Mouse/Touch Drag Scroll (Pointer Events)
+  const speakSeqRef = useRef(0);
+  const speakAbortRef = useRef<AbortController | null>(null);
+  const spokenTextRef = useRef<string | null>(null);
+  const audioBlobCacheRef = useRef<Map<string, Blob>>(new Map());
+
   const quickRepliesRef = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  // Dipakai di dalam event listener, jadi harus ref (bukan state) supaya
-  // nilainya selalu yang terbaru saat event click dari tombol terjadi.
-  const dragRef = useRef({ active: false, startX: 0, scrollLeft: 0, distance: 0 });
+  const dragRef = useRef({
+    active: false,
+    startX: 0,
+    scrollLeft: 0,
+    distance: 0,
+  });
 
   const reduceMotion = useReducedMotion();
 
-  // Deteksi perangkat sentuh (HP/tablet) untuk perilaku Enter & auto-focus
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
     const mq = window.matchMedia("(pointer: coarse)");
@@ -400,9 +452,6 @@ export default function Chatbot() {
     return () => mq.removeEventListener("change", apply);
   }, []);
 
-  // Pointer Events -> jalan untuk mouse, pena, dan sentuhan.
-  // PENTING: jangan pakai setPointerCapture(), karena itu membuat event click
-  // dialihkan ke elemen pembungkus sehingga tombol quick reply tidak bisa diklik.
   const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
     const el = quickRepliesRef.current;
     if (!el) return;
@@ -415,8 +464,6 @@ export default function Chatbot() {
     setIsDragging(true);
   };
 
-  // Move/up dipantau di level window supaya drag tetap jalan walau kursor
-  // keluar dari area chip, tanpa mengganggu event click normal.
   useEffect(() => {
     if (!isDragging) return;
     const el = quickRepliesRef.current;
@@ -452,7 +499,6 @@ export default function Chatbot() {
     }
   };
 
-  // Load Chat History
   useEffect(() => {
     const saved = localStorage.getItem("fiska_chat_history");
     if (saved) {
@@ -468,122 +514,234 @@ export default function Chatbot() {
     isLoadedRef.current = true;
   }, []);
 
-  // Simpan Chat History
   useEffect(() => {
     if (isLoadedRef.current) {
       localStorage.setItem("fiska_chat_history", JSON.stringify(chatHistory));
     }
   }, [chatHistory]);
 
-  // Hentikan suara audio jika ada
   const stopAudio = useCallback(() => {
+    speakSeqRef.current += 1;
+    if (speakAbortRef.current) {
+      try {
+        speakAbortRef.current.abort();
+      } catch {}
+      speakAbortRef.current = null;
+    }
+
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
     if (audioRef.current) {
+      audioRef.current.onended = null;
+      audioRef.current.onerror = null;
       audioRef.current.pause();
       audioRef.current = null;
     }
     if (softSourceRef.current) {
-      // Matikan callback dulu supaya stop() tidak memicu onEnd.
       softSourceRef.current.onended = null;
       try {
         softSourceRef.current.stop();
-      } catch {
-        // abaikan bila sudah berhenti
-      }
+      } catch {}
       softSourceRef.current = null;
     }
     if (softTimerRef.current !== null) {
-      // Penting: timer audio sebelumnya harus dibuang, kalau tidak ia akan
-      // menyalakan ulang state "sedang berbicara" di tengah audio yang baru.
       window.clearTimeout(softTimerRef.current);
       softTimerRef.current = null;
     }
+    spokenTextRef.current = null;
     setIsSpeaking(false);
+    setIsVoiceLoading(false);
   }, []);
 
-  // Text-to-Speech Utama
-  const speak = useCallback(
-    async (text: string) => {
-      if (!isAudioEnabled) return;
+  const fetchTtsBlob = useCallback(
+    async (cleanText: string, signal: AbortSignal): Promise<Blob | null> => {
+      const cached = audioBlobCacheRef.current.get(cleanText);
+      if (cached) return cached;
 
-      stopAudio();
+      for (let attempt = 0; attempt < TTS_MAX_ATTEMPTS; attempt++) {
+        if (signal.aborted) return null;
 
-      const cleanText = cleanTextForSpeech(text);
-      if (!cleanText) return;
+        const controller = new AbortController();
+        const onAbort = () => controller.abort();
+        signal.addEventListener("abort", onAbort, { once: true });
+        const timeoutId = window.setTimeout(
+          () => controller.abort(),
+          TTS_TIMEOUT_MS,
+        );
 
-      setIsSpeaking(true);
+        try {
+          const res = await fetch("/api/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: cleanText }),
+            signal: controller.signal,
+          });
 
-      try {
-        // Coba request TTS sampai 2x dengan timeout 20 detik
-        // supaya jarang jatuh ke suara browser (fallback).
-        let res: Response | null = null;
-        for (let attempt = 0; attempt < 2 && !res; attempt++) {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 20000);
-          try {
-            const r = await fetch("/api/tts", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ text: cleanText }),
-              signal: controller.signal,
-            });
-            if (r.ok) res = r;
-          } catch {
-            // gagal -> coba lagi di iterasi berikutnya
-          } finally {
-            clearTimeout(timeoutId);
+          if (res.ok) {
+            const blob = await res.blob();
+            const cache = audioBlobCacheRef.current;
+            cache.delete(cleanText);
+            cache.set(cleanText, blob);
+            while (cache.size > AUDIO_CACHE_LIMIT) {
+              const oldest = cache.keys().next().value;
+              if (oldest === undefined) break;
+              cache.delete(oldest);
+            }
+            return blob;
           }
+        } catch {
+        } finally {
+          window.clearTimeout(timeoutId);
+          signal.removeEventListener("abort", onAbort);
         }
+      }
 
-        if (!res) {
-          playFallbackSpeech(cleanText, () => setIsSpeaking(false));
+      return null;
+    },
+    [],
+  );
+
+  const playAudioElement = useCallback(
+    (blob: Blob, isActive: () => boolean): Promise<void> =>
+      new Promise((resolve) => {
+        if (!isActive()) {
+          resolve();
           return;
         }
 
-        const blob = await res.blob();
-
-        // Jalur utama: poles audio server lewat Web Audio supaya suaranya
-        // mulus & lembut.
-        const playedSoftly = await playSoftAudio(
-          blob,
-          () => setIsSpeaking(false),
-          (source) => {
-            softSourceRef.current = source;
-          },
-          (timer) => {
-            softTimerRef.current = timer;
-          },
-        );
-        if (playedSoftly) return;
-
-        // Jalur cadangan: <audio> biasa (bila Web Audio tidak tersedia).
         const audioUrl = URL.createObjectURL(blob);
         const audio = new Audio(audioUrl);
         audioRef.current = audio;
 
-        audio.onended = () => {
-          setIsSpeaking(false);
-          audioRef.current = null;
+        let done = false;
+        const cleanup = () => {
+          if (done) return;
+          done = true;
+          if (audioRef.current === audio) audioRef.current = null;
           URL.revokeObjectURL(audioUrl);
+          resolve();
         };
 
-        audio.onerror = () => {
-          audioRef.current = null;
-          URL.revokeObjectURL(audioUrl);
-          playFallbackSpeech(cleanText, () => setIsSpeaking(false));
-        };
-
-        await audio.play();
-      } catch {
-        playFallbackSpeech(cleanText, () => setIsSpeaking(false));
-      }
-    },
-    [isAudioEnabled, stopAudio],
+        audio.onended = cleanup;
+        audio.onerror = cleanup;
+        audio.play().catch(cleanup);
+      }),
+    [],
   );
 
-  // Speech-to-Text
+  const speak = useCallback(
+    async (text: string) => {
+      if (!isAudioEnabled) return;
+
+      const cleanText = cleanTextForSpeech(text);
+      if (!cleanText) return;
+
+      if (isVoiceLoading && spokenTextRef.current === cleanText) return;
+      if (isSpeaking && spokenTextRef.current === cleanText) {
+        stopAudio();
+        return;
+      }
+
+      stopAudio();
+
+      const myId = speakSeqRef.current;
+      const controller = new AbortController();
+      speakAbortRef.current = controller;
+      const isActive = () =>
+        speakSeqRef.current === myId && !controller.signal.aborted;
+
+      spokenTextRef.current = cleanText;
+      setIsSpeaking(true);
+      setIsVoiceLoading(true);
+
+      const chunks = splitIntoSpeechChunks(cleanText);
+
+      const pending: Array<Promise<Blob | null> | undefined> = [];
+      const ensure = (index: number): Promise<Blob | null> | undefined => {
+        if (index >= chunks.length) return undefined;
+        if (!pending[index]) {
+          pending[index] = fetchTtsBlob(chunks[index], controller.signal);
+        }
+        return pending[index];
+      };
+
+      ensure(0);
+      ensure(1);
+
+      try {
+        for (let i = 0; i < chunks.length; i++) {
+          if (!isActive()) return;
+
+          const blob = await ensure(i);
+          if (!isActive()) return;
+
+          ensure(i + 1);
+          ensure(i + 2);
+
+          if (!blob) {
+            if (i === 0) {
+              setIsVoiceLoading(false);
+              playFallbackSpeech(cleanText, () => {
+                if (!isActive()) return;
+                spokenTextRef.current = null;
+                speakAbortRef.current = null;
+                setIsSpeaking(false);
+                setIsVoiceLoading(false);
+              });
+              return;
+            }
+            continue;
+          }
+
+          setIsVoiceLoading(false);
+
+          const playedSoftly = await playSoftAudio(
+            blob,
+            isActive,
+            (source) => {
+              if (isActive()) softSourceRef.current = source;
+            },
+            (timer) => {
+              if (isActive()) softTimerRef.current = timer;
+            },
+          );
+          if (!isActive()) return;
+
+          if (!playedSoftly) {
+            await playAudioElement(blob, isActive);
+            if (!isActive()) return;
+          }
+        }
+
+        if (isActive()) {
+          spokenTextRef.current = null;
+          speakAbortRef.current = null;
+          setIsSpeaking(false);
+          setIsVoiceLoading(false);
+        }
+      } catch {
+        if (!isActive()) return;
+        setIsVoiceLoading(false);
+        playFallbackSpeech(cleanText, () => {
+          if (!isActive()) return;
+          spokenTextRef.current = null;
+          speakAbortRef.current = null;
+          setIsSpeaking(false);
+          setIsVoiceLoading(false);
+        });
+      }
+    },
+    [
+      isAudioEnabled,
+      isSpeaking,
+      isVoiceLoading,
+      stopAudio,
+      fetchTtsBlob,
+      playAudioElement,
+    ],
+  );
+
   const toggleListening = () => {
     if (typeof window === "undefined") return;
 
@@ -631,7 +789,7 @@ export default function Chatbot() {
   const toggleOpen = useCallback(() => {
     stopAudio();
     if (open) {
-      setIsFullscreen(false); // Reset status fullscreen saat obrolan ditutup/diminimize
+      setIsFullscreen(false);
       setIsScrolledUp(false);
     }
     setOpen((prev) => !prev);
@@ -655,8 +813,6 @@ export default function Chatbot() {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [open, isFullscreen, toggleOpen]);
 
-  // Kunci scroll halaman HANYA saat layar penuh.
-  // Di mode biasa, halaman di belakang panel harus tetap bisa digulir.
   useEffect(() => {
     if (!open || !isFullscreen) return;
     const previous = document.body.style.overflow;
@@ -666,14 +822,12 @@ export default function Chatbot() {
     };
   }, [open, isFullscreen]);
 
-  // Auto-focus input hanya di perangkat mouse/keyboard (HP: jangan buka keyboard)
   useEffect(() => {
     if (!open || isCoarsePointer) return;
     const timer = window.setTimeout(() => textareaRef.current?.focus(), 250);
     return () => window.clearTimeout(timer);
   }, [open, isCoarsePointer]);
 
-  // Input auto-tinggi (maks 8rem, danach jadi scroll)
   useEffect(() => {
     const el = textareaRef.current;
     if (!el) return;
@@ -699,14 +853,12 @@ export default function Chatbot() {
     isScrolledUpRef.current = isScrolledUp;
   }, [isScrolledUp]);
 
-  // Auto-scroll mengikuti pesan baru, kecuali user sedang scroll ke atas
   useEffect(() => {
     if (open && !isScrolledUpRef.current) {
       scrollToBottom(reduceMotion ? "auto" : "smooth");
     }
   }, [chatHistory, isLoading, open, scrollToBottom, reduceMotion]);
 
-  // Cleanup saat unmount
   useEffect(() => {
     return () => {
       stopAudio();
@@ -752,7 +904,6 @@ export default function Chatbot() {
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Di HP, Enter = baris baru. Di desktop, Enter = kirim (Shift+Enter = baris baru).
     if (e.key === "Enter" && !e.shiftKey && !isCoarsePointer) {
       e.preventDefault();
       sendMessageToBot(message);
@@ -814,7 +965,10 @@ export default function Chatbot() {
                   <h2 className="flex items-center gap-2 font-[family-name:var(--font-space-grotesk)] text-sm font-semibold tracking-tight text-white">
                     <span className="truncate">Fiska</span>
                     {isSpeaking && (
-                      <span className="inline-flex h-3 items-end gap-0.5" aria-hidden="true">
+                      <span
+                        className="inline-flex h-3 items-end gap-0.5"
+                        aria-hidden="true"
+                      >
                         <span className="h-full w-0.5 animate-pulse bg-[#C1E8FF]"></span>
                         <span className="h-2/3 w-0.5 animate-bounce bg-[#C1E8FF]"></span>
                         <span className="h-full w-0.5 animate-pulse bg-[#C1E8FF]"></span>
@@ -822,7 +976,11 @@ export default function Chatbot() {
                     )}
                   </h2>
                   <p className="truncate text-[11px] text-[#C1E8FF]/70">
-                    {isSpeaking ? "Sedang berbicara..." : "Asisten Virtual Sekolah"}
+                    {isVoiceLoading
+                      ? "Menyiapkan suara..."
+                      : isSpeaking
+                        ? "Sedang berbicara..."
+                        : "Asisten Virtual Sekolah"}
                   </p>
                 </div>
               </div>
@@ -847,24 +1005,36 @@ export default function Chatbot() {
                     setIsAudioEnabled(!isAudioEnabled);
                   }}
                   aria-label={
-                    isAudioEnabled ? "Matikan Suara Fiska" : "Aktifkan Suara Fiska"
+                    isAudioEnabled
+                      ? "Matikan Suara Fiska"
+                      : "Aktifkan Suara Fiska"
                   }
                   aria-pressed={isAudioEnabled}
                   title={isAudioEnabled ? "Suara Fiska Aktif" : "Suara Muted"}
                   className={iconBtn(isAudioEnabled)}
                 >
-                  {isAudioEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                  {isAudioEnabled ? (
+                    <Volume2 size={16} />
+                  ) : (
+                    <VolumeX size={16} />
+                  )}
                 </button>
 
                 <button
                   type="button"
                   onClick={toggleFullscreen}
-                  aria-label={isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"}
+                  aria-label={
+                    isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"
+                  }
                   aria-pressed={isFullscreen}
                   title={isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"}
                   className={iconBtn(false)}
                 >
-                  {isFullscreen ? <Minimize2 size={16} /> : <Maximize2 size={16} />}
+                  {isFullscreen ? (
+                    <Minimize2 size={16} />
+                  ) : (
+                    <Maximize2 size={16} />
+                  )}
                 </button>
 
                 <button
@@ -919,8 +1089,26 @@ export default function Chatbot() {
                             title="Dengarkan Suara Fiska"
                             className="mt-1.5 flex items-center gap-1 text-[11px] text-[#C1E8FF] opacity-70 transition-opacity hover:opacity-100"
                           >
-                            <Volume2 size={12} />
-                            <span>Dengar</span>
+                            {isVoiceLoading &&
+                            spokenTextRef.current ===
+                              cleanTextForSpeech(chat.text) ? (
+                              <>
+                                <Loader2 size={12} className="animate-spin" />
+                                <span>Memuat suara...</span>
+                              </>
+                            ) : isSpeaking &&
+                              spokenTextRef.current ===
+                                cleanTextForSpeech(chat.text) ? (
+                              <>
+                                <Square size={12} />
+                                <span>Berhenti</span>
+                              </>
+                            ) : (
+                              <>
+                                <Volume2 size={12} />
+                                <span>Dengar</span>
+                              </>
+                            )}
                           </button>
                         </div>
                       </motion.div>
@@ -946,7 +1134,10 @@ export default function Chatbot() {
                         aria-live="polite"
                       >
                         <span>Fiska sedang berpikir</span>
-                        <span className="flex items-center gap-1" aria-hidden="true">
+                        <span
+                          className="flex items-center gap-1"
+                          aria-hidden="true"
+                        >
                           {[0, 1, 2].map((i) => (
                             <span
                               key={i}
@@ -1001,7 +1192,6 @@ export default function Chatbot() {
                     type="button"
                     disabled={isLoading}
                     onClick={() => {
-                      // Abaikan klik kalau terjadi setelah drag (geser chip).
                       if (dragRef.current.distance >= 5) return;
                       dragRef.current.distance = 0;
                       sendMessageToBot(text);
