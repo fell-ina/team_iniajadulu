@@ -22,6 +22,30 @@ import Link from "next/link";
 import Image from "next/image";
 import { cleanTextForSpeech, splitIntoSpeechChunks } from "@/lib/speech";
 
+// --- MAPPING GAMBAR EKSPRESI SESUAI TERMINAL KAMU ---
+const botImages = {
+  Netral: {
+    diam: "/images/EkspresiBot/netral.png",
+    buka: "/images/EkspresiBot/netralBuka.png",
+  },
+  Happy: {
+    diam: "/images/EkspresiBot/happyDiam.png",
+    buka: "/images/EkspresiBot/HappyBuka.png",
+  },
+  Sad: {
+    diam: "/images/EkspresiBot/SadDiam.png",
+    buka: "/images/EkspresiBot/SadBuka.png",
+  },
+  Angry: {
+    diam: "/images/EkspresiBot/AngryTutup.png",
+    buka: "/images/EkspresiBot/AngryBuka.png",
+  },
+  Bingung: {
+    diam: "/images/EkspresiBot/BingungDiam.png",
+    buka: "/images/EkspresiBot/BingungBuka.png",
+  },
+};
+
 type ChatMessage = {
   sender: "bot" | "user";
   text: string;
@@ -52,9 +76,6 @@ const TTS_TIMEOUT_MS = 12000;
 const TTS_MAX_ATTEMPTS = 2;
 const AUDIO_CACHE_LIMIT = 24;
 
-// Suara browser diutamakan, urut dari yang paling natural. Urutannya tetap
-// supaya perangkat yang menyediakan suara sama selalu memilih suara yang sama.
-// Kunci dibandingkan dalam bentuk lowercase tanpa spasi.
 const PREFERRED_FEMALE_VOICES = [
   "id-id-gadisneural",
   "id-id-ayuneural",
@@ -92,11 +113,6 @@ function isMaleName(name: string): boolean {
   return MALE_MARKERS.some((m) => n.includes(m));
 }
 
-/**
- * Pilih suara perempuan Indonesia secara deterministik: pakai daftar prioritas
- * tetap lebih dulu, lalu fallback ke suara id-ID (bukan nama pria) yang
- * diurutkan alfabetis. Tidak ada pemilihan acak, jadi suara konsisten.
- */
 function pickIndonesianFemaleVoice(
   voices: SpeechSynthesisVoice[],
 ): SpeechSynthesisVoice | null {
@@ -104,12 +120,10 @@ function pickIndonesianFemaleVoice(
   for (const v of voices) {
     byNormalized.set(v.name.toLowerCase().replace(/\s+/g, ""), v);
   }
-
   for (const wanted of PREFERRED_FEMALE_VOICES) {
     const hit = byNormalized.get(wanted);
     if (hit) return hit;
   }
-
   return (
     voices
       .filter((v) => isIndonesian(v) && !isMaleName(v.name))
@@ -359,6 +373,11 @@ export default function Chatbot() {
 
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>(INITIAL_CHAT);
 
+  // --- STATE UNTUK AVATAR ---
+  const [botEmotion, setBotEmotion] =
+    useState<keyof typeof botImages>("Netral");
+  const [mouthOpen, setMouthOpen] = useState(false);
+
   const isLoadedRef = useRef(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -383,6 +402,19 @@ export default function Chatbot() {
   });
 
   const reduceMotion = useReducedMotion();
+
+  // --- EFEK ANIMASI MULUT SAAT BICARA ---
+  useEffect(() => {
+    let interval: number;
+    if (isSpeaking) {
+      interval = window.setInterval(() => {
+        setMouthOpen((prev) => !prev);
+      }, 150); // Kecepatan ganti frame buka-tutup mulut
+    } else {
+      setMouthOpen(false); // Pastikan tertutup saat diam
+    }
+    return () => window.clearInterval(interval);
+  }, [isSpeaking]);
 
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
@@ -603,9 +635,6 @@ export default function Chatbot() {
 
       const chunks = splitIntoSpeechChunks(cleanText);
 
-      // Tentukan SATU suara untuk seluruh jawaban (preflight sisa kuota
-      // ElevenLabs) supaya suara tidak berpindah ke key/voice lain di tengah
-      // jawaban.
       let provider: "elevenlabs" | "edge" | undefined;
       let key: 1 | 2 | undefined;
       try {
@@ -651,8 +680,6 @@ export default function Chatbot() {
           const blob = await ensure(i);
           if (!isActive()) return;
 
-          // Prefetch hanya 1 chunk di depan agar tidak memicu rate-limit
-          // ElevenLabs (yang membuat sebagian suara jatuh ke Edge TTS).
           ensure(i + 1);
 
           if (!blob) {
@@ -842,6 +869,7 @@ export default function Chatbot() {
     };
   }, [stopAudio]);
 
+  // --- LOGIKA KIRIM PESAN KE AI ---
   const sendMessageToBot = async (userMsg: string) => {
     if (!userMsg.trim() || isLoading) return;
 
@@ -850,7 +878,10 @@ export default function Chatbot() {
     setMessage("");
     setIsScrolledUp(false);
     setChatHistory((prev) => [...prev, { sender: "user", text: userMsg }]);
+
+    // Set loading dan ubah ekspresi Fiska jadi mikir/bingung saat loading
     setIsLoading(true);
+    setBotEmotion("Bingung");
 
     try {
       const res = await fetch("/api/chat", {
@@ -862,11 +893,15 @@ export default function Chatbot() {
       const data = await res.json();
       const botReply = data.reply || "Maaf, sistem sedang error.";
 
+      // Update ekspresi sesuai dengan balasan JSON (atau fallback ke netral)
+      setBotEmotion(data.emotion || "Netral");
+
       setChatHistory((prev) => [...prev, { sender: "bot", text: botReply }]);
       speak(botReply);
     } catch {
       const errorReply =
         "Ck, koneksinya putus nih! Coba cek internetmu sendiri deh. 🙄";
+      setBotEmotion("Angry"); // Fiska agak ngambek kalau error
       setChatHistory((prev) => [...prev, { sender: "bot", text: errorReply }]);
       speak(errorReply);
     } finally {
@@ -895,349 +930,381 @@ export default function Chatbot() {
           : "text-white/60 hover:bg-white/10 hover:text-white"
     }`;
 
+  // Ambil gambar yang sesuai (fallback ke Netral jika emosi dari AI ngaco)
+  const currentEmotionData = botImages[botEmotion] || botImages.Netral;
+  const FiskaImage = currentEmotionData[mouthOpen ? "buka" : "diam"];
+
   return (
     <div
       className={
         open && isFullscreen
-          ? "fixed inset-0 z-[80] flex items-center justify-center bg-black/60 p-0 pt-[env(safe-area-inset-top)] backdrop-blur-sm transition-all duration-300 sm:p-4"
+          ? "fixed inset-0 z-[80] flex flex-col md:flex-row items-center justify-center gap-6 bg-black/85 p-0 pt-[env(safe-area-inset-top)] backdrop-blur-md transition-all duration-300 sm:p-4 md:p-8"
           : "fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[max(1rem,env(safe-area-inset-bottom))] z-[80]"
       }
     >
       <AnimatePresence>
         {open && (
-          <motion.div
-            role="dialog"
-            aria-modal={isFullscreen}
-            aria-label="Obrolan Asisten Virtual Fiska"
-            initial={{ opacity: 0, y: 20, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 15, scale: 0.95 }}
-            transition={{ duration: reduceMotion ? 0 : 0.2 }}
-            className={`flex flex-col overflow-hidden border border-[#7DA0CA]/25 bg-[#021024]/95 text-[#F4F9FF] shadow-[0_24px_70px_-20px_rgba(2,16,36,0.75)] backdrop-blur-2xl transition-all duration-300 ${
-              isFullscreen
-                ? "h-full max-h-none w-full max-w-4xl rounded-none sm:h-[calc(100dvh_-_2rem)] sm:rounded-3xl"
-                : "mb-3 h-[clamp(18rem,75dvh,38rem)] max-h-[calc(100dvh_-_6.5rem)] w-[min(26rem,calc(100vw_-_2rem))] rounded-[1.75rem]"
-            }`}
-          >
-            {/* Header */}
-            <div className="relative flex shrink-0 items-center justify-between gap-2 border-b border-white/10 bg-gradient-to-r from-[#052659] via-[#052659]/70 to-[#021024] px-3 py-3 sm:px-5 sm:py-3.5">
-              <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-                <div className="relative size-9 shrink-0 overflow-hidden rounded-xl border border-[#7DA0CA]/30 bg-[#052659] sm:size-10 sm:rounded-2xl">
+          <>
+            {/* AVATAR FISKA (HANYA MUNCUL SAAT FULLSCREEN DI DEKSTOP/TABLET) */}
+            {isFullscreen && (
+              <motion.div
+                key="avatar-fiska"
+                initial={{ opacity: 0, x: -50, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: -50, scale: 0.95 }}
+                transition={{ duration: 0.3 }}
+                className="hidden md:flex flex-1 h-full w-full max-w-lg relative flex-col items-center justify-end"
+              >
+                <div className="relative w-full h-[85%] pointer-events-none select-none">
                   <Image
-                    src="/images/school/bot.png"
-                    alt="Fiska Avatar"
+                    src={FiskaImage}
+                    alt="Fiska Avatar Streamer Mode"
                     fill
-                    sizes="40px"
-                    className="object-cover"
+                    className="object-contain object-bottom drop-shadow-[0_0_35px_rgba(125,160,202,0.25)] transition-opacity duration-200"
+                    priority
                   />
-                  {isSpeaking && (
-                    <span className="absolute -top-1 -right-1 z-10 flex size-3">
-                      <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#C1E8FF] opacity-75"></span>
-                      <span className="relative inline-flex size-3 rounded-full bg-[#5483B3]"></span>
-                    </span>
-                  )}
                 </div>
-                <div className="min-w-0">
-                  <h2 className="flex items-center gap-2 font-[family-name:var(--font-space-grotesk)] text-sm font-semibold tracking-tight text-white">
-                    <span className="truncate">Fiska</span>
+              </motion.div>
+            )}
+
+            {/* CHAT WINDOW */}
+            <motion.div
+              key="chat-window"
+              role="dialog"
+              aria-modal={isFullscreen}
+              aria-label="Obrolan Asisten Virtual Fiska"
+              initial={{ opacity: 0, y: 20, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 15, scale: 0.95 }}
+              transition={{ duration: reduceMotion ? 0 : 0.2 }}
+              className={`flex flex-col overflow-hidden border border-[#7DA0CA]/25 bg-[#021024]/95 text-[#F4F9FF] shadow-[0_24px_70px_-20px_rgba(2,16,36,0.75)] backdrop-blur-2xl transition-all duration-300 ${
+                isFullscreen
+                  ? "h-full max-h-none w-full max-w-2xl rounded-none sm:h-[calc(100dvh_-_2rem)] sm:rounded-3xl"
+                  : "mb-3 h-[clamp(18rem,75dvh,38rem)] max-h-[calc(100dvh_-_6.5rem)] w-[min(26rem,calc(100vw_-_2rem))] rounded-[1.75rem]"
+              }`}
+            >
+              {/* Header */}
+              <div className="relative flex shrink-0 items-center justify-between gap-2 border-b border-white/10 bg-gradient-to-r from-[#052659] via-[#052659]/70 to-[#021024] px-3 py-3 sm:px-5 sm:py-3.5">
+                <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+                  <div className="relative size-9 shrink-0 overflow-hidden rounded-xl border border-[#7DA0CA]/30 bg-[#052659] sm:size-10 sm:rounded-2xl">
+                    <Image
+                      src="/images/school/bot.png"
+                      alt="Fiska Avatar"
+                      fill
+                      sizes="40px"
+                      className="object-cover"
+                    />
                     {isSpeaking && (
-                      <span
-                        className="inline-flex h-3 items-end gap-0.5"
-                        aria-hidden="true"
-                      >
-                        <span className="h-full w-0.5 animate-pulse bg-[#C1E8FF]"></span>
-                        <span className="h-2/3 w-0.5 animate-bounce bg-[#C1E8FF]"></span>
-                        <span className="h-full w-0.5 animate-pulse bg-[#C1E8FF]"></span>
+                      <span className="absolute -top-1 -right-1 z-10 flex size-3">
+                        <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#C1E8FF] opacity-75"></span>
+                        <span className="relative inline-flex size-3 rounded-full bg-[#5483B3]"></span>
                       </span>
                     )}
-                  </h2>
-                  <p className="truncate text-[11px] text-[#C1E8FF]/70">
-                    {isVoiceLoading
-                      ? "Menyiapkan suara..."
-                      : isSpeaking
-                        ? "Sedang berbicara..."
-                        : "Asisten Virtual Sekolah"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
-                <button
-                  type="button"
-                  onClick={handleClearChat}
-                  aria-label="Hapus Riwayat Chat"
-                  title="Hapus Riwayat Chat"
-                  className={iconBtn(false, true)}
-                >
-                  <Trash2 size={16} />
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (isSpeaking) {
-                      stopAudio();
-                    }
-                    setIsAudioEnabled(!isAudioEnabled);
-                  }}
-                  aria-label={
-                    isAudioEnabled
-                      ? "Matikan Suara Fiska"
-                      : "Aktifkan Suara Fiska"
-                  }
-                  aria-pressed={isAudioEnabled}
-                  title={isAudioEnabled ? "Suara Fiska Aktif" : "Suara Muted"}
-                  className={iconBtn(isAudioEnabled)}
-                >
-                  {isAudioEnabled ? (
-                    <Volume2 size={16} />
-                  ) : (
-                    <VolumeX size={16} />
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={toggleFullscreen}
-                  aria-label={
-                    isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"
-                  }
-                  aria-pressed={isFullscreen}
-                  title={isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"}
-                  className={iconBtn(false)}
-                >
-                  {isFullscreen ? (
-                    <Minimize2 size={16} />
-                  ) : (
-                    <Maximize2 size={16} />
-                  )}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={toggleOpen}
-                  aria-label="Tutup Obrolan"
-                  title="Tutup Obrolan"
-                  className={iconBtn(false)}
-                >
-                  <Minus size={16} />
-                </button>
-              </div>
-            </div>
-
-            {/* Chat Content */}
-            <div className="relative flex min-h-0 flex-1 flex-col">
-              <div
-                ref={contentRef}
-                onScroll={handleContentScroll}
-                className={`min-h-0 flex-1 overflow-y-auto px-3.5 py-4 sm:px-4 ${SCROLLBAR}`}
-                aria-live="polite"
-              >
-                <div className="mx-auto w-full max-w-[42rem] space-y-3.5">
-                  {chatHistory.map((chat, index) =>
-                    chat.sender === "bot" ? (
-                      <motion.div
-                        initial={reduceMotion ? false : { opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        key={index}
-                        className="flex items-start gap-2.5"
-                      >
-                        <div className="relative mt-1 size-7 shrink-0 overflow-hidden rounded-full border border-[#7DA0CA]/30 bg-[#052659]">
-                          <Image
-                            src="/images/school/bot.png"
-                            alt="Bot Avatar"
-                            fill
-                            sizes="28px"
-                            className="object-cover"
-                          />
-                        </div>
-                        <div className="min-w-0 max-w-[92%] break-words [overflow-wrap:anywhere] rounded-2xl rounded-tl-sm border border-white/10 bg-white/[0.06] px-3.5 py-2.5 text-[15px] leading-relaxed text-white/90 sm:max-w-[85%]">
-                          <div className={MARKDOWN_WRAPPER}>
-                            <ReactMarkdown components={MARKDOWN_COMPONENTS}>
-                              {chat.text}
-                            </ReactMarkdown>
-                          </div>
-
-                          <button
-                            type="button"
-                            onClick={() => speak(chat.text)}
-                            aria-label="Dengarkan pesan Fiska ini"
-                            title="Dengarkan Suara Fiska"
-                            className="mt-1.5 flex items-center gap-1 text-[11px] text-[#C1E8FF] opacity-70 transition-opacity hover:opacity-100"
-                          >
-                            {isVoiceLoading &&
-                            spokenTextRef.current ===
-                              cleanTextForSpeech(chat.text) ? (
-                              <>
-                                <Loader2 size={12} className="animate-spin" />
-                                <span>Memuat suara...</span>
-                              </>
-                            ) : isSpeaking &&
-                              spokenTextRef.current ===
-                                cleanTextForSpeech(chat.text) ? (
-                              <>
-                                <Square size={12} />
-                                <span>Berhenti</span>
-                              </>
-                            ) : (
-                              <>
-                                <Volume2 size={12} />
-                                <span>Dengar</span>
-                              </>
-                            )}
-                          </button>
-                        </div>
-                      </motion.div>
-                    ) : (
-                      <motion.div
-                        initial={reduceMotion ? false : { opacity: 0, x: 8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        key={index}
-                        className="ml-auto max-w-[90%] break-words [overflow-wrap:anywhere] rounded-2xl rounded-tr-sm bg-[#C1E8FF] px-3.5 py-2.5 text-[15px] leading-relaxed font-medium break-words text-[#021024] sm:max-w-[80%] sm:text-sm"
-                      >
-                        {chat.text}
-                      </motion.div>
-                    ),
-                  )}
-
-                  {isLoading && (
-                    <div className="flex items-center gap-2.5">
-                      <div className="grid size-7 shrink-0 place-items-center rounded-full bg-[#5483B3]/20 text-[#C1E8FF]">
-                        <Loader2 size={14} className="animate-spin" />
-                      </div>
-                      <div
-                        className="flex items-center gap-2 rounded-2xl rounded-tl-sm border border-white/10 bg-white/[0.06] px-3.5 py-2.5 text-xs text-white/60"
-                        aria-live="polite"
-                      >
-                        <span>Fiska sedang berpikir</span>
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="flex items-center gap-2 font-[family-name:var(--font-space-grotesk)] text-sm font-semibold tracking-tight text-white">
+                      <span className="truncate">Fiska</span>
+                      {isSpeaking && (
                         <span
-                          className="flex items-center gap-1"
+                          className="inline-flex h-3 items-end gap-0.5"
                           aria-hidden="true"
                         >
-                          {[0, 1, 2].map((i) => (
-                            <span
-                              key={i}
-                              className={`size-1.5 rounded-full bg-[#C1E8FF]/70 ${
-                                reduceMotion ? "" : "animate-bounce"
-                              }`}
-                              style={{ animationDelay: `${i * 150}ms` }}
-                            />
-                          ))}
+                          <span className="h-full w-0.5 animate-pulse bg-[#C1E8FF]"></span>
+                          <span className="h-2/3 w-0.5 animate-bounce bg-[#C1E8FF]"></span>
+                          <span className="h-full w-0.5 animate-pulse bg-[#C1E8FF]"></span>
                         </span>
-                      </div>
-                    </div>
-                  )}
+                      )}
+                    </h2>
+                    <p className="truncate text-[11px] text-[#C1E8FF]/70">
+                      {isVoiceLoading
+                        ? "Menyiapkan suara..."
+                        : isSpeaking
+                          ? "Sedang berbicara..."
+                          : "Asisten Virtual Sekolah"}
+                    </p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Tombol scroll ke pesan terbaru */}
-              <AnimatePresence>
-                {isScrolledUp && (
-                  <motion.button
-                    type="button"
-                    initial={{ opacity: 0, y: 8, scale: 0.9 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 8, scale: 0.9 }}
-                    transition={{ duration: reduceMotion ? 0 : 0.15 }}
-                    onClick={() => scrollToBottom()}
-                    aria-label="Gulir ke pesan terbaru"
-                    title="Pesan terbaru"
-                    className="absolute right-3.5 bottom-3 z-10 grid size-9 place-items-center rounded-full border border-[#7DA0CA]/40 bg-[#052659]/90 text-[#C1E8FF] shadow-lg backdrop-blur transition-colors hover:bg-[#5483B3]/50 sm:right-4"
-                  >
-                    <ChevronDown size={16} />
-                  </motion.button>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Quick Replies */}
-            <div className="shrink-0 border-t border-white/5 bg-[#021024]/80">
-              <div
-                ref={quickRepliesRef}
-                onWheel={handleWheel}
-                onPointerDown={handlePointerDown}
-                className={`mx-auto flex w-full max-w-[42rem] snap-x gap-2 select-none px-3.5 py-2.5 sm:px-4 ${
-                  isFullscreen
-                    ? "max-h-36 flex-wrap justify-center overflow-y-auto"
-                    : "cursor-grab touch-pan-x overflow-x-auto overscroll-x-contain active:cursor-grabbing [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                }`}
-              >
-                {QUICK_REPLIES.map((text, i) => (
+                <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
                   <button
-                    key={i}
                     type="button"
-                    disabled={isLoading}
+                    onClick={handleClearChat}
+                    aria-label="Hapus Riwayat Chat"
+                    title="Hapus Riwayat Chat"
+                    className={iconBtn(false, true)}
+                  >
+                    <Trash2 size={16} />
+                  </button>
+
+                  <button
+                    type="button"
                     onClick={() => {
-                      if (dragRef.current.distance >= 5) return;
-                      dragRef.current.distance = 0;
-                      sendMessageToBot(text);
+                      if (isSpeaking) {
+                        stopAudio();
+                      }
+                      setIsAudioEnabled(!isAudioEnabled);
                     }}
-                    className="shrink-0 snap-start rounded-xl border border-[#7DA0CA]/30 bg-[#052659]/60 px-3.5 py-2 text-[13px] leading-none font-medium text-[#C1E8FF] transition-colors hover:bg-[#7DA0CA]/30 hover:text-white active:bg-[#7DA0CA]/40 disabled:opacity-50"
-                  >
-                    {text}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Form Input */}
-            <form
-              onSubmit={handleFormSubmit}
-              className="shrink-0 border-t border-white/10 bg-[#021024] px-3.5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4"
-            >
-              <div className="mx-auto w-full max-w-[42rem]">
-                <div className="flex items-end gap-1.5 rounded-2xl border border-white/15 bg-black/40 p-1.5 transition-colors focus-within:border-[#C1E8FF]/60 sm:gap-2">
-                  <textarea
-                    ref={textareaRef}
-                    rows={1}
-                    value={message}
-                    onChange={(e) => setMessage(e.target.value)}
-                    onKeyDown={handleInputKeyDown}
-                    placeholder={
-                      isListening
-                        ? "Sedang mendengarkan ucapanmu..."
-                        : isLoading
-                          ? "Tunggu bentar ya..."
-                          : "Tanya Fiska sesuatu..."
+                    aria-label={
+                      isAudioEnabled
+                        ? "Matikan Suara Fiska"
+                        : "Aktifkan Suara Fiska"
                     }
-                    disabled={isLoading}
-                    aria-label="Ketik pertanyaan"
-                    autoComplete="off"
-                    className="max-h-32 min-h-9 min-w-0 flex-1 resize-none bg-transparent px-3 py-2 text-base leading-6 text-white outline-none placeholder:text-white/40 disabled:opacity-50 sm:text-sm"
-                  />
+                    aria-pressed={isAudioEnabled}
+                    title={isAudioEnabled ? "Suara Fiska Aktif" : "Suara Muted"}
+                    className={iconBtn(isAudioEnabled)}
+                  >
+                    {isAudioEnabled ? (
+                      <Volume2 size={16} />
+                    ) : (
+                      <VolumeX size={16} />
+                    )}
+                  </button>
 
                   <button
                     type="button"
-                    onClick={toggleListening}
-                    disabled={isLoading}
-                    aria-label="Bicara dengan mikrofon"
-                    aria-pressed={isListening}
-                    title={isListening ? "Sedang Merekam..." : "Gunakan Suara"}
-                    className={`grid size-11 shrink-0 place-items-center rounded-xl transition-colors sm:size-10 ${
-                      isListening
-                        ? "animate-pulse bg-red-500/80 text-white"
-                        : "text-[#C1E8FF] hover:bg-white/10"
-                    }`}
+                    onClick={toggleFullscreen}
+                    aria-label={
+                      isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"
+                    }
+                    aria-pressed={isFullscreen}
+                    title={isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"}
+                    className={iconBtn(false)}
                   >
-                    {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+                    {isFullscreen ? (
+                      <Minimize2 size={16} />
+                    ) : (
+                      <Maximize2 size={16} />
+                    )}
                   </button>
 
                   <button
-                    type="submit"
-                    disabled={isLoading || !message.trim()}
-                    aria-label="Kirim Pesan"
-                    title="Kirim"
-                    className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#C1E8FF] text-[#021024] transition-colors hover:bg-white disabled:opacity-30 sm:size-10"
+                    type="button"
+                    onClick={toggleOpen}
+                    aria-label="Tutup Obrolan"
+                    title="Tutup Obrolan"
+                    className={iconBtn(false)}
                   >
-                    <Send size={15} />
+                    <Minus size={16} />
                   </button>
                 </div>
-                <p className="mt-1.5 hidden text-center text-[10px] text-white/30 sm:block">
-                  Enter untuk kirim · Shift+Enter untuk baris baru
-                </p>
               </div>
-            </form>
-          </motion.div>
+
+              {/* Chat Content */}
+              <div className="relative flex min-h-0 flex-1 flex-col">
+                <div
+                  ref={contentRef}
+                  onScroll={handleContentScroll}
+                  className={`min-h-0 flex-1 overflow-y-auto px-3.5 py-4 sm:px-4 ${SCROLLBAR}`}
+                  aria-live="polite"
+                >
+                  <div className="mx-auto w-full max-w-[42rem] space-y-3.5">
+                    {chatHistory.map((chat, index) =>
+                      chat.sender === "bot" ? (
+                        <motion.div
+                          initial={reduceMotion ? false : { opacity: 0, x: -8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          key={index}
+                          className="flex items-start gap-2.5"
+                        >
+                          <div className="relative mt-1 size-7 shrink-0 overflow-hidden rounded-full border border-[#7DA0CA]/30 bg-[#052659]">
+                            <Image
+                              src="/images/school/bot.png"
+                              alt="Bot Avatar"
+                              fill
+                              sizes="28px"
+                              className="object-cover"
+                            />
+                          </div>
+                          <div className="min-w-0 max-w-[92%] break-words [overflow-wrap:anywhere] rounded-2xl rounded-tl-sm border border-white/10 bg-white/[0.06] px-3.5 py-2.5 text-[15px] leading-relaxed text-white/90 sm:max-w-[85%]">
+                            <div className={MARKDOWN_WRAPPER}>
+                              <ReactMarkdown components={MARKDOWN_COMPONENTS}>
+                                {chat.text}
+                              </ReactMarkdown>
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={() => speak(chat.text)}
+                              aria-label="Dengarkan pesan Fiska ini"
+                              title="Dengarkan Suara Fiska"
+                              className="mt-1.5 flex items-center gap-1 text-[11px] text-[#C1E8FF] opacity-70 transition-opacity hover:opacity-100"
+                            >
+                              {isVoiceLoading &&
+                              spokenTextRef.current ===
+                                cleanTextForSpeech(chat.text) ? (
+                                <>
+                                  <Loader2 size={12} className="animate-spin" />
+                                  <span>Memuat suara...</span>
+                                </>
+                              ) : isSpeaking &&
+                                spokenTextRef.current ===
+                                  cleanTextForSpeech(chat.text) ? (
+                                <>
+                                  <Square size={12} />
+                                  <span>Berhenti</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Volume2 size={12} />
+                                  <span>Dengar</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </motion.div>
+                      ) : (
+                        <motion.div
+                          initial={reduceMotion ? false : { opacity: 0, x: 8 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          key={index}
+                          className="ml-auto max-w-[90%] break-words [overflow-wrap:anywhere] rounded-2xl rounded-tr-sm bg-[#C1E8FF] px-3.5 py-2.5 text-[15px] leading-relaxed font-medium break-words text-[#021024] sm:max-w-[80%] sm:text-sm"
+                        >
+                          {chat.text}
+                        </motion.div>
+                      ),
+                    )}
+
+                    {isLoading && (
+                      <div className="flex items-center gap-2.5">
+                        <div className="grid size-7 shrink-0 place-items-center rounded-full bg-[#5483B3]/20 text-[#C1E8FF]">
+                          <Loader2 size={14} className="animate-spin" />
+                        </div>
+                        <div
+                          className="flex items-center gap-2 rounded-2xl rounded-tl-sm border border-white/10 bg-white/[0.06] px-3.5 py-2.5 text-xs text-white/60"
+                          aria-live="polite"
+                        >
+                          <span>Fiska sedang berpikir</span>
+                          <span
+                            className="flex items-center gap-1"
+                            aria-hidden="true"
+                          >
+                            {[0, 1, 2].map((i) => (
+                              <span
+                                key={i}
+                                className={`size-1.5 rounded-full bg-[#C1E8FF]/70 ${
+                                  reduceMotion ? "" : "animate-bounce"
+                                }`}
+                                style={{ animationDelay: `${i * 150}ms` }}
+                              />
+                            ))}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Tombol scroll ke pesan terbaru */}
+                <AnimatePresence>
+                  {isScrolledUp && (
+                    <motion.button
+                      type="button"
+                      initial={{ opacity: 0, y: 8, scale: 0.9 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 8, scale: 0.9 }}
+                      transition={{ duration: reduceMotion ? 0 : 0.15 }}
+                      onClick={() => scrollToBottom()}
+                      aria-label="Gulir ke pesan terbaru"
+                      title="Pesan terbaru"
+                      className="absolute right-3.5 bottom-3 z-10 grid size-9 place-items-center rounded-full border border-[#7DA0CA]/40 bg-[#052659]/90 text-[#C1E8FF] shadow-lg backdrop-blur transition-colors hover:bg-[#5483B3]/50 sm:right-4"
+                    >
+                      <ChevronDown size={16} />
+                    </motion.button>
+                  )}
+                </AnimatePresence>
+              </div>
+
+              {/* Quick Replies */}
+              <div className="shrink-0 border-t border-white/5 bg-[#021024]/80">
+                <div
+                  ref={quickRepliesRef}
+                  onWheel={handleWheel}
+                  onPointerDown={handlePointerDown}
+                  className={`mx-auto flex w-full max-w-[42rem] snap-x gap-2 select-none px-3.5 py-2.5 sm:px-4 ${
+                    isFullscreen
+                      ? "max-h-36 flex-wrap justify-center overflow-y-auto"
+                      : "cursor-grab touch-pan-x overflow-x-auto overscroll-x-contain active:cursor-grabbing [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+                  }`}
+                >
+                  {QUICK_REPLIES.map((text, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      disabled={isLoading}
+                      onClick={() => {
+                        if (dragRef.current.distance >= 5) return;
+                        dragRef.current.distance = 0;
+                        sendMessageToBot(text);
+                      }}
+                      className="shrink-0 snap-start rounded-xl border border-[#7DA0CA]/30 bg-[#052659]/60 px-3.5 py-2 text-[13px] leading-none font-medium text-[#C1E8FF] transition-colors hover:bg-[#7DA0CA]/30 hover:text-white active:bg-[#7DA0CA]/40 disabled:opacity-50"
+                    >
+                      {text}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Form Input */}
+              <form
+                onSubmit={handleFormSubmit}
+                className="shrink-0 border-t border-white/10 bg-[#021024] px-3.5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4"
+              >
+                <div className="mx-auto w-full max-w-[42rem]">
+                  <div className="flex items-end gap-1.5 rounded-2xl border border-white/15 bg-black/40 p-1.5 transition-colors focus-within:border-[#C1E8FF]/60 sm:gap-2">
+                    <textarea
+                      ref={textareaRef}
+                      rows={1}
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      onKeyDown={handleInputKeyDown}
+                      placeholder={
+                        isListening
+                          ? "Sedang mendengarkan ucapanmu..."
+                          : isLoading
+                            ? "Tunggu bentar ya..."
+                            : "Tanya Fiska sesuatu..."
+                      }
+                      disabled={isLoading}
+                      aria-label="Ketik pertanyaan"
+                      autoComplete="off"
+                      className="max-h-32 min-h-9 min-w-0 flex-1 resize-none bg-transparent px-3 py-2 text-base leading-6 text-white outline-none placeholder:text-white/40 disabled:opacity-50 sm:text-sm"
+                    />
+
+                    <button
+                      type="button"
+                      onClick={toggleListening}
+                      disabled={isLoading}
+                      aria-label="Bicara dengan mikrofon"
+                      aria-pressed={isListening}
+                      title={
+                        isListening ? "Sedang Merekam..." : "Gunakan Suara"
+                      }
+                      className={`grid size-11 shrink-0 place-items-center rounded-xl transition-colors sm:size-10 ${
+                        isListening
+                          ? "animate-pulse bg-red-500/80 text-white"
+                          : "text-[#C1E8FF] hover:bg-white/10"
+                      }`}
+                    >
+                      {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+                    </button>
+
+                    <button
+                      type="submit"
+                      disabled={isLoading || !message.trim()}
+                      aria-label="Kirim Pesan"
+                      title="Kirim"
+                      className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#C1E8FF] text-[#021024] transition-colors hover:bg-white disabled:opacity-30 sm:size-10"
+                    >
+                      <Send size={15} />
+                    </button>
+                  </div>
+                  <p className="mt-1.5 hidden text-center text-[10px] text-white/30 sm:block">
+                    Enter untuk kirim · Shift+Enter untuk baris baru
+                  </p>
+                </div>
+              </form>
+            </motion.div>
+          </>
         )}
       </AnimatePresence>
 
