@@ -2,68 +2,18 @@
 
 import { useState, useRef, useEffect, useCallback } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import {
-  Send,
-  X,
-  Minus,
-  Loader2,
-  Volume2,
-  VolumeX,
-  Mic,
-  MicOff,
-  Trash2,
-  Maximize2,
-  Minimize2,
-  ChevronDown,
-  Square,
-} from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import Link from "next/link";
+import { X } from "lucide-react";
 import Image from "next/image";
-import { cleanTextForSpeech, splitIntoSpeechChunks } from "@/lib/speech";
 
-// --- MAPPING GAMBAR EKSPRESI SESUAI TERMINAL KAMU ---
-const botImages = {
-  Netral: {
-    diam: "/images/EkspresiBot/netral.png",
-    buka: "/images/EkspresiBot/netralBuka.png",
-  },
-  Happy: {
-    diam: "/images/EkspresiBot/happyDiam.png",
-    buka: "/images/EkspresiBot/HappyBuka.png",
-  },
-  Sad: {
-    diam: "/images/EkspresiBot/SadDiam.png",
-    buka: "/images/EkspresiBot/SadBuka.png",
-  },
-  Angry: {
-    diam: "/images/EkspresiBot/AngryTutup.png",
-    buka: "/images/EkspresiBot/AngryBuka.png",
-  },
-  Bingung: {
-    diam: "/images/EkspresiBot/BingungDiam.png",
-    buka: "/images/EkspresiBot/BingungBuka.png",
-  },
-};
+// Import Semua Child Component & Hooks yang baru kita buat
+import { useFiskaSpeech } from "@/hooks/useFiskaSpeech";
+import ChatHeader from "./chat/ChatHeader";
+import ChatMessages from "./chat/ChatMessages";
+import QuickReplies from "./chat/QuickReplies";
+import ChatInput from "./chat/ChatInput";
+import FiskaAvatar from "./chat/FiskaAvatar";
 
-type ChatMessage = {
-  sender: "bot" | "user";
-  text: string;
-};
-
-const QUICK_REPLIES = [
-  "Info PPDB 2027 🏫",
-  "Syarat Pendaftaran 📋",
-  "Ada jurusan apa aja? 🎓",
-  "Biaya SPP & Pendaftaran 💰",
-  "Info Beasiswa 🎁",
-  "Fasilitas & Lab 💻",
-  "Info Asrama Sekolah 🏠",
-  "Peluang Kerja Lulusan 💼",
-  "Program PKL & Magang 🏢",
-  "Ekstrakurikuler (Ekskul) ⚽",
-  "Lokasi & Kontak Sekolah 📍",
-];
+type ChatMessage = { sender: "bot" | "user"; text: string };
 
 const INITIAL_CHAT: ChatMessage[] = [
   {
@@ -72,350 +22,36 @@ const INITIAL_CHAT: ChatMessage[] = [
   },
 ];
 
-const TTS_TIMEOUT_MS = 12000;
-const TTS_MAX_ATTEMPTS = 2;
-const AUDIO_CACHE_LIMIT = 24;
-
-const PREFERRED_FEMALE_VOICES = [
-  "id-id-gadisneural",
-  "id-id-ayuneural",
-  "id-id-sitineural",
-  "id-id-dewineural",
-  "id-id-indahneural",
-  "microsoftgadisonline(natural)-indonesian(indonesia)",
-  "googlebahasaindonesia",
-];
-
-const MALE_MARKERS = ["ardi", "david", "andrew", "brandon", "pria", "guy"];
-const FEMALE_MARKERS = [
-  "gadis",
-  "female",
-  "wanita",
-  "perempuan",
-  "ayu",
-  "siti",
-  "dewi",
-  "indah",
-];
-
-function isIndonesian(v: SpeechSynthesisVoice): boolean {
-  return v.lang?.toLowerCase().startsWith("id") ?? false;
-}
-
-function isFemaleName(name: string): boolean {
-  const n = name.toLowerCase();
-  return FEMALE_MARKERS.some((m) => n.includes(m));
-}
-
-function isMaleName(name: string): boolean {
-  const n = name.toLowerCase();
-  if (n.includes("female")) return false;
-  return MALE_MARKERS.some((m) => n.includes(m));
-}
-
-function pickIndonesianFemaleVoice(
-  voices: SpeechSynthesisVoice[],
-): SpeechSynthesisVoice | null {
-  const byNormalized = new Map<string, SpeechSynthesisVoice>();
-  for (const v of voices) {
-    byNormalized.set(v.name.toLowerCase().replace(/\s+/g, ""), v);
-  }
-  for (const wanted of PREFERRED_FEMALE_VOICES) {
-    const hit = byNormalized.get(wanted);
-    if (hit) return hit;
-  }
-  return (
-    voices
-      .filter((v) => isIndonesian(v) && !isMaleName(v.name))
-      .sort((a, b) => {
-        const femaleA = isFemaleName(a.name) ? 0 : 1;
-        const femaleB = isFemaleName(b.name) ? 0 : 1;
-        if (femaleA !== femaleB) return femaleA - femaleB;
-        return a.name.localeCompare(b.name);
-      })[0] ?? null
-  );
-}
-
-let cachedFemaleVoice: SpeechSynthesisVoice | null = null;
-
-function getVoicesWhenReady(onReady: (voices: SpeechSynthesisVoice[]) => void) {
-  const synth = window.speechSynthesis;
-  const existing = synth.getVoices();
-  if (existing.length > 0) {
-    onReady(existing);
-    return;
-  }
-
-  let finished = false;
-  const finish = () => {
-    if (finished) return;
-    finished = true;
-    synth.onvoiceschanged = null;
-    window.clearTimeout(safetyTimer);
-    onReady(synth.getVoices());
-  };
-
-  const safetyTimer = window.setTimeout(finish, 2000);
-  synth.onvoiceschanged = finish;
-}
-
-function playFallbackSpeech(text: string, onEnd: () => void) {
-  if (typeof window === "undefined" || !("speechSynthesis" in window)) {
-    onEnd();
-    return;
-  }
-
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "id-ID";
-  utterance.rate = 0.95;
-  utterance.pitch = 1;
-  utterance.volume = 1;
-
-  let finished = false;
-  let safetyTimer: number | null = null;
-  const finish = () => {
-    if (finished) return;
-    finished = true;
-    if (safetyTimer !== null) window.clearTimeout(safetyTimer);
-    onEnd();
-  };
-
-  getVoicesWhenReady((voices) => {
-    const voice =
-      cachedFemaleVoice && voices.includes(cachedFemaleVoice)
-        ? cachedFemaleVoice
-        : pickIndonesianFemaleVoice(voices);
-
-    if (voice) {
-      cachedFemaleVoice = voice;
-      utterance.voice = voice;
-      utterance.lang = voice.lang;
-    }
-
-    utterance.onend = finish;
-    utterance.onerror = finish;
-    safetyTimer = window.setTimeout(finish, 60000);
-    window.speechSynthesis.speak(utterance);
-  });
-}
-
-let sharedAudioCtx: AudioContext | null = null;
-
-function getAudioContext(): AudioContext | null {
-  if (typeof window === "undefined") return null;
-  const Ctor =
-    window.AudioContext ??
-    (window as unknown as { webkitAudioContext?: typeof AudioContext })
-      .webkitAudioContext;
-  if (!Ctor) return null;
-
-  if (!sharedAudioCtx || sharedAudioCtx.state === "closed") {
-    try {
-      sharedAudioCtx = new Ctor();
-    } catch {
-      return null;
-    }
-  }
-  return sharedAudioCtx;
-}
-
-async function playSoftAudio(
-  blob: Blob,
-  isActive: () => boolean,
-  registerSource: (source: AudioBufferSourceNode | null) => void,
-  registerTimer: (timer: number | null) => void,
-): Promise<boolean> {
-  const ctx = getAudioContext();
-  if (!ctx) return false;
-
-  try {
-    if (ctx.state === "suspended") {
-      await ctx.resume();
-    }
-
-    const arrayBuffer = await blob.arrayBuffer();
-    if (!isActive()) return true;
-    const buffer = await ctx.decodeAudioData(arrayBuffer);
-    if (!isActive()) return true;
-
-    const source = ctx.createBufferSource();
-    source.buffer = buffer;
-
-    const highpass = ctx.createBiquadFilter();
-    highpass.type = "highpass";
-    highpass.frequency.value = 180;
-    highpass.Q.value = 0.7;
-
-    const warmth = ctx.createBiquadFilter();
-    warmth.type = "lowshelf";
-    warmth.frequency.value = 300;
-    warmth.gain.value = -2.5;
-
-    const soften = ctx.createBiquadFilter();
-    soften.type = "highshelf";
-    soften.frequency.value = 5500;
-    soften.gain.value = -5;
-
-    const compressor = ctx.createDynamicsCompressor();
-    compressor.threshold.value = -22;
-    compressor.knee.value = 20;
-    compressor.ratio.value = 2.5;
-    compressor.attack.value = 0.01;
-    compressor.release.value = 0.25;
-
-    source.connect(highpass);
-    highpass.connect(warmth);
-    warmth.connect(soften);
-    soften.connect(compressor);
-    compressor.connect(ctx.destination);
-
-    return await new Promise<boolean>((resolve) => {
-      let finished = false;
-      const finish = () => {
-        if (finished) return;
-        finished = true;
-        registerTimer(null);
-        registerSource(null);
-        resolve(true);
-      };
-
-      source.onended = finish;
-      registerSource(source);
-      registerTimer(window.setTimeout(finish, (buffer.duration + 1.5) * 1000));
-      source.start();
-    });
-  } catch {
-    return false;
-  }
-}
-
-const MARKDOWN_COMPONENTS = {
-  a: ({
-    href = "",
-    children,
-  }: {
-    href?: string;
-    children?: React.ReactNode;
-  }) => {
-    const isInternal = href.startsWith("/");
-    const className =
-      "font-medium text-[#7DA0CA] underline decoration-[#7DA0CA]/40 underline-offset-2 transition-colors hover:text-[#C1E8FF] hover:decoration-[#C1E8FF]";
-
-    if (isInternal) {
-      return (
-        <Link href={href} className={className}>
-          {children}
-        </Link>
-      );
-    }
-    return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={className}
-      >
-        {children}
-      </a>
-    );
-  },
-  table: ({ children }: { children?: React.ReactNode }) => (
-    <div className="my-2 w-full overflow-x-auto overscroll-x-contain [scrollbar-width:thin]">
-      <table className="w-full min-w-[18rem] border-collapse text-left text-[0.85em]">
-        {children}
-      </table>
-    </div>
-  ),
-  th: ({ children }: { children?: React.ReactNode }) => (
-    <th className="border-b border-[#7DA0CA]/30 px-2 py-1.5 font-semibold text-[#C1E8FF]">
-      {children}
-    </th>
-  ),
-  td: ({ children }: { children?: React.ReactNode }) => (
-    <td className="border-b border-white/5 px-2 py-1.5 align-top">
-      {children}
-    </td>
-  ),
-};
-
-const MARKDOWN_WRAPPER =
-  "[&>*:first-child]:mt-0 [&>*:last-child]:mb-0 " +
-  "[&_p]:my-1.5 [&_ul]:my-1.5 [&_ol]:my-1.5 " +
-  "[&_ul]:list-disc [&_ol]:list-decimal [&_ul]:pl-5 [&_ol]:pl-5 " +
-  "[&_li]:my-1 [&_li::marker]:text-[#7DA0CA] " +
-  "[&_strong]:font-semibold [&_strong]:text-white " +
-  "[&_em]:text-white/80 " +
-  "[&_h1]:my-2 [&_h1]:text-base [&_h1]:font-semibold [&_h1]:text-white " +
-  "[&_h2]:my-2 [&_h2]:text-base [&_h2]:font-semibold [&_h2]:text-white " +
-  "[&_h3]:my-2 [&_h3]:text-[0.95em] [&_h3]:font-semibold [&_h3]:text-white " +
-  "[&_code]:rounded-md [&_code]:bg-black/40 [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:text-[0.85em] [&_code]:text-[#C1E8FF] " +
-  "[&_pre]:my-2 [&_pre]:overflow-x-auto [&_pre]:rounded-xl [&_pre]:bg-black/40 [&_pre]:p-3 [&_pre]:text-[0.8em] " +
-  "[&_blockquote]:my-2 [&_blockquote]:border-l-2 [&_blockquote]:border-[#7DA0CA]/60 [&_blockquote]:pl-3 [&_blockquote]:text-white/70 " +
-  "[&_hr]:my-3 [&_hr]:border-white/10";
-
-const SCROLLBAR =
-  "[scrollbar-width:thin] [scrollbar-color:#5483B3_transparent] " +
-  "[&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent " +
-  "[&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#5483B3]/60";
-
 export default function Chatbot() {
   const [open, setOpen] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isAudioEnabled, setIsAudioEnabled] = useState(true);
-  const [isSpeaking, setIsSpeaking] = useState(false);
-  const [isVoiceLoading, setIsVoiceLoading] = useState(false);
-  const [isListening, setIsListening] = useState(false);
   const [isScrolledUp, setIsScrolledUp] = useState(false);
   const [isCoarsePointer, setIsCoarsePointer] = useState(false);
-
   const [chatHistory, setChatHistory] = useState<ChatMessage[]>(INITIAL_CHAT);
+  const [botEmotion, setBotEmotion] = useState<
+    "Netral" | "Happy" | "Sad" | "Angry" | "Bingung"
+  >("Netral");
 
-  // --- STATE UNTUK AVATAR ---
-  const [botEmotion, setBotEmotion] =
-    useState<keyof typeof botImages>("Netral");
-  const [mouthOpen, setMouthOpen] = useState(false);
-
-  const isLoadedRef = useRef(false);
   const contentRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const softSourceRef = useRef<AudioBufferSourceNode | null>(null);
-  const softTimerRef = useRef<number | null>(null);
-  const recognitionRef = useRef<any>(null);
+  const isLoadedRef = useRef(false);
   const isScrolledUpRef = useRef(false);
-
-  const speakSeqRef = useRef(0);
-  const speakAbortRef = useRef<AbortController | null>(null);
-  const spokenTextRef = useRef<string | null>(null);
-  const audioBlobCacheRef = useRef<Map<string, Blob>>(new Map());
-
-  const quickRepliesRef = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const dragRef = useRef({
-    active: false,
-    startX: 0,
-    scrollLeft: 0,
-    distance: 0,
-  });
-
   const reduceMotion = useReducedMotion();
 
-  // --- EFEK ANIMASI MULUT SAAT BICARA ---
-  useEffect(() => {
-    let interval: number;
-    if (isSpeaking) {
-      interval = window.setInterval(() => {
-        setMouthOpen((prev) => !prev);
-      }, 150); // Kecepatan ganti frame buka-tutup mulut
-    } else {
-      setMouthOpen(false); // Pastikan tertutup saat diam
-    }
-    return () => window.clearInterval(interval);
-  }, [isSpeaking]);
+  // Memanggil Custom Hook Logika Suara
+  const {
+    isSpeaking,
+    isVoiceLoading,
+    isListening,
+    speak,
+    stopAudio,
+    toggleListening,
+    spokenTextRef,
+  } = useFiskaSpeech(isAudioEnabled, (text) => setMessage(text));
 
+  // --- EFEK SISTEM & UI ---
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
     const mq = window.matchMedia("(pointer: coarse)");
@@ -425,396 +61,32 @@ export default function Chatbot() {
     return () => mq.removeEventListener("change", apply);
   }, []);
 
-  const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
-    const el = quickRepliesRef.current;
-    if (!el) return;
-    dragRef.current = {
-      active: true,
-      startX: e.clientX - el.getBoundingClientRect().left,
-      scrollLeft: el.scrollLeft,
-      distance: 0,
-    };
-    setIsDragging(true);
-  };
-
-  useEffect(() => {
-    if (!isDragging) return;
-    const el = quickRepliesRef.current;
-    if (!el) return;
-
-    const onPointerMove = (e: PointerEvent) => {
-      const state = dragRef.current;
-      if (!state.active) return;
-      const x = e.clientX - el.getBoundingClientRect().left;
-      const walk = (x - state.startX) * 1.5;
-      state.distance = Math.abs(walk);
-      el.scrollLeft = state.scrollLeft - walk;
-    };
-
-    const stopDragging = () => {
-      dragRef.current.active = false;
-      setIsDragging(false);
-    };
-
-    window.addEventListener("pointermove", onPointerMove);
-    window.addEventListener("pointerup", stopDragging);
-    window.addEventListener("pointercancel", stopDragging);
-    return () => {
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", stopDragging);
-      window.removeEventListener("pointercancel", stopDragging);
-    };
-  }, [isDragging]);
-
-  const handleWheel = (e: React.WheelEvent) => {
-    if (quickRepliesRef.current && !isFullscreen) {
-      quickRepliesRef.current.scrollLeft += e.deltaY;
-    }
-  };
-
   useEffect(() => {
     const saved = localStorage.getItem("fiska_chat_history");
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setChatHistory(parsed);
-        }
+        if (Array.isArray(parsed) && parsed.length > 0) setChatHistory(parsed);
       } catch (err) {
-        console.error("Gagal memuat riwayat obrolan:", err);
+        console.error(err);
       }
     }
     isLoadedRef.current = true;
   }, []);
 
   useEffect(() => {
-    if (isLoadedRef.current) {
+    if (isLoadedRef.current)
       localStorage.setItem("fiska_chat_history", JSON.stringify(chatHistory));
-    }
   }, [chatHistory]);
-
-  const stopAudio = useCallback(() => {
-    speakSeqRef.current += 1;
-    if (speakAbortRef.current) {
-      try {
-        speakAbortRef.current.abort();
-      } catch {}
-      speakAbortRef.current = null;
-    }
-
-    if (typeof window !== "undefined" && "speechSynthesis" in window) {
-      window.speechSynthesis.cancel();
-    }
-    if (audioRef.current) {
-      audioRef.current.onended = null;
-      audioRef.current.onerror = null;
-      audioRef.current.pause();
-      audioRef.current = null;
-    }
-    if (softSourceRef.current) {
-      softSourceRef.current.onended = null;
-      try {
-        softSourceRef.current.stop();
-      } catch {}
-      softSourceRef.current = null;
-    }
-    if (softTimerRef.current !== null) {
-      window.clearTimeout(softTimerRef.current);
-      softTimerRef.current = null;
-    }
-    spokenTextRef.current = null;
-    setIsSpeaking(false);
-    setIsVoiceLoading(false);
-  }, []);
-
-  const fetchTtsBlob = useCallback(
-    async (
-      cleanText: string,
-      signal: AbortSignal,
-      provider?: "elevenlabs" | "edge",
-      key?: 1 | 2,
-    ): Promise<Blob | null> => {
-      const cached = audioBlobCacheRef.current.get(cleanText);
-      if (cached) return cached;
-
-      for (let attempt = 0; attempt < TTS_MAX_ATTEMPTS; attempt++) {
-        if (signal.aborted) return null;
-
-        const controller = new AbortController();
-        const onAbort = () => controller.abort();
-        signal.addEventListener("abort", onAbort, { once: true });
-        const timeoutId = window.setTimeout(
-          () => controller.abort(),
-          TTS_TIMEOUT_MS,
-        );
-
-        try {
-          const res = await fetch("/api/tts", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: cleanText, provider, key }),
-            signal: controller.signal,
-          });
-
-          if (res.ok) {
-            const blob = await res.blob();
-            const cache = audioBlobCacheRef.current;
-            cache.delete(cleanText);
-            cache.set(cleanText, blob);
-            while (cache.size > AUDIO_CACHE_LIMIT) {
-              const oldest = cache.keys().next().value;
-              if (oldest === undefined) break;
-              cache.delete(oldest);
-            }
-            return blob;
-          }
-        } catch {
-        } finally {
-          window.clearTimeout(timeoutId);
-          signal.removeEventListener("abort", onAbort);
-        }
-      }
-
-      return null;
-    },
-    [],
-  );
-
-  const playAudioElement = useCallback(
-    (blob: Blob, isActive: () => boolean): Promise<void> =>
-      new Promise((resolve) => {
-        if (!isActive()) {
-          resolve();
-          return;
-        }
-
-        const audioUrl = URL.createObjectURL(blob);
-        const audio = new Audio(audioUrl);
-        audioRef.current = audio;
-
-        let done = false;
-        const cleanup = () => {
-          if (done) return;
-          done = true;
-          if (audioRef.current === audio) audioRef.current = null;
-          URL.revokeObjectURL(audioUrl);
-          resolve();
-        };
-
-        audio.onended = cleanup;
-        audio.onerror = cleanup;
-        audio.play().catch(cleanup);
-      }),
-    [],
-  );
-
-  const speak = useCallback(
-    async (text: string) => {
-      if (!isAudioEnabled) return;
-
-      const cleanText = cleanTextForSpeech(text);
-      if (!cleanText) return;
-
-      if (isVoiceLoading && spokenTextRef.current === cleanText) return;
-      if (isSpeaking && spokenTextRef.current === cleanText) {
-        stopAudio();
-        return;
-      }
-
-      stopAudio();
-
-      const myId = speakSeqRef.current;
-      const controller = new AbortController();
-      speakAbortRef.current = controller;
-      const isActive = () =>
-        speakSeqRef.current === myId && !controller.signal.aborted;
-
-      spokenTextRef.current = cleanText;
-      setIsSpeaking(true);
-      setIsVoiceLoading(true);
-
-      const chunks = splitIntoSpeechChunks(cleanText);
-
-      let provider: "elevenlabs" | "edge" | undefined;
-      let key: 1 | 2 | undefined;
-      try {
-        const probe = await fetch(
-          `/api/tts?chars=${encodeURIComponent(cleanText.length)}`,
-          { signal: controller.signal, cache: "no-store" },
-        );
-        if (probe.ok) {
-          const data = (await probe.json()) as {
-            provider?: "elevenlabs" | "edge";
-            key?: 1 | 2;
-          };
-          provider = data.provider;
-          key = data.key === 2 ? 2 : data.key === 1 ? 1 : undefined;
-        }
-      } catch {
-        provider = undefined;
-        key = undefined;
-      }
-      if (!isActive()) return;
-
-      const pending: Array<Promise<Blob | null> | undefined> = [];
-      const ensure = (index: number): Promise<Blob | null> | undefined => {
-        if (index >= chunks.length) return undefined;
-        if (!pending[index]) {
-          pending[index] = fetchTtsBlob(
-            chunks[index],
-            controller.signal,
-            provider,
-            key,
-          );
-        }
-        return pending[index];
-      };
-
-      ensure(0);
-      ensure(1);
-
-      try {
-        for (let i = 0; i < chunks.length; i++) {
-          if (!isActive()) return;
-
-          const blob = await ensure(i);
-          if (!isActive()) return;
-
-          ensure(i + 1);
-
-          if (!blob) {
-            if (i === 0) {
-              setIsVoiceLoading(false);
-              playFallbackSpeech(cleanText, () => {
-                if (!isActive()) return;
-                spokenTextRef.current = null;
-                speakAbortRef.current = null;
-                setIsSpeaking(false);
-                setIsVoiceLoading(false);
-              });
-              return;
-            }
-            continue;
-          }
-
-          setIsVoiceLoading(false);
-
-          const playedSoftly = await playSoftAudio(
-            blob,
-            isActive,
-            (source) => {
-              if (isActive()) softSourceRef.current = source;
-            },
-            (timer) => {
-              if (isActive()) softTimerRef.current = timer;
-            },
-          );
-          if (!isActive()) return;
-
-          if (!playedSoftly) {
-            await playAudioElement(blob, isActive);
-            if (!isActive()) return;
-          }
-        }
-
-        if (isActive()) {
-          spokenTextRef.current = null;
-          speakAbortRef.current = null;
-          setIsSpeaking(false);
-          setIsVoiceLoading(false);
-        }
-      } catch {
-        if (!isActive()) return;
-        setIsVoiceLoading(false);
-        playFallbackSpeech(cleanText, () => {
-          if (!isActive()) return;
-          spokenTextRef.current = null;
-          speakAbortRef.current = null;
-          setIsSpeaking(false);
-          setIsVoiceLoading(false);
-        });
-      }
-    },
-    [
-      isAudioEnabled,
-      isSpeaking,
-      isVoiceLoading,
-      stopAudio,
-      fetchTtsBlob,
-      playAudioElement,
-    ],
-  );
-
-  const toggleListening = () => {
-    if (typeof window === "undefined") return;
-
-    const SpeechRecognition =
-      (window as any).SpeechRecognition ||
-      (window as any).webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      alert("Browser kamu belum mendukung Speech Recognition.");
-      return;
-    }
-
-    if (isListening) {
-      recognitionRef.current?.stop();
-      setIsListening(false);
-      return;
-    }
-
-    const recognition = new SpeechRecognition();
-    recognitionRef.current = recognition;
-    recognition.lang = "id-ID";
-    recognition.interimResults = false;
-
-    recognition.onstart = () => setIsListening(true);
-    recognition.onend = () => setIsListening(false);
-    recognition.onerror = () => setIsListening(false);
-
-    recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
-      if (transcript) {
-        setMessage(transcript);
-      }
-    };
-
-    recognition.start();
-  };
-
-  const handleClearChat = () => {
-    stopAudio();
-    setChatHistory(INITIAL_CHAT);
-    setIsScrolledUp(false);
-    localStorage.removeItem("fiska_chat_history");
-  };
-
-  const toggleOpen = useCallback(() => {
-    stopAudio();
-    if (open) {
-      setIsFullscreen(false);
-      setIsScrolledUp(false);
-    }
-    setOpen((prev) => !prev);
-  }, [open, stopAudio]);
-
-  const toggleFullscreen = () => {
-    setIsFullscreen((prev) => !prev);
-  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && open) {
-        if (isFullscreen) {
-          setIsFullscreen(false);
-        } else {
-          toggleOpen();
-        }
-      }
+      if (e.key === "Escape" && open)
+        isFullscreen ? setIsFullscreen(false) : toggleOpen();
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [open, isFullscreen, toggleOpen]);
+  }, [open, isFullscreen]);
 
   useEffect(() => {
     if (!open || !isFullscreen) return;
@@ -825,19 +97,7 @@ export default function Chatbot() {
     };
   }, [open, isFullscreen]);
 
-  useEffect(() => {
-    if (!open || isCoarsePointer) return;
-    const timer = window.setTimeout(() => textareaRef.current?.focus(), 250);
-    return () => window.clearTimeout(timer);
-  }, [open, isCoarsePointer]);
-
-  useEffect(() => {
-    const el = textareaRef.current;
-    if (!el) return;
-    el.style.height = "auto";
-    el.style.height = `${Math.min(el.scrollHeight, 128)}px`;
-  }, [message, open]);
-
+  // --- LOGIKA SCROLL ---
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     const el = contentRef.current;
     if (!el) return;
@@ -848,8 +108,7 @@ export default function Chatbot() {
   const handleContentScroll = () => {
     const el = contentRef.current;
     if (!el) return;
-    const distance = el.scrollHeight - el.scrollTop - el.clientHeight;
-    setIsScrolledUp(distance > 80);
+    setIsScrolledUp(el.scrollHeight - el.scrollTop - el.clientHeight > 80);
   };
 
   useEffect(() => {
@@ -857,29 +116,34 @@ export default function Chatbot() {
   }, [isScrolledUp]);
 
   useEffect(() => {
-    if (open && !isScrolledUpRef.current) {
+    if (open && !isScrolledUpRef.current)
       scrollToBottom(reduceMotion ? "auto" : "smooth");
-    }
   }, [chatHistory, isLoading, open, scrollToBottom, reduceMotion]);
 
-  useEffect(() => {
-    return () => {
-      stopAudio();
-      recognitionRef.current?.stop();
-    };
-  }, [stopAudio]);
+  // --- ACTIONS ---
+  const toggleOpen = useCallback(() => {
+    stopAudio();
+    if (open) {
+      setIsFullscreen(false);
+      setIsScrolledUp(false);
+    }
+    setOpen((prev) => !prev);
+  }, [open, stopAudio]);
 
-  // --- LOGIKA KIRIM PESAN KE AI ---
+  const handleClearChat = () => {
+    stopAudio();
+    setChatHistory(INITIAL_CHAT);
+    setIsScrolledUp(false);
+    localStorage.removeItem("fiska_chat_history");
+  };
+
+  // --- LOGIKA FETCH KE AI (API) ---
   const sendMessageToBot = async (userMsg: string) => {
     if (!userMsg.trim() || isLoading) return;
-
     stopAudio();
-
     setMessage("");
     setIsScrolledUp(false);
     setChatHistory((prev) => [...prev, { sender: "user", text: userMsg }]);
-
-    // Set loading dan ubah ekspresi Fiska jadi mikir/bingung saat loading
     setIsLoading(true);
     setBotEmotion("Bingung");
 
@@ -889,50 +153,21 @@ export default function Chatbot() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message: userMsg, history: chatHistory }),
       });
-
       const data = await res.json();
       const botReply = data.reply || "Maaf, sistem sedang error.";
-
-      // Update ekspresi sesuai dengan balasan JSON (atau fallback ke netral)
       setBotEmotion(data.emotion || "Netral");
-
       setChatHistory((prev) => [...prev, { sender: "bot", text: botReply }]);
       speak(botReply);
     } catch {
-      const errorReply =
+      const errTxt =
         "Ck, koneksinya putus nih! Coba cek internetmu sendiri deh. 🙄";
-      setBotEmotion("Angry"); // Fiska agak ngambek kalau error
-      setChatHistory((prev) => [...prev, { sender: "bot", text: errorReply }]);
-      speak(errorReply);
+      setBotEmotion("Angry");
+      setChatHistory((prev) => [...prev, { sender: "bot", text: errTxt }]);
+      speak(errTxt);
     } finally {
       setIsLoading(false);
     }
   };
-
-  const handleFormSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    sendMessageToBot(message);
-  };
-
-  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === "Enter" && !e.shiftKey && !isCoarsePointer) {
-      e.preventDefault();
-      sendMessageToBot(message);
-    }
-  };
-
-  const iconBtn = (active: boolean, danger = false) =>
-    `grid size-10 shrink-0 place-items-center rounded-xl transition-colors ${
-      danger
-        ? "text-white/60 hover:bg-red-500/15 hover:text-red-400"
-        : active
-          ? "text-[#C1E8FF] bg-[#5483B3]/25 hover:bg-[#5483B3]/45"
-          : "text-white/60 hover:bg-white/10 hover:text-white"
-    }`;
-
-  // Ambil gambar yang sesuai (fallback ke Netral jika emosi dari AI ngaco)
-  const currentEmotionData = botImages[botEmotion] || botImages.Netral;
-  const FiskaImage = currentEmotionData[mouthOpen ? "buka" : "diam"];
 
   return (
     <div
@@ -945,364 +180,59 @@ export default function Chatbot() {
       <AnimatePresence>
         {open && (
           <>
-            {/* AVATAR FISKA (HANYA MUNCUL SAAT FULLSCREEN DI DEKSTOP/TABLET) */}
-            {isFullscreen && (
-              <motion.div
-                key="avatar-fiska"
-                initial={{ opacity: 0, x: -50, scale: 0.95 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                exit={{ opacity: 0, x: -50, scale: 0.95 }}
-                transition={{ duration: 0.3 }}
-                className="hidden md:flex flex-1 h-full w-full max-w-lg relative flex-col items-center justify-end"
-              >
-                <div className="relative w-full h-[85%] pointer-events-none select-none">
-                  <Image
-                    src={FiskaImage}
-                    alt="Fiska Avatar Streamer Mode"
-                    fill
-                    className="object-contain object-bottom drop-shadow-[0_0_35px_rgba(125,160,202,0.25)] transition-opacity duration-200"
-                    priority
-                  />
-                </div>
-              </motion.div>
-            )}
-
-            {/* CHAT WINDOW */}
+            <FiskaAvatar
+              isFullscreen={isFullscreen}
+              botEmotion={botEmotion}
+              isSpeaking={isSpeaking}
+            />
             <motion.div
               key="chat-window"
               role="dialog"
               aria-modal={isFullscreen}
-              aria-label="Obrolan Asisten Virtual Fiska"
               initial={{ opacity: 0, y: 20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 15, scale: 0.95 }}
               transition={{ duration: reduceMotion ? 0 : 0.2 }}
-              className={`flex flex-col overflow-hidden border border-[#7DA0CA]/25 bg-[#021024]/95 text-[#F4F9FF] shadow-[0_24px_70px_-20px_rgba(2,16,36,0.75)] backdrop-blur-2xl transition-all duration-300 ${
-                isFullscreen
-                  ? "h-full max-h-none w-full max-w-2xl rounded-none sm:h-[calc(100dvh_-_2rem)] sm:rounded-3xl"
-                  : "mb-3 h-[clamp(18rem,75dvh,38rem)] max-h-[calc(100dvh_-_6.5rem)] w-[min(26rem,calc(100vw_-_2rem))] rounded-[1.75rem]"
-              }`}
+              className={`flex flex-col overflow-hidden border border-[#7DA0CA]/25 bg-[#021024]/95 text-[#F4F9FF] shadow-[0_24px_70px_-20px_rgba(2,16,36,0.75)] backdrop-blur-2xl transition-all duration-300 ${isFullscreen ? "h-full max-h-none w-full max-w-2xl rounded-none sm:h-[calc(100dvh_-_2rem)] sm:rounded-3xl" : "mb-3 h-[clamp(18rem,75dvh,38rem)] max-h-[calc(100dvh_-_6.5rem)] w-[min(26rem,calc(100vw_-_2rem))] rounded-[1.75rem]"}`}
             >
-              {/* Header */}
-              <div className="relative flex shrink-0 items-center justify-between gap-2 border-b border-white/10 bg-gradient-to-r from-[#052659] via-[#052659]/70 to-[#021024] px-3 py-3 sm:px-5 sm:py-3.5">
-                <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-                  <div className="relative size-9 shrink-0 overflow-hidden rounded-xl border border-[#7DA0CA]/30 bg-[#052659] sm:size-10 sm:rounded-2xl">
-                    <Image
-                      src="/images/school/bot.png"
-                      alt="Fiska Avatar"
-                      fill
-                      sizes="40px"
-                      className="object-cover"
-                    />
-                    {isSpeaking && (
-                      <span className="absolute -top-1 -right-1 z-10 flex size-3">
-                        <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#C1E8FF] opacity-75"></span>
-                        <span className="relative inline-flex size-3 rounded-full bg-[#5483B3]"></span>
-                      </span>
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <h2 className="flex items-center gap-2 font-[family-name:var(--font-space-grotesk)] text-sm font-semibold tracking-tight text-white">
-                      <span className="truncate">Fiska</span>
-                      {isSpeaking && (
-                        <span
-                          className="inline-flex h-3 items-end gap-0.5"
-                          aria-hidden="true"
-                        >
-                          <span className="h-full w-0.5 animate-pulse bg-[#C1E8FF]"></span>
-                          <span className="h-2/3 w-0.5 animate-bounce bg-[#C1E8FF]"></span>
-                          <span className="h-full w-0.5 animate-pulse bg-[#C1E8FF]"></span>
-                        </span>
-                      )}
-                    </h2>
-                    <p className="truncate text-[11px] text-[#C1E8FF]/70">
-                      {isVoiceLoading
-                        ? "Menyiapkan suara..."
-                        : isSpeaking
-                          ? "Sedang berbicara..."
-                          : "Asisten Virtual Sekolah"}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex shrink-0 items-center gap-0.5 sm:gap-1">
-                  <button
-                    type="button"
-                    onClick={handleClearChat}
-                    aria-label="Hapus Riwayat Chat"
-                    title="Hapus Riwayat Chat"
-                    className={iconBtn(false, true)}
-                  >
-                    <Trash2 size={16} />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (isSpeaking) {
-                        stopAudio();
-                      }
-                      setIsAudioEnabled(!isAudioEnabled);
-                    }}
-                    aria-label={
-                      isAudioEnabled
-                        ? "Matikan Suara Fiska"
-                        : "Aktifkan Suara Fiska"
-                    }
-                    aria-pressed={isAudioEnabled}
-                    title={isAudioEnabled ? "Suara Fiska Aktif" : "Suara Muted"}
-                    className={iconBtn(isAudioEnabled)}
-                  >
-                    {isAudioEnabled ? (
-                      <Volume2 size={16} />
-                    ) : (
-                      <VolumeX size={16} />
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={toggleFullscreen}
-                    aria-label={
-                      isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"
-                    }
-                    aria-pressed={isFullscreen}
-                    title={isFullscreen ? "Keluar Layar Penuh" : "Layar Penuh"}
-                    className={iconBtn(false)}
-                  >
-                    {isFullscreen ? (
-                      <Minimize2 size={16} />
-                    ) : (
-                      <Maximize2 size={16} />
-                    )}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={toggleOpen}
-                    aria-label="Tutup Obrolan"
-                    title="Tutup Obrolan"
-                    className={iconBtn(false)}
-                  >
-                    <Minus size={16} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Chat Content */}
-              <div className="relative flex min-h-0 flex-1 flex-col">
-                <div
-                  ref={contentRef}
-                  onScroll={handleContentScroll}
-                  className={`min-h-0 flex-1 overflow-y-auto px-3.5 py-4 sm:px-4 ${SCROLLBAR}`}
-                  aria-live="polite"
-                >
-                  <div className="mx-auto w-full max-w-[42rem] space-y-3.5">
-                    {chatHistory.map((chat, index) =>
-                      chat.sender === "bot" ? (
-                        <motion.div
-                          initial={reduceMotion ? false : { opacity: 0, x: -8 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          key={index}
-                          className="flex items-start gap-2.5"
-                        >
-                          <div className="relative mt-1 size-7 shrink-0 overflow-hidden rounded-full border border-[#7DA0CA]/30 bg-[#052659]">
-                            <Image
-                              src="/images/school/bot.png"
-                              alt="Bot Avatar"
-                              fill
-                              sizes="28px"
-                              className="object-cover"
-                            />
-                          </div>
-                          <div className="min-w-0 max-w-[92%] break-words [overflow-wrap:anywhere] rounded-2xl rounded-tl-sm border border-white/10 bg-white/[0.06] px-3.5 py-2.5 text-[15px] leading-relaxed text-white/90 sm:max-w-[85%]">
-                            <div className={MARKDOWN_WRAPPER}>
-                              <ReactMarkdown components={MARKDOWN_COMPONENTS}>
-                                {chat.text}
-                              </ReactMarkdown>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => speak(chat.text)}
-                              aria-label="Dengarkan pesan Fiska ini"
-                              title="Dengarkan Suara Fiska"
-                              className="mt-1.5 flex items-center gap-1 text-[11px] text-[#C1E8FF] opacity-70 transition-opacity hover:opacity-100"
-                            >
-                              {isVoiceLoading &&
-                              spokenTextRef.current ===
-                                cleanTextForSpeech(chat.text) ? (
-                                <>
-                                  <Loader2 size={12} className="animate-spin" />
-                                  <span>Memuat suara...</span>
-                                </>
-                              ) : isSpeaking &&
-                                spokenTextRef.current ===
-                                  cleanTextForSpeech(chat.text) ? (
-                                <>
-                                  <Square size={12} />
-                                  <span>Berhenti</span>
-                                </>
-                              ) : (
-                                <>
-                                  <Volume2 size={12} />
-                                  <span>Dengar</span>
-                                </>
-                              )}
-                            </button>
-                          </div>
-                        </motion.div>
-                      ) : (
-                        <motion.div
-                          initial={reduceMotion ? false : { opacity: 0, x: 8 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          key={index}
-                          className="ml-auto max-w-[90%] break-words [overflow-wrap:anywhere] rounded-2xl rounded-tr-sm bg-[#C1E8FF] px-3.5 py-2.5 text-[15px] leading-relaxed font-medium break-words text-[#021024] sm:max-w-[80%] sm:text-sm"
-                        >
-                          {chat.text}
-                        </motion.div>
-                      ),
-                    )}
-
-                    {isLoading && (
-                      <div className="flex items-center gap-2.5">
-                        <div className="grid size-7 shrink-0 place-items-center rounded-full bg-[#5483B3]/20 text-[#C1E8FF]">
-                          <Loader2 size={14} className="animate-spin" />
-                        </div>
-                        <div
-                          className="flex items-center gap-2 rounded-2xl rounded-tl-sm border border-white/10 bg-white/[0.06] px-3.5 py-2.5 text-xs text-white/60"
-                          aria-live="polite"
-                        >
-                          <span>Fiska sedang berpikir</span>
-                          <span
-                            className="flex items-center gap-1"
-                            aria-hidden="true"
-                          >
-                            {[0, 1, 2].map((i) => (
-                              <span
-                                key={i}
-                                className={`size-1.5 rounded-full bg-[#C1E8FF]/70 ${
-                                  reduceMotion ? "" : "animate-bounce"
-                                }`}
-                                style={{ animationDelay: `${i * 150}ms` }}
-                              />
-                            ))}
-                          </span>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Tombol scroll ke pesan terbaru */}
-                <AnimatePresence>
-                  {isScrolledUp && (
-                    <motion.button
-                      type="button"
-                      initial={{ opacity: 0, y: 8, scale: 0.9 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: 8, scale: 0.9 }}
-                      transition={{ duration: reduceMotion ? 0 : 0.15 }}
-                      onClick={() => scrollToBottom()}
-                      aria-label="Gulir ke pesan terbaru"
-                      title="Pesan terbaru"
-                      className="absolute right-3.5 bottom-3 z-10 grid size-9 place-items-center rounded-full border border-[#7DA0CA]/40 bg-[#052659]/90 text-[#C1E8FF] shadow-lg backdrop-blur transition-colors hover:bg-[#5483B3]/50 sm:right-4"
-                    >
-                      <ChevronDown size={16} />
-                    </motion.button>
-                  )}
-                </AnimatePresence>
-              </div>
-
-              {/* Quick Replies */}
-              <div className="shrink-0 border-t border-white/5 bg-[#021024]/80">
-                <div
-                  ref={quickRepliesRef}
-                  onWheel={handleWheel}
-                  onPointerDown={handlePointerDown}
-                  className={`mx-auto flex w-full max-w-[42rem] snap-x gap-2 select-none px-3.5 py-2.5 sm:px-4 ${
-                    isFullscreen
-                      ? "max-h-36 flex-wrap justify-center overflow-y-auto"
-                      : "cursor-grab touch-pan-x overflow-x-auto overscroll-x-contain active:cursor-grabbing [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-                  }`}
-                >
-                  {QUICK_REPLIES.map((text, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      disabled={isLoading}
-                      onClick={() => {
-                        if (dragRef.current.distance >= 5) return;
-                        dragRef.current.distance = 0;
-                        sendMessageToBot(text);
-                      }}
-                      className="shrink-0 snap-start rounded-xl border border-[#7DA0CA]/30 bg-[#052659]/60 px-3.5 py-2 text-[13px] leading-none font-medium text-[#C1E8FF] transition-colors hover:bg-[#7DA0CA]/30 hover:text-white active:bg-[#7DA0CA]/40 disabled:opacity-50"
-                    >
-                      {text}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Form Input */}
-              <form
-                onSubmit={handleFormSubmit}
-                className="shrink-0 border-t border-white/10 bg-[#021024] px-3.5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-4"
-              >
-                <div className="mx-auto w-full max-w-[42rem]">
-                  <div className="flex items-end gap-1.5 rounded-2xl border border-white/15 bg-black/40 p-1.5 transition-colors focus-within:border-[#C1E8FF]/60 sm:gap-2">
-                    <textarea
-                      ref={textareaRef}
-                      rows={1}
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      onKeyDown={handleInputKeyDown}
-                      placeholder={
-                        isListening
-                          ? "Sedang mendengarkan ucapanmu..."
-                          : isLoading
-                            ? "Tunggu bentar ya..."
-                            : "Tanya Fiska sesuatu..."
-                      }
-                      disabled={isLoading}
-                      aria-label="Ketik pertanyaan"
-                      autoComplete="off"
-                      className="max-h-32 min-h-9 min-w-0 flex-1 resize-none bg-transparent px-3 py-2 text-base leading-6 text-white outline-none placeholder:text-white/40 disabled:opacity-50 sm:text-sm"
-                    />
-
-                    <button
-                      type="button"
-                      onClick={toggleListening}
-                      disabled={isLoading}
-                      aria-label="Bicara dengan mikrofon"
-                      aria-pressed={isListening}
-                      title={
-                        isListening ? "Sedang Merekam..." : "Gunakan Suara"
-                      }
-                      className={`grid size-11 shrink-0 place-items-center rounded-xl transition-colors sm:size-10 ${
-                        isListening
-                          ? "animate-pulse bg-red-500/80 text-white"
-                          : "text-[#C1E8FF] hover:bg-white/10"
-                      }`}
-                    >
-                      {isListening ? <MicOff size={16} /> : <Mic size={16} />}
-                    </button>
-
-                    <button
-                      type="submit"
-                      disabled={isLoading || !message.trim()}
-                      aria-label="Kirim Pesan"
-                      title="Kirim"
-                      className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#C1E8FF] text-[#021024] transition-colors hover:bg-white disabled:opacity-30 sm:size-10"
-                    >
-                      <Send size={15} />
-                    </button>
-                  </div>
-                  <p className="mt-1.5 hidden text-center text-[10px] text-white/30 sm:block">
-                    Enter untuk kirim · Shift+Enter untuk baris baru
-                  </p>
-                </div>
-              </form>
+              <ChatHeader
+                isSpeaking={isSpeaking}
+                isVoiceLoading={isVoiceLoading}
+                isAudioEnabled={isAudioEnabled}
+                isFullscreen={isFullscreen}
+                onClearChat={handleClearChat}
+                onToggleAudio={() => setIsAudioEnabled(!isAudioEnabled)}
+                onToggleFullscreen={() => setIsFullscreen(!isFullscreen)}
+                onToggleOpen={toggleOpen}
+              />
+              <ChatMessages
+                chatHistory={chatHistory}
+                isLoading={isLoading}
+                isSpeaking={isSpeaking}
+                isVoiceLoading={isVoiceLoading}
+                spokenTextRef={spokenTextRef}
+                onSpeak={speak}
+                contentRef={contentRef}
+                handleContentScroll={handleContentScroll}
+                isScrolledUp={isScrolledUp}
+                scrollToBottom={scrollToBottom}
+                reduceMotion={reduceMotion ?? false}
+              />
+              <QuickReplies
+                isLoading={isLoading}
+                onSendMessage={sendMessageToBot}
+                isFullscreen={isFullscreen}
+              />
+              <ChatInput
+                message={message}
+                setMessage={setMessage}
+                isLoading={isLoading}
+                isListening={isListening}
+                onSendMessage={sendMessageToBot}
+                onToggleListening={toggleListening}
+                isCoarsePointer={isCoarsePointer}
+                open={open}
+              />
             </motion.div>
           </>
         )}
@@ -1313,8 +243,6 @@ export default function Chatbot() {
           whileHover={reduceMotion ? undefined : { scale: 1.05 }}
           whileTap={reduceMotion ? undefined : { scale: 0.95 }}
           onClick={toggleOpen}
-          aria-label={open ? "Tutup Chat" : "Buka Obrolan Fiska"}
-          aria-expanded={open}
           className="relative ml-auto grid size-14 place-items-center rounded-full border border-[#C1E8FF]/50 bg-[#052659] text-[#C1E8FF] shadow-[0_8px_30px_rgba(125,160,202,0.35)] transition-colors hover:border-[#C1E8FF] sm:size-16"
         >
           {!open && !reduceMotion && (
