@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import { useState } from "react";
 import type { ComponentType, KeyboardEvent } from "react";
@@ -370,7 +370,7 @@ export default function CompetencyShowcase({
                   duration: reduce ? 0 : 0.45,
                   delay: reduce ? 0 : 0.04 + i * 0.06,
                 }}
-                className={`min-w-0 transition-[flex-grow,flex-basis] duration-500 ease-out motion-reduce:transition-none ${
+                className={`min-w-0 transition-[flex-grow,flex-basis] duration-700 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
                   isActive
                     ? "sm:col-span-2 lg:min-w-[300px] lg:flex-[3_1_0%]"
                     : "lg:min-w-[140px] lg:flex-[1_1_0%]"
@@ -381,25 +381,35 @@ export default function CompetencyShowcase({
                   onClick={() => setActive(i)}
                   aria-expanded={isActive}
                   aria-label={`Kompetensi ${num}: ${skill}`}
-                  className={`relative flex min-h-[64px] w-full cursor-pointer flex-col justify-between gap-4 overflow-hidden rounded-3xl border p-4 text-left transition-colors duration-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C1E8FF] active:scale-[0.99] motion-reduce:transition-none sm:p-5 lg:h-full lg:min-h-[320px] ${
+                  className={`relative flex min-h-[64px] w-full cursor-pointer flex-col justify-between gap-4 overflow-hidden rounded-3xl border p-4 text-left transition-[border-color,background-color,box-shadow,transform] duration-500 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C1E8FF] active:scale-[0.99] motion-reduce:transition-none sm:p-5 lg:h-full lg:min-h-[320px] ${
                     isActive
                       ? "border-[#7DA0CA]/60 bg-white/[0.06] shadow-[0_24px_60px_-24px_rgba(84,131,179,0.4)]"
                       : "border-white/10 bg-white/[0.03] hover:-translate-y-0.5 hover:border-[#7DA0CA]/40 hover:bg-white/[0.05] motion-reduce:hover:translate-y-0"
                   }`}
                 >
-                  {isActive && activity ? (
-                    <span aria-hidden="true" className="pointer-events-none absolute inset-0 block">
-                      <Image
-                        src={activity}
-                        alt=""
-                        fill
-                        sizes="(min-width: 1024px) 60vw, 100vw"
-                        loading="lazy"
-                        className="object-cover opacity-40 [mask-image:linear-gradient(to_top,black_25%,transparent_80%)] lg:opacity-55 lg:[mask-image:linear-gradient(to_right,transparent_5%,black_60%)]"
-                      />
-                      <span className="absolute inset-0 block bg-gradient-to-t from-[#021024]/95 via-[#021024]/50 to-[#021024]/20 lg:bg-gradient-to-r lg:from-[#021024]/95 lg:via-[#021024]/55 lg:to-[#021024]/10" />
-                    </span>
-                  ) : null}
+                  <AnimatePresence>
+                    {isActive && activity ? (
+                      <motion.span
+                        key="activity-background"
+                        aria-hidden="true"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: reduce ? 0 : 0.55, ease: [0.22, 1, 0.36, 1] }}
+                        className="pointer-events-none absolute inset-0 block"
+                      >
+                        <Image
+                          src={activity}
+                          alt=""
+                          fill
+                          sizes="(min-width: 1024px) 60vw, 100vw"
+                          loading="lazy"
+                          className="object-cover opacity-40 [mask-image:linear-gradient(to_top,black_25%,transparent_80%)] lg:opacity-55 lg:[mask-image:linear-gradient(to_right,transparent_5%,black_60%)]"
+                        />
+                        <span className="absolute inset-0 block bg-gradient-to-t from-[#021024]/95 via-[#021024]/50 to-[#021024]/20 lg:bg-gradient-to-r lg:from-[#021024]/95 lg:via-[#021024]/55 lg:to-[#021024]/10" />
+                      </motion.span>
+                    ) : null}
+                  </AnimatePresence>
                   <span className="relative z-10 flex items-start justify-between gap-2">
                     <span
                       className={`grid size-10 shrink-0 place-items-center rounded-xl border transition-colors duration-300 ${
@@ -416,7 +426,7 @@ export default function CompetencyShowcase({
                   </span>
                   <span className="relative z-10 block min-w-0">
                     <span
-                      className={`block min-w-0 tracking-tight ${
+                      className={`block min-w-0 tracking-tight transition-[font-size,line-height] duration-500 [transition-timing-function:cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none ${
                         isActive
                           ? "max-w-md text-balance text-[clamp(24px,1.5rem+1.6vw,38px)] font-medium leading-[1.12] text-white"
                           : "text-[13px] font-medium leading-[1.5] break-words text-white/85"
@@ -424,8 +434,16 @@ export default function CompetencyShowcase({
                     >
                       {skill}
                     </span>
+                    <AnimatePresence mode="wait" initial={false}>
                     {isActive ? (
-                      <span className="mt-4 block max-w-md">
+                      <motion.span
+                        key="active-details"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 5 }}
+                        transition={{ duration: reduce ? 0 : 0.3, ease: "easeOut" }}
+                        className="mt-4 block max-w-md"
+                      >
                         <span className="block h-px w-full bg-gradient-to-r from-[#7DA0CA]/60 to-transparent" />
                         <span className="mt-3 flex items-center justify-between gap-3">
                           <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-[#C1E8FF]/80">
@@ -433,16 +451,24 @@ export default function CompetencyShowcase({
                           </span>
                           <ArrowUpRight size={17} className="shrink-0 text-[#C1E8FF]" />
                         </span>
-                      </span>
+                      </motion.span>
                     ) : (
-                      <span className="mt-3 flex items-center justify-between gap-2">
+                      <motion.span
+                        key="inactive-details"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: reduce ? 0 : 0.2 }}
+                        className="mt-3 flex items-center justify-between gap-2"
+                      >
                         <span className="h-px w-8 shrink-0 bg-white/15" />
                         <ArrowUpRight
                           size={15}
                           className="shrink-0 text-[#7DA0CA]/50"
                         />
-                      </span>
+                      </motion.span>
                     )}
+                    </AnimatePresence>
                   </span>
                 </button>
               </motion.li>

@@ -188,7 +188,7 @@ export default function HeroSection() {
       </section>
 
       <div className="relative z-20 -mt-12 px-4 sm:px-6">
-        <div className="mx-auto flex max-w-7xl snap-x overflow-x-auto rounded-md bg-[#343A70] shadow-xl sm:grid sm:grid-cols-2 lg:grid-cols-4 lg:overflow-hidden">
+        <div className="mx-auto grid max-w-7xl grid-cols-2 overflow-hidden rounded-md bg-[#343A70] shadow-xl lg:grid-cols-4">
           {[
             {
               title: "TEFA",
@@ -220,7 +220,7 @@ export default function HeroSection() {
               href={href}
               target={href.startsWith("http") ? "_blank" : undefined}
               rel={href.startsWith("http") ? "noreferrer" : undefined}
-              className={`group flex min-h-24 min-w-[230px] snap-start items-center gap-4 px-5 py-4 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-[#C1E8FF] sm:min-w-0 sm:px-6 ${index === 3 ? "bg-[#C2410C] text-white hover:bg-[#9A3412]" : "text-white hover:bg-white/[.06] lg:border-r lg:border-white/10"}`}
+              className={`group flex min-h-24 items-center gap-4 px-4 py-4 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-[#C1E8FF] sm:px-6 ${index === 3 ? "bg-[#C2410C] text-white hover:bg-[#9A3412]" : "text-white hover:bg-white/[.06] lg:border-r lg:border-white/10"}`}
             >
               <Icon
                 aria-hidden="true"
@@ -240,14 +240,6 @@ export default function HeroSection() {
                   {description}
                 </span>
               </span>
-              {index === 3 && (
-                <ArrowRight
-                  aria-hidden="true"
-                  size={27}
-                  strokeWidth={1.7}
-                  className="shrink-0 transition-transform group-hover:translate-x-1"
-                />
-              )}
             </a>
           ))}
         </div>
