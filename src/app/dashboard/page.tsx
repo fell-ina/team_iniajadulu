@@ -52,10 +52,6 @@ export default async function DashboardPage() {
 
   const role = profil?.role;
 
-  if (role !== "admin" && role !== "guru") {
-    redirect("/?alasan=role-ditolak");
-  }
-
   const inisial = (profil?.nama ?? "A").trim().charAt(0).toUpperCase() || "A";
 
   return (

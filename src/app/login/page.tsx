@@ -213,6 +213,13 @@ export default function LoginPage() {
               {loading ? "Memeriksa akun..." : "Masuk"}
             </button>
           </form>
+
+          <p className={styles.footerText}>
+            Belum memiliki akun?
+            <Link href="/register" className={styles.footerLink}>
+              Daftar sekarang
+            </Link>
+          </p>
         </div>
       </section>
     </main>

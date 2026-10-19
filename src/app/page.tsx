@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, ArrowUpRight, Clock3, GraduationCap, Menu, UserRound, UsersRound, X, Handshake, Trophy } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, Clock3, GraduationCap, LogOut, Menu, UserRound, UsersRound, X, Handshake, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import HeroSection from '@/components/HeroSection';
 import Chatbot from '@/components/Chatbot';
@@ -160,7 +160,6 @@ function Facilities(){
       title: 'Asrama Putri',
       subtitle: 'Lingkungan tinggal siswi',
       detail: 'Asrama putri berbentuk komplek perumahan dengan banyak unit yang terbagi dalam beberapa ruangan. Dilengkapi ruang makan, pembinaan dan pengawasan ketat, serta kegiatan minat dan olahraga. Informasi biaya dapat ditanyakan langsung kepada pihak sekolah.',
-      // TODO: ganti dengan foto asli komplek asrama putri
       image: '/images/facilities/placeholder.svg',
       imageAlt: 'Asrama putri (foto segera hadir)',
     },
@@ -168,7 +167,6 @@ function Facilities(){
       title: 'Lapangan Basket Atap',
       subtitle: 'Area Olahraga',
       detail: 'Lapangan basket beratap yang dapat digunakan untuk latihan, pertandingan, dan kegiatan olahraga siswa dalam segala cuaca.',
-      // TODO: ganti dengan foto asli lapangan basket beratap
       image: '/images/school/hero-lapangan.jpg',
       imageAlt: 'Lapangan basket beratap (foto sementara)',
     },
@@ -176,7 +174,6 @@ function Facilities(){
       title: 'Lapangan Rumput',
       subtitle: 'Area Olahraga & Upacara',
       detail: 'Lapangan rumput serbaguna untuk sepak bola, upacara bendera, dan berbagai kegiatan luar ruang sekolah.',
-      // TODO: ganti dengan foto asli lapangan rumput
       image: '/images/school/hero-courtyard.jpg',
       imageAlt: 'Lapangan rumput (foto sementara)',
     },
@@ -184,7 +181,6 @@ function Facilities(){
       title: 'Masjid',
       subtitle: 'Tempat Ibadah',
       detail: 'Masjid sekolah sebagai pusat ibadah dan pembinaan rohani warga sekolah dalam lingkungan yang nyaman.',
-      // TODO: ganti dengan foto asli masjid
       image: '/images/school/building-main.png',
       imageAlt: 'Masjid sekolah (foto sementara)',
     },
@@ -192,7 +188,6 @@ function Facilities(){
       title: 'Toilet',
       subtitle: 'Sanitasi Siswa',
       detail: 'Fasilitas toilet yang bersih dan terawat untuk menunjang kenyamanan siswa selama beraktivitas di sekolah.',
-      // TODO: ganti dengan foto asli toilet
       image: '/images/school/building-secondary.png',
       imageAlt: 'Toilet sekolah (foto sementara)',
     },
@@ -200,7 +195,6 @@ function Facilities(){
       title: 'Parkiran',
       subtitle: 'Area Parkir',
       detail: 'Area parkir yang tertata untuk kendaraan siswa, guru, dan tamu di lingkungan sekolah.',
-      // TODO: ganti dengan foto asli parkiran
       image: '/images/school/tkr.jpg',
       imageAlt: 'Parkiran sekolah (foto sementara)',
     },
@@ -208,7 +202,6 @@ function Facilities(){
       title: 'Aula',
       subtitle: 'Gedung Serbaguna',
       detail: 'Ruang serbaguna untuk berbagai acara dan kegiatan besar sekolah, seperti wisuda, seminar, dan pentas seni.',
-      // TODO: ganti dengan foto asli aula
       image: '/images/facilities/placeholder.svg',
       imageAlt: 'Aula sekolah (foto segera hadir)',
     },
@@ -216,7 +209,6 @@ function Facilities(){
       title: 'Lab & Bengkel Praktik',
       subtitle: 'Praktik Kejuruan',
       detail: 'Ruang Praktik Siswa (RPS), bengkel/gedung TKR, dan GameLab untuk pembelajaran praktik sesuai bidang keahlian.',
-      // TODO: ganti dengan foto asli lab/bengkel (saat ini foto lab komputer)
       image: '/images/school/hero-lab.jpg',
       imageAlt: 'Lab dan bengkel praktik (foto sementara)',
     },
@@ -224,7 +216,6 @@ function Facilities(){
       title: 'Kantin',
       subtitle: 'Kuliner Sekolah',
       detail: 'Area kantin dengan beragam pilihan makanan dan minuman untuk siswa selama waktu istirahat.',
-      // TODO: ganti dengan foto asli kantin
       image: '/images/facilities/placeholder.svg',
       imageAlt: 'Kantin sekolah (foto segera hadir)',
     },
@@ -232,7 +223,6 @@ function Facilities(){
       title: 'UKS',
       subtitle: 'Kesehatan Siswa',
       detail: 'Layanan kesehatan dasar dan pertolongan pertama bagi siswa yang membutuhkan selama beraktivitas di sekolah.',
-      // TODO: ganti dengan foto asli ruang UKS
       image: '/images/facilities/placeholder.svg',
       imageAlt: 'Ruang UKS (foto segera hadir)',
     },
@@ -574,7 +564,102 @@ function Future(){
     </div>
   </div></section>;
 }
-function Footer(){return <footer className="bg-[#021024] px-6 py-16 text-white"><div className="mx-auto max-w-7xl"><div className="grid gap-10 border-b border-white/10 pb-12 md:grid-cols-3"><div><p className="text-lg font-semibold">SMK TELEKOMUNIKASI<br/>TUNAS HARAPAN</p><p className="mt-4 max-w-sm text-sm leading-7 text-white/40">Jl. Umbul Senjoyo I, No. 3 Desa Bener, Kec. Tengaran, Kabupaten Semarang, Jawa Tengah.</p><div className="mt-4 flex flex-wrap gap-x-5 gap-y-3"><a href="https://www.facebook.com/smktelekomunikasitunasharapan/" target="_blank" rel="noreferrer" aria-label="Facebook SMK Telekomunikasi Tunas Harapan" className="inline-flex items-center gap-2 text-sm text-white/55 transition hover:text-[#C1E8FF]"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M13.4 21v-8h2.7l.4-3.1h-3.1v-2c0-.9.3-1.5 1.6-1.5h1.7V3.6c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.1H7.2V13H10v8h3.4Z"/></svg><span>@smktelekomunikasitunasharapan</span></a><a href="https://www.instagram.com/smk_tth?stkn=MWhua3ZxdjA1MWNmYw==" target="_blank" rel="noreferrer" aria-label="Instagram SMK Telekomunikasi Tunas Harapan" className="inline-flex items-center gap-2 text-sm text-white/55 transition hover:text-[#C1E8FF]"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".75" fill="currentColor" stroke="none"/></svg><span>@smk_tth</span></a><a href="https://www.youtube.com/channel/UCiQWJxhNpa_mq_WxnvbEBQQ" target="_blank" rel="noreferrer" aria-label="YouTube Telsa TV SMKTTH" className="inline-flex items-center gap-2 text-sm text-white/55 transition hover:text-[#C1E8FF]"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.6 3.6 12 3.6 12 3.6s-7.6 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.8.5 9.4.5 9.4.5s7.6 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4l6.3 3.6-6.3 3.6Z"/></svg><span>@telsatv
-</span></a></div></div><div><p className="eyebrow text-[#7DA0CA]">EXPLORE</p><div className="mt-4 space-y-3 text-sm text-white/45"><a className="block hover:text-white" href="#profil">Profil</a><a className="block hover:text-white" href="#jurusan">Jurusan</a><a className="block hover:text-white" href="#industri">Mitra Industri</a><Link className="block hover:text-white" href="/berita">Berita</Link></div></div><div><p className="eyebrow text-[#7DA0CA]">PPDB / ADMIN</p><a href="https://spmb.tunasharapan.info" target="_blank" rel="noreferrer" className="mt-4 inline-flex rounded-full bg-white px-5 py-3 text-[10px] font-bold uppercase tracking-[.15em] text-[#021024]">Buka SPMB <ArrowUpRight size={14}/></a><Link href="/login" className="mt-3 inline-flex rounded-full border border-white/15 px-5 py-3 text-[10px] font-bold uppercase tracking-[.15em] text-white/70 transition hover:border-white/30 hover:text-white">Login Admin <ArrowUpRight size={14}/></Link></div></div><p className="pt-7 text-[10px] uppercase tracking-[.18em] text-white/25">© 2026 SMK Telekomunikasi Tunas Harapan · Frontend concept</p></div></footer>}
+type AuthStatus = 'loading' | 'loggedIn' | 'loggedOut';
 
-export default function Home(){return <main id="top" className="overflow-x-hidden"><Nav/><HeroSection/><Profile/><Majors/><News/><Facilities/><Partners/><Achievements/><Future/><Footer/><Chatbot/></main>}
+function WelcomeCard({ nama, onClose }: { nama: string; onClose?: () => void }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 16 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -16 }}
+      transition={{ duration: 0.4, ease: 'easeOut' }}
+      className="mx-auto flex max-w-7xl items-center justify-between gap-5 rounded-[1.6rem] border border-white/20 bg-white/95 px-6 py-5 shadow-[0_24px_50px_-28px_rgba(2,16,36,.55)] backdrop-blur-md sm:px-8 sm:py-6"
+    >
+      <div className="flex items-center gap-4 sm:gap-5 min-w-0">
+        <span className="grid size-12 shrink-0 place-items-center rounded-full bg-[#052659] text-base font-bold text-[#C1E8FF] sm:size-14">
+          {nama.trim().charAt(0).toUpperCase()}
+        </span>
+        <div className="min-w-0">
+          <h2 className="display text-xl text-[#021024] sm:text-3xl">Selamat datang, {nama}.</h2>
+          <p className="mt-1 text-xs text-[#021024]/60 sm:text-sm">..ke website SMK Telkom Tunas Harapan.</p>
+        </div>
+      </div>
+      {onClose && (
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Tutup pesan selamat datang"
+          className="grid size-9 shrink-0 place-items-center rounded-full text-[#021024]/40 transition hover:bg-[#021024]/10 hover:text-[#021024]"
+        >
+          <X size={18} />
+        </button>
+      )}
+    </motion.div>
+  );
+}
+
+function Footer({ status, onLogout }: { status: AuthStatus; onLogout: () => void }) {
+  return <footer className="bg-[#021024] px-6 py-16 text-white"><div className="mx-auto max-w-7xl"><div className="grid gap-10 border-b border-white/10 pb-12 md:grid-cols-3"><div><p className="text-lg font-semibold">SMK TELEKOMUNIKASI<br/>TUNAS HARAPAN</p><p className="mt-4 max-w-sm text-sm leading-7 text-white/40">Jl. Umbul Senjoyo I, No. 3 Desa Bener, Kec. Tengaran, Kabupaten Semarang, Jawa Tengah.</p><div className="mt-4 flex flex-wrap gap-x-5 gap-y-3"><a href="https://www.facebook.com/smktelekomunikasitunasharapan/" target="_blank" rel="noreferrer" aria-label="Facebook SMK Telekomunikasi Tunas Harapan" className="inline-flex items-center gap-2 text-sm text-white/55 transition hover:text-[#C1E8FF]"><svg viewBox="0 0 24 24" width="17" height="17" fill="currentColor" aria-hidden="true"><path d="M13.4 21v-8h2.7l.4-3.1h-3.1v-2c0-.9.3-1.5 1.6-1.5h1.7V3.6c-.3 0-1.3-.1-2.5-.1-2.5 0-4.2 1.5-4.2 4.3v2.1H7.2V13H10v8h3.4Z"/></svg><span>@smktelekomunikasitunasharapan</span></a><a href="https://www.instagram.com/smk_tth?stkn=MWhua3ZxdjA1MWNmYw==" target="_blank" rel="noreferrer" aria-label="Instagram SMK Telekomunikasi Tunas Harapan" className="inline-flex items-center gap-2 text-sm text-white/55 transition hover:text-[#C1E8FF]"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r=".75" fill="currentColor" stroke="none"/></svg><span>@smk_tth</span></a><a href="https://www.youtube.com/channel/UCiQWJxhNpa_mq_WxnvbEBQQ" target="_blank" rel="noreferrer" aria-label="YouTube Telsa TV SMKTTH" className="inline-flex items-center gap-2 text-sm text-white/55 transition hover:text-[#C1E8FF]"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" aria-hidden="true"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.6 3.6 12 3.6 12 3.6s-7.6 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.8.5 9.4.5 9.4.5s7.6 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4l6.3 3.6-6.3 3.6Z"/></svg><span>@telsatv
+</span></a></div></div><div><p className="eyebrow text-[#7DA0CA]">EXPLORE</p><div className="mt-4 space-y-3 text-sm text-white/45"><a className="block hover:text-white" href="#profil">Profil</a><a className="block hover:text-white" href="#jurusan">Jurusan</a><a className="block hover:text-white" href="#industri">Mitra Industri</a><Link className="block hover:text-white" href="/berita">Berita</Link></div></div><div><p className="eyebrow text-[#7DA0CA]">PPDB / LOGIN</p><a href="https://spmb.tunasharapan.info" target="_blank" rel="noreferrer" className="mt-4 inline-flex rounded-full bg-white px-5 py-3 text-[10px] font-bold uppercase tracking-[.15em] text-[#021024]">Buka SPMB <ArrowUpRight size={14}/></a>{status === 'loggedIn' ? (
+<button type="button" onClick={onLogout} className="mt-3 inline-flex rounded-full bg-red-600 px-5 py-3 text-[10px] font-bold uppercase tracking-[.15em] text-white transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400">Logout <LogOut size={14}/></button>
+) : status === 'loading' ? null : (
+<Link href="/login" className="mt-3 inline-flex rounded-full border border-white/15 px-5 py-3 text-[10px] font-bold uppercase tracking-[.15em] text-white/70 transition hover:border-white/30 hover:text-white">Login <ArrowUpRight size={14}/></Link>
+)}</div></div><p className="pt-7 text-[10px] uppercase tracking-[.18em] text-white/25">© 2026 SMK Telekomunikasi Tunas Harapan · Frontend concept</p></div></footer>}
+
+export default function Home(){
+  const [status, setStatus] = useState<AuthStatus>('loading');
+  const [nama, setNama] = useState('');
+  const [showWelcome, setShowWelcome] = useState(true);
+
+  useEffect(() => {
+    let batal = false;
+    fetch('/api/auth/me', { credentials: 'same-origin' })
+      .then(r => r.json())
+      .then(d => {
+        if (batal) return;
+        if (d?.ok && typeof d.nama === 'string' && d.nama.trim()) {
+          setNama(d.nama.trim());
+          setStatus('loggedIn');
+        } else {
+          setStatus('loggedOut');
+        }
+      })
+      .catch(() => { if (!batal) setStatus('loggedOut'); });
+    return () => { batal = true; };
+  }, []);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+    } catch {
+      // tetap muat ulang meski endpoint logout gagal dijangkau
+    }
+    window.location.reload();
+  };
+
+  return <main id="top" className="relative overflow-x-hidden">
+    <Nav/>
+
+    <AnimatePresence>
+      {status === 'loggedIn' && showWelcome && (
+        <motion.section
+          key="welcome-card"
+          initial={{ opacity: 0, y: -16 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -16 }}
+          transition={{ duration: 0.35, ease: 'easeOut' }}
+          className="fixed inset-x-0 top-20 z-40 pointer-events-none px-4 sm:top-24 sm:px-6"
+        >
+          <div className="pointer-events-auto">
+            <WelcomeCard nama={nama} onClose={() => setShowWelcome(false)}/>
+          </div>
+        </motion.section>
+      )}
+    </AnimatePresence>
+
+    <HeroSection/>
+    <Profile/><Majors/><News/><Facilities/><Partners/><Achievements/><Future/>
+    <Footer status={status} onLogout={handleLogout}/>
+    <Chatbot/>
+  </main>;
+}
