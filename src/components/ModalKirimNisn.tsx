@@ -126,7 +126,8 @@ export default function ModalKirimNisn({ terbuka, onTutup, onSukses }: Props) {
                 </h3>
                 <p className="relative mt-2 text-xs leading-relaxed text-[#C1E8FF]/65">
                   NISN dipakai admin untuk memastikan Anda benar-benar siswa SMK Telekomunikasi
-                  Tunas Harapan.
+                  Tunas Harapan. Setelah disetujui, NISN juga bisa dipakai untuk masuk di halaman
+                  login.
                 </p>
               </div>
 

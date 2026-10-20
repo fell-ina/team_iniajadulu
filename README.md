@@ -100,6 +100,32 @@ pnpm dev
 ```
 Buka `http://localhost:3000` pada peramban Anda.
 
+### 6. Mengaktifkan "Daftar / Masuk dengan Google"
+
+Client ID & Client Secret Google **tidak disimpan di repo ini**, melainkan di Supabase:
+
+1. Buka [Google Cloud Console](https://console.cloud.google.com/apis/credentials) → **Create Credentials → OAuth client ID → Web application**.
+2. Tambahkan **Authorized redirect URI**: `https://<project-ref>.supabase.co/auth/v1/callback`
+   (project-ref adalah bagian dari `NEXT_PUBLIC_SUPABASE_URL`).
+3. Salin **Client ID** dan **Client Secret** ke Supabase Dashboard → **Authentication → Providers → Google** → aktifkan provider tersebut.
+4. Di Supabase → **Authentication → URL Configuration**, pastikan *Site URL* dan *Redirect URLs* memuat
+   `http://localhost:3000/auth/callback` serta `https://domain-anda.vercel.app/auth/callback`.
+
+Alur kodenya: `src/components/TombolGoogle.tsx` → `src/app/api/auth/google/route.ts` → Google →
+`src/app/auth/callback/route.ts` (membuat baris di tabel `users` dengan role `siswa`, lalu mengalihkan sesuai role).
+
+### 7. Masuk dengan NISN (Pelajar Terverifikasi)
+
+Pelajar yang pengajuan NISN-nya sudah **diverifikasi** admin/guru
+(`users.verification_status = 'terverifikasi'`) dapat masuk di `/login` dengan mengetik
+**10 digit NISN** pada kolom identitas, ditambah kata sandi akunnya.
+
+Logikanya ada di `src/app/api/auth/login/route.ts`: kolom `users.nisn` dicari, status
+verifikasi dipastikan `terverifikasi`, lalu email Supabase Auth milik akun itu dipakai untuk
+login. Status `belum` / `menunggu` / `ditolak` akan ditolak dengan pesan yang sesuai.
+NISN tidak menggantikan kata sandi — akun yang mendaftar lewat Google tetap harus memakai
+tombol “Masuk dengan Google”.
+
 ---
 
 ## 🚀 Status Rencana Pengembangan (Roadmap)
