@@ -2,10 +2,11 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { ArrowLeft, ArrowRight, ArrowUpRight, Clock3, GraduationCap, LogOut, Menu, UserRound, UsersRound, X, Handshake, Trophy } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowUpRight, BadgeCheck, Clock3, GraduationCap, LogOut, Menu, UserRound, UsersRound, X, Handshake, Trophy } from 'lucide-react';
 import Link from 'next/link';
 import HeroSection from '@/components/HeroSection';
 import Chatbot from '@/components/Chatbot';
+import ModalKirimNisn from '@/components/ModalKirimNisn';
 
 const nav = [['Profil','#profil'],['Jurusan','#jurusan'],['Berita','#berita'],['Fasilitas','#fasilitas'],['Mitra Industri','#industri'],['Prestasi','#prestasi']];
 
@@ -566,33 +567,108 @@ function Future(){
 }
 type AuthStatus = 'loading' | 'loggedIn' | 'loggedOut';
 
-function WelcomeCard({ nama, onClose }: { nama: string; onClose?: () => void }) {
+function WelcomeCard({
+  nama,
+  verificationStatus,
+  perluVerifikasi = true,
+  onKirimNisn,
+  onClose,
+}: {
+  nama: string;
+  verificationStatus?: string | null;
+  /** false untuk admin/guru: tidak perlu verifikasi pelajar. */
+  perluVerifikasi?: boolean;
+  onKirimNisn?: () => void;
+  onClose?: () => void;
+}) {
+  const belumKirim = !verificationStatus || verificationStatus === 'belum';
+  const menunggu = verificationStatus === 'menunggu';
+  const ditolak = verificationStatus === 'ditolak';
+  const terverifikasi = verificationStatus === 'terverifikasi';
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -16 }}
       transition={{ duration: 0.4, ease: 'easeOut' }}
-      className="mx-auto flex max-w-7xl items-center justify-between gap-5 rounded-[1.6rem] border border-white/20 bg-white/95 px-6 py-5 shadow-[0_24px_50px_-28px_rgba(2,16,36,.55)] backdrop-blur-md sm:px-8 sm:py-6"
+      className="mx-auto max-w-7xl rounded-[1.6rem] border border-white/20 bg-white/95 px-6 py-5 shadow-[0_24px_50px_-28px_rgba(2,16,36,.55)] backdrop-blur-md sm:px-8 sm:py-6"
     >
-      <div className="flex items-center gap-4 sm:gap-5 min-w-0">
-        <span className="grid size-12 shrink-0 place-items-center rounded-full bg-[#052659] text-base font-bold text-[#C1E8FF] sm:size-14">
-          {nama.trim().charAt(0).toUpperCase()}
-        </span>
-        <div className="min-w-0">
-          <h2 className="display text-xl text-[#021024] sm:text-3xl">Selamat datang, {nama}.</h2>
-          <p className="mt-1 text-xs text-[#021024]/60 sm:text-sm">..ke website SMK Telkom Tunas Harapan.</p>
+      <div className="flex items-start justify-between gap-5">
+        <div className="flex min-w-0 items-center gap-4 sm:gap-5">
+          <span className="grid size-12 shrink-0 place-items-center rounded-full bg-[#052659] text-base font-bold text-[#C1E8FF] sm:size-14">
+            {nama.trim().charAt(0).toUpperCase()}
+          </span>
+          <div className="min-w-0">
+            <h2 className="display text-xl text-[#021024] sm:text-3xl">Selamat datang, {nama}.</h2>
+            <p className="mt-1 text-xs text-[#021024]/60 sm:text-sm">..ke website SMK Telkom Tunas Harapan.</p>
+          </div>
         </div>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Tutup pesan selamat datang"
+            className="grid size-9 shrink-0 place-items-center rounded-full text-[#021024]/40 transition hover:bg-[#021024]/10 hover:text-[#021024]"
+          >
+            <X size={18} />
+          </button>
+        )}
       </div>
-      {onClose && (
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Tutup pesan selamat datang"
-          className="grid size-9 shrink-0 place-items-center rounded-full text-[#021024]/40 transition hover:bg-[#021024]/10 hover:text-[#021024]"
+
+      {perluVerifikasi && (belumKirim || menunggu || ditolak || terverifikasi) && (
+        <div
+          className={`mt-4 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between ${
+            terverifikasi ? 'border-emerald-200' : 'border-[#021024]/10'
+          }`}
         >
-          <X size={18} />
-        </button>
+          {belumKirim && (
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-red-600 sm:text-base">
+                Anda belum memverifikasi akun anda sebagai pelajar
+              </p>
+              <p className="mt-0.5 text-xs text-[#021024]/50">
+                Kirim NISN agar admin dapat memverifikasi status pelajar Anda.
+              </p>
+            </div>
+          )}
+
+          {menunggu && (
+            <p className="flex items-center gap-2 text-sm font-medium text-amber-700">
+              <Clock3 size={16} className="shrink-0" />
+              NISN Anda sudah dikirim dan sedang menunggu verifikasi admin.
+            </p>
+          )}
+
+          {ditolak && (
+            <div className="min-w-0">
+              <p className="text-sm font-semibold text-red-600 sm:text-base">
+                Verifikasi akun pelajar Anda ditolak
+              </p>
+              <p className="mt-0.5 text-xs text-[#021024]/50">
+                Periksa kembali NISN Anda, lalu kirim ulang untuk ditinjau admin.
+              </p>
+            </div>
+          )}
+
+          {terverifikasi && (
+            <p className="flex items-center gap-2 text-sm font-semibold text-emerald-700">
+              <BadgeCheck size={16} className="shrink-0" />
+              Akun Anda sudah terverifikasi sebagai pelajar.
+            </p>
+          )}
+
+          {(belumKirim || ditolak) && onKirimNisn && (
+            <button
+              type="button"
+              onClick={onKirimNisn}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-red-600 px-5 py-2.5 text-xs font-bold uppercase tracking-[.12em] text-white shadow-sm transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 sm:text-[11px]"
+            >
+              <GraduationCap size={15} />
+              {ditolak ? 'Kirim Ulang NISN' : 'Kirim NISN'}
+            </button>
+          )}
+        </div>
       )}
     </motion.div>
   );
@@ -609,23 +685,49 @@ function Footer({ status, onLogout }: { status: AuthStatus; onLogout: () => void
 export default function Home(){
   const [status, setStatus] = useState<AuthStatus>('loading');
   const [nama, setNama] = useState('');
+  const [role, setRole] = useState<string | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
+  const [verifikasi, setVerifikasi] = useState<string | null>(null);
+  const [modalNisn, setModalNisn] = useState(false);
+  const [pesanNisn, setPesanNisn] = useState<string | null>(null);
 
   useEffect(() => {
     let batal = false;
-    fetch('/api/auth/me', { credentials: 'same-origin' })
-      .then(r => r.json())
-      .then(d => {
-        if (batal) return;
-        if (d?.ok && typeof d.nama === 'string' && d.nama.trim()) {
-          setNama(d.nama.trim());
-          setStatus('loggedIn');
-        } else {
-          setStatus('loggedOut');
-        }
-      })
-      .catch(() => { if (!batal) setStatus('loggedOut'); });
-    return () => { batal = true; };
+    let awal = true;
+
+    const muatSesi = () => {
+      // no-store: status verifikasi bisa berubah dari dashboard admin.
+      fetch('/api/auth/me', { credentials: 'same-origin', cache: 'no-store' })
+        .then(r => r.json())
+        .then(d => {
+          if (batal) return;
+          if (d?.ok && typeof d.nama === 'string' && d.nama.trim()) {
+            setNama(d.nama.trim());
+            setRole(typeof d.role === 'string' ? d.role : null);
+            setVerifikasi(typeof d.verification_status === 'string' ? d.verification_status : 'belum');
+            setStatus('loggedIn');
+          } else {
+            setStatus('loggedOut');
+          }
+        })
+        .catch(() => { if (!batal && awal) setStatus('loggedOut'); })
+        .finally(() => { awal = false; });
+    };
+
+    muatSesi();
+
+    // Segarkan saat tab aktif lagi, mis. setelah admin memverifikasi akun.
+    const segarkan = () => {
+      if (document.visibilityState === 'visible') muatSesi();
+    };
+    window.addEventListener('focus', segarkan);
+    document.addEventListener('visibilitychange', segarkan);
+
+    return () => {
+      batal = true;
+      window.removeEventListener('focus', segarkan);
+      document.removeEventListener('visibilitychange', segarkan);
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -651,7 +753,13 @@ export default function Home(){
           className="fixed inset-x-0 top-20 z-40 pointer-events-none px-4 sm:top-24 sm:px-6"
         >
           <div className="pointer-events-auto">
-            <WelcomeCard nama={nama} onClose={() => setShowWelcome(false)}/>
+            <WelcomeCard
+              nama={nama}
+              verificationStatus={verifikasi}
+              perluVerifikasi={role !== 'admin' && role !== 'guru'}
+              onKirimNisn={() => setModalNisn(true)}
+              onClose={() => setShowWelcome(false)}
+            />
           </div>
         </motion.section>
       )}
@@ -661,5 +769,29 @@ export default function Home(){
     <Profile/><Majors/><News/><Facilities/><Partners/><Achievements/><Future/>
     <Footer status={status} onLogout={handleLogout}/>
     <Chatbot/>
+
+    <AnimatePresence>
+      {pesanNisn && (
+        <motion.div
+          initial={{ opacity: 0, y: -12 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -12 }}
+          role="status"
+          className="fixed right-4 top-20 z-[96] max-w-xs rounded-2xl border border-emerald-300/30 bg-[#021024]/95 px-4 py-3 text-sm text-emerald-200 shadow-2xl backdrop-blur-xl sm:right-6"
+        >
+          {pesanNisn}
+        </motion.div>
+      )}
+    </AnimatePresence>
+
+    <ModalKirimNisn
+      terbuka={modalNisn}
+      onTutup={() => setModalNisn(false)}
+      onSukses={(pesan) => {
+        setVerifikasi('menunggu');
+        setPesanNisn(pesan);
+        window.setTimeout(() => setPesanNisn(null), 4000);
+      }}
+    />
   </main>;
 }

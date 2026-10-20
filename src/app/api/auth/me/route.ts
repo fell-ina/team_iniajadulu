@@ -8,10 +8,12 @@ import { createClient } from "@supabase/supabase-js";
  * ---------------------------------------------------------------------------
  * GET /api/auth/me
  * Dipakai halaman publik ('use client') untuk mengecek status login:
- *   - 200 { ok: true, nama, role }  jika ada session (cookie Supabase valid)
- *   - 200 { ok: false }             jika belum login / session sudah tamat
+ *   - 200 { ok: true, nama, role, nisn, verification_status, perlu_verifikasi }
+ *   - 200 { ok: false }  jika belum login / session sudah tamat
  * ---------------------------------------------------------------------------
  */
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const cookieStore = await cookies();
   const supabase = createServerClient(
@@ -50,15 +52,38 @@ export async function GET() {
     { auth: { persistSession: false } }
   );
 
-  const { data: profil } = await admin
+  // Selalu baru: status verifikasi bisa berubah dari dashboard admin.
+  const lengkap = await admin
     .from("users")
-    .select("nama, role")
+    .select("nama, role, nisn, verification_status")
     .eq("id", user.id)
     .maybeSingle();
 
-  return NextResponse.json({
-    ok: true,
-    nama: profil?.nama ?? null,
-    role: profil?.role ?? null,
-  });
+  let profil = lengkap.data;
+
+  // Kolom verifikasi belum ada (migrasi belum dijalankan) -> pakai data dasar.
+  if (lengkap.error) {
+    console.warn("[auth/me] fallback tanpa kolom verifikasi:", lengkap.error.message);
+    const cadangan = await admin
+      .from("users")
+      .select("nama, role")
+      .eq("id", user.id)
+      .maybeSingle();
+    profil = cadangan.data as typeof profil;
+  }
+
+  const role = profil?.role ?? null;
+  const perluVerifikasi = role !== "admin" && role !== "guru";
+
+  return NextResponse.json(
+    {
+      ok: true,
+      nama: profil?.nama ?? null,
+      role,
+      nisn: profil?.nisn ?? null,
+      verification_status: profil?.verification_status ?? "belum",
+      perlu_verifikasi: perluVerifikasi,
+    },
+    { headers: { "Cache-Control": "no-store, max-age=0" } }
+  );
 }
