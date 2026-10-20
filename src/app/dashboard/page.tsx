@@ -83,6 +83,12 @@ export default async function DashboardPage() {
             >
               ← Lihat situs
             </Link>
+            <Link
+              href="/forum-guru"
+              className="rounded-full border border-[#052659]/15 bg-[#E4F3FF] px-4 py-2 text-xs font-semibold text-[#052659] transition hover:bg-[#C1E8FF]"
+            >
+              Forum guru
+            </Link>
             <span
               title={profil?.nama ?? user.email ?? ""}
               className="grid size-9 place-items-center rounded-full bg-[#052659] text-sm font-bold text-[#C1E8FF]"
