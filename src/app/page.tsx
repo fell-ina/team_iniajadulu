@@ -15,6 +15,7 @@ import {
   X,
   Handshake,
   Trophy,
+  BadgeCheck
 } from "lucide-react";
 import Link from "next/link";
 import HeroSection from "@/components/HeroSection";
