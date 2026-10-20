@@ -16,6 +16,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Instrument_Serif, Inter } from "next/font/google";
+import TombolGoogle from "@/components/TombolGoogle";
 import styles from "./register.module.css";
 
 const serif = Instrument_Serif({
@@ -28,6 +29,15 @@ const sans = Inter({ subsets: ["latin"], variable: "--font-sans" });
 const REGISTER_ENDPOINT = "/api/auth/register";
 const VERIFY_ENDPOINT = "/api/auth/verify-otp";
 const RESEND_ENDPOINT = "/api/auth/resend-otp";
+
+/** Pesan untuk kegagalan alur Google (?google=... dari /auth/callback). */
+const PESAN_GOOGLE: Record<string, string> = {
+  "belum-dikonfigurasi":
+    "Login Google belum dikonfigurasi. Hubungi admin sekolah untuk mengaktifkannya.",
+  gagal: "Pendaftaran dengan Google dibatalkan atau gagal. Silakan coba lagi.",
+  "sesi-gagal":
+    "Gagal menyelesaikan proses masuk. Silakan coba lagi atau daftar dengan email.",
+};
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -52,6 +62,21 @@ export default function RegisterPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Tampilkan kegagalan OAuth Google (?google=...) yang dikirim /auth/callback
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const alasan = params.get("google");
+    if (!alasan) return;
+    setError(PESAN_GOOGLE[alasan] ?? PESAN_GOOGLE.gagal);
+    params.delete("google");
+    const sisa = params.toString();
+    window.history.replaceState(
+      null,
+      "",
+      `${window.location.pathname}${sisa ? `?${sisa}` : ""}`
+    );
+  }, []);
 
   // Countdown timer untuk kirim ulang kode
   useEffect(() => {
@@ -317,6 +342,9 @@ export default function RegisterPage() {
                 {error && <p className={styles.error}>{error}</p>}
                 {success && <p className={styles.success}>{success}</p>}
               </div>
+
+              <TombolGoogle className={styles.google} label="Daftar dengan Google" />
+              <div className={styles.divider}>atau daftar dengan email</div>
 
               <form onSubmit={handleRegister} noValidate className={styles.form}>
                 <div className={styles.field}>

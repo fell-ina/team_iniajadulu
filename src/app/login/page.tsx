@@ -19,6 +19,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Instrument_Serif, Inter } from "next/font/google";
+import TombolGoogle from "@/components/TombolGoogle";
 import styles from "./login.module.css";
 
 const serif = Instrument_Serif({
@@ -50,7 +51,7 @@ export default function LoginPage() {
     // Validasi ringan di sisi client (hanya untuk UX).
     // Validasi yang sebenarnya WAJIB diulang di server (route.ts).
     if (!identifier.trim() || !password) {
-      setError("Isi username dan kata sandi terlebih dahulu.");
+      setError("Isi email/NISN/username dan kata sandi terlebih dahulu.");
       return;
     }
 
@@ -132,12 +133,19 @@ export default function LoginPage() {
       {/* ---------- Panel kanan (form) ---------- */}
       <section className={styles.stage}>
         <span className={styles.watermark} aria-hidden="true">
-          SMK
+          SMK TUNAS HARA
+          PAN
         </span>
 
         <div className={styles.card}>
           <h2 className={styles.cardTitle}>Masuk</h2>
-          <p className={styles.cardHint}>Gunakan akun yang diberikan sekolah.</p>
+          <p className={styles.cardHint}>
+            Masuk dengan email, username, atau NISN — NISN hanya bisa dipakai setelah akun Anda
+            diverifikasi sebagai pelajar.
+          </p>
+
+          <TombolGoogle className={styles.google} label="Masuk dengan Google" />
+          <div className={styles.divider}>atau masuk dengan akun sekolah</div>
 
           <form onSubmit={handleSubmit} noValidate className={styles.form}>
             {/* Pesan error dari client / back-end */}
@@ -147,13 +155,16 @@ export default function LoginPage() {
 
             <div className={styles.field}>
               <label htmlFor="identifier" className={styles.label}>
-                Username atau NIS
+                Email, NISN, atau username
               </label>
               <input
                 id="identifier"
                 name="identifier"
                 type="text"
                 autoComplete="username"
+                placeholder="nama@email.com atau NISN"
+                autoCapitalize="none"
+                spellCheck={false}
                 className={styles.input}
                 value={identifier}
                 onChange={(e) => setIdentifier(e.target.value)}

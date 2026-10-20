@@ -163,6 +163,55 @@
   line-height: 1.5;
 }
 
+/* ---------- Tombol Google & pemisah ---------- */
+.google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  height: 50px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+.google:hover {
+  background: var(--paper);
+  border-color: #b9c9dc;
+}
+.google:focus-visible {
+  outline: 3px solid rgba(85, 129, 179, 0.5);
+  outline-offset: 2px;
+}
+.google[aria-busy="true"] {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0 4px;
+  color: var(--muted);
+  font-size: 0.8125rem;
+  text-align: center;
+}
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+
 /* ---------- Form ---------- */
 .form {
   display: flex;

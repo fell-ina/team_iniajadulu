@@ -6,6 +6,7 @@ import { createServerClient } from "@supabase/ssr";
 import { createClient } from "@supabase/supabase-js";
 import TombolTambahBerita from "@/components/TombolTambahBerita";
 import DaftarBeritaAdmin from "@/components/DaftarBeritaAdmin";
+import DaftarVerifikasiNisn from "@/components/DaftarVerifikasiNisn";
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
@@ -51,6 +52,7 @@ export default async function DashboardPage() {
     .maybeSingle();
 
   const role = profil?.role;
+  const bolehVerifikasi = role === "admin" || role === "guru";
 
   const inisial = (profil?.nama ?? "A").trim().charAt(0).toUpperCase() || "A";
 
@@ -140,6 +142,29 @@ export default async function DashboardPage() {
           </div>
         </div>
       </section>
+
+      {/* Verifikasi NISN pelajar */}
+      {bolehVerifikasi && (
+        <section className="mx-auto max-w-6xl px-4 pt-8 sm:px-6">
+          <div className="mb-5 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[#2F5F8F]/70">
+                Verifikasi pelajar
+              </p>
+              <h2 className="mt-1 text-2xl font-bold tracking-tight text-[#021024] sm:text-3xl">
+                Pengajuan NISN
+              </h2>
+              <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#021024]/55">
+                Periksa NISN yang dikirim siswa, lalu{" "}
+                <strong className="text-[#021024]">verifikasi</strong> atau{" "}
+                <strong className="text-[#021024]">tolak</strong> pengajuannya. Persetujuan langsung
+                mengubah status pelajar pada akun siswa.
+              </p>
+            </div>
+          </div>
+          <DaftarVerifikasiNisn />
+        </section>
+      )}
 
       {/* Daftar berita */}
       <section className="mx-auto max-w-6xl px-4 pb-16 pt-8 sm:px-6">
