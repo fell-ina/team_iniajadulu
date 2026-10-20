@@ -7,6 +7,35 @@ const TTS_TIMEOUT_MS = 12000;
 const TTS_MAX_ATTEMPTS = 2;
 const AUDIO_CACHE_LIMIT = 24;
 
+// Mouth animation: level suara (0-255, rata-rata frekuensi rendah) dihaluskan
+// lalu dipetakan ke 0..1 (tertutup..terbuka). Karena kontinu, mulut tidak
+// pernah "loncat" antar pose seperti animasi 2-3 frame.
+const MOUTH_LOW = 6; // di bawah ini mulut tertutup
+const MOUTH_HIGH = 40; // di atas ini mulut terbuka penuh
+// Konstanta waktu (ms) untuk smoothing: buka mulut responsif, menutup lebih
+// pelan seperti mulut yang rileks. Berbasis waktu, jadi tetap halus di layar
+// 60Hz maupun 120Hz.
+const MOUTH_ATTACK_TAU = 55;
+const MOUTH_RELEASE_TAU = 110;
+
+type MouthMeter = { level: number; at: number };
+
+/** Update level bukaan mulut 0..1 dari volume audio mentah. */
+function updateMouthLevel(
+  meter: MouthMeter,
+  rawLevel: number,
+  now: number,
+): number {
+  const dt = meter.at === 0 ? 16 : Math.min(50, Math.max(1, now - meter.at));
+  meter.at = now;
+
+  const tau = rawLevel > meter.level ? MOUTH_ATTACK_TAU : MOUTH_RELEASE_TAU;
+  meter.level += (rawLevel - meter.level) * (1 - Math.exp(-dt / tau));
+
+  const open = (meter.level - MOUTH_LOW) / (MOUTH_HIGH - MOUTH_LOW);
+  return open < 0 ? 0 : open > 1 ? 1 : open;
+}
+
 const PREFERRED_FEMALE_VOICES = [
   "id-id-gadisneural",
   "id-id-ayuneural",
@@ -76,7 +105,6 @@ function getVoicesWhenReady(onReady: (voices: SpeechSynthesisVoice[]) => void) {
     onReady(existing);
     return;
   }
-
   let finished = false;
   const finish = () => {
     if (finished) return;
@@ -85,7 +113,6 @@ function getVoicesWhenReady(onReady: (voices: SpeechSynthesisVoice[]) => void) {
     window.clearTimeout(safetyTimer);
     onReady(synth.getVoices());
   };
-
   const safetyTimer = window.setTimeout(finish, 2000);
   synth.onvoiceschanged = finish;
 }
@@ -95,7 +122,6 @@ function playFallbackSpeech(text: string, onEnd: () => void) {
     onEnd();
     return;
   }
-
   window.speechSynthesis.cancel();
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "id-ID";
@@ -117,13 +143,11 @@ function playFallbackSpeech(text: string, onEnd: () => void) {
       cachedFemaleVoice && voices.includes(cachedFemaleVoice)
         ? cachedFemaleVoice
         : pickIndonesianFemaleVoice(voices);
-
     if (voice) {
       cachedFemaleVoice = voice;
       utterance.voice = voice;
       utterance.lang = voice.lang;
     }
-
     utterance.onend = finish;
     utterance.onerror = finish;
     safetyTimer = window.setTimeout(finish, 60000);
@@ -140,7 +164,6 @@ function getAudioContext(): AudioContext | null {
     (window as unknown as { webkitAudioContext?: typeof AudioContext })
       .webkitAudioContext;
   if (!Ctor) return null;
-
   if (!sharedAudioCtx || sharedAudioCtx.state === "closed") {
     try {
       sharedAudioCtx = new Ctor();
@@ -151,19 +174,19 @@ function getAudioContext(): AudioContext | null {
   return sharedAudioCtx;
 }
 
+// Tambahkan parameter onAnalyserReady untuk menyambungkan detektor volume
 async function playSoftAudio(
   blob: Blob,
   isActive: () => boolean,
   registerSource: (source: AudioBufferSourceNode | null) => void,
   registerTimer: (timer: number | null) => void,
+  onAnalyserReady?: (analyser: AnalyserNode) => void,
 ): Promise<boolean> {
   const ctx = getAudioContext();
   if (!ctx) return false;
 
   try {
-    if (ctx.state === "suspended") {
-      await ctx.resume();
-    }
+    if (ctx.state === "suspended") await ctx.resume();
 
     const arrayBuffer = await blob.arrayBuffer();
     if (!isActive()) return true;
@@ -195,11 +218,20 @@ async function playSoftAudio(
     compressor.attack.value = 0.01;
     compressor.release.value = 0.25;
 
+    // Volume analyzer untuk menggerakkan mulut secara real-time.
+    // Smoothing tinggi berguna supaya level suara tidak melonjak-lonjak.
+    const analyser = ctx.createAnalyser();
+    analyser.fftSize = 256;
+    analyser.smoothingTimeConstant = 0.7;
+
     source.connect(highpass);
     highpass.connect(warmth);
     warmth.connect(soften);
     soften.connect(compressor);
-    compressor.connect(ctx.destination);
+    compressor.connect(analyser); // Audio masuk ke analyzer dulu
+    analyser.connect(ctx.destination); // Baru dibuang ke speaker
+
+    if (onAnalyserReady) onAnalyserReady(analyser);
 
     return await new Promise<boolean>((resolve) => {
       let finished = false;
@@ -210,7 +242,6 @@ async function playSoftAudio(
         registerSource(null);
         resolve(true);
       };
-
       source.onended = finish;
       registerSource(source);
       registerTimer(window.setTimeout(finish, (buffer.duration + 1.5) * 1000));
@@ -229,6 +260,11 @@ export function useFiskaSpeech(
   const [isVoiceLoading, setIsVoiceLoading] = useState(false);
   const [isListening, setIsListening] = useState(false);
 
+  // Level bukaan mulut 0..1. Disimpan di ref (bukan state) supaya animasi bisa
+  // diperbarui tiap frame tanpa me-render ulang seluruh chat.
+  const mouthLevelRef = useRef(0);
+  const mouthMeterRef = useRef<MouthMeter>({ level: 0, at: 0 });
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const softSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const softTimerRef = useRef<number | null>(null);
@@ -239,6 +275,60 @@ export function useFiskaSpeech(
   const spokenTextRef = useRef<string | null>(null);
   const audioBlobCacheRef = useRef<Map<string, Blob>>(new Map());
 
+  const reqAnimRef = useRef<number>(0);
+
+  // Membaca volume suara secara real-time dan menerjemahkannya ke bukaan mulut
+  const monitorAudioVolume = useCallback(
+    (analyser: AnalyserNode) => {
+      // Pastikan hanya ada satu loop animasi mulut yang berjalan.
+      cancelAnimationFrame(reqAnimRef.current);
+
+      const dataArray = new Uint8Array(analyser.frequencyBinCount);
+      const length = Math.floor(dataArray.length / 2);
+      const meter = mouthMeterRef.current;
+
+      const tick = () => {
+        analyser.getByteFrequencyData(dataArray);
+        let sum = 0;
+        // Hanya menghitung rata-rata frekuensi suara manusia
+        for (let i = 0; i < length; i++) sum += dataArray[i];
+        mouthLevelRef.current = updateMouthLevel(
+          meter,
+          sum / length,
+          performance.now(),
+        );
+
+        reqAnimRef.current = requestAnimationFrame(tick);
+      };
+      tick();
+    },
+    [],
+  );
+
+  // Animasi mulut palsu untuk fallback kalau Web Audio API gagal dipakai.
+  // Nilainya tetap kontinu (sine yang dihaluskan), bukan kedip tutup-buka.
+  const startFakeTalking = useCallback(() => {
+    cancelAnimationFrame(reqAnimRef.current);
+    const startedAt = performance.now();
+
+    const tick = () => {
+      const t = (performance.now() - startedAt) / 1000;
+      const syllable = (Math.sin(t * Math.PI * 2 * 3.2) + 1) / 2;
+      const breath = 0.7 + 0.3 * Math.sin(t * 1.9);
+      mouthLevelRef.current = 0.18 + 0.72 * syllable * breath;
+      reqAnimRef.current = requestAnimationFrame(tick);
+    };
+    tick();
+  }, []);
+
+  // Hentikan semua animasi mulut
+  const stopMouthAnimation = useCallback(() => {
+    cancelAnimationFrame(reqAnimRef.current);
+    mouthMeterRef.current.level = 0;
+    mouthMeterRef.current.at = 0;
+    mouthLevelRef.current = 0;
+  }, []);
+
   const stopAudio = useCallback(() => {
     speakSeqRef.current += 1;
     if (speakAbortRef.current) {
@@ -247,7 +337,6 @@ export function useFiskaSpeech(
       } catch {}
       speakAbortRef.current = null;
     }
-
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
     }
@@ -271,7 +360,8 @@ export function useFiskaSpeech(
     spokenTextRef.current = null;
     setIsSpeaking(false);
     setIsVoiceLoading(false);
-  }, []);
+    stopMouthAnimation();
+  }, [stopMouthAnimation]);
 
   const fetchTtsBlob = useCallback(
     async (
@@ -285,7 +375,6 @@ export function useFiskaSpeech(
 
       for (let attempt = 0; attempt < TTS_MAX_ATTEMPTS; attempt++) {
         if (signal.aborted) return null;
-
         const controller = new AbortController();
         const onAbort = () => controller.abort();
         signal.addEventListener("abort", onAbort, { once: true });
@@ -332,7 +421,6 @@ export function useFiskaSpeech(
           resolve();
           return;
         }
-
         const audioUrl = URL.createObjectURL(blob);
         const audio = new Audio(audioUrl);
         audioRef.current = audio;
@@ -379,7 +467,6 @@ export function useFiskaSpeech(
       setIsVoiceLoading(true);
 
       const chunks = splitIntoSpeechChunks(cleanText);
-
       let provider: "elevenlabs" | "edge" | undefined;
       let key: 1 | 2 | undefined;
       try {
@@ -421,7 +508,6 @@ export function useFiskaSpeech(
       try {
         for (let i = 0; i < chunks.length; i++) {
           if (!isActive()) return;
-
           const blob = await ensure(i);
           if (!isActive()) return;
 
@@ -436,7 +522,9 @@ export function useFiskaSpeech(
                 speakAbortRef.current = null;
                 setIsSpeaking(false);
                 setIsVoiceLoading(false);
+                stopMouthAnimation();
               });
+              startFakeTalking();
               return;
             }
             continue;
@@ -444,6 +532,7 @@ export function useFiskaSpeech(
 
           setIsVoiceLoading(false);
 
+          // AUDIO DI-PLAY SEKALIGUS DIANALISA VOLUMENYA DI SINI
           const playedSoftly = await playSoftAudio(
             blob,
             isActive,
@@ -453,11 +542,16 @@ export function useFiskaSpeech(
             (timer) => {
               if (isActive()) softTimerRef.current = timer;
             },
+            (analyser) => {
+              if (isActive()) monitorAudioVolume(analyser);
+            },
           );
           if (!isActive()) return;
 
           if (!playedSoftly) {
+            startFakeTalking();
             await playAudioElement(blob, isActive);
+            stopMouthAnimation();
             if (!isActive()) return;
           }
         }
@@ -467,6 +561,7 @@ export function useFiskaSpeech(
           speakAbortRef.current = null;
           setIsSpeaking(false);
           setIsVoiceLoading(false);
+          stopMouthAnimation();
         }
       } catch {
         if (!isActive()) return;
@@ -477,7 +572,9 @@ export function useFiskaSpeech(
           speakAbortRef.current = null;
           setIsSpeaking(false);
           setIsVoiceLoading(false);
+          stopMouthAnimation();
         });
+        startFakeTalking();
       }
     },
     [
@@ -487,6 +584,9 @@ export function useFiskaSpeech(
       stopAudio,
       fetchTtsBlob,
       playAudioElement,
+      monitorAudioVolume,
+      startFakeTalking,
+      stopMouthAnimation,
     ],
   );
 
@@ -501,13 +601,11 @@ export function useFiskaSpeech(
       alert("Browser kamu belum mendukung Speech Recognition.");
       return;
     }
-
     if (isListening) {
       recognitionRef.current?.stop();
       setIsListening(false);
       return;
     }
-
     const recognition = new SpeechRecognition();
     recognitionRef.current = recognition;
     recognition.lang = "id-ID";
@@ -516,14 +614,10 @@ export function useFiskaSpeech(
     recognition.onstart = () => setIsListening(true);
     recognition.onend = () => setIsListening(false);
     recognition.onerror = () => setIsListening(false);
-
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
-      if (transcript) {
-        onTranscriptUpdate(transcript);
-      }
+      if (transcript) onTranscriptUpdate(transcript);
     };
-
     recognition.start();
   }, [isListening, onTranscriptUpdate]);
 
@@ -535,6 +629,7 @@ export function useFiskaSpeech(
     stopAudio,
     toggleListening,
     recognitionRef,
-    spokenTextRef, // <-- Tambahkan ini!
+    spokenTextRef,
+    mouthLevelRef, // Level bukaan mulut 0..1 untuk animasi avatar
   };
 }
