@@ -401,6 +401,102 @@
   text-decoration: underline;
 }
 
+/* ---------- Pilihan jurusan & kelas (halaman /register/lengkapi) ---------- */
+.akunRingkas {
+  margin: 0 0 20px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper);
+  color: var(--muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+.akunRingkas strong {
+  color: var(--ink);
+}
+
+.gridJurusan {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.gridKelas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.opsi {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s;
+}
+.opsi:hover:not(:disabled) {
+  border-color: #b9c9dc;
+  background: #fbfdff;
+}
+.opsi:focus-visible {
+  outline: none;
+  border-color: var(--blue);
+  box-shadow: 0 0 0 3px rgba(85, 129, 179, 0.3);
+}
+.opsi:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.opsiAktif {
+  border-color: var(--blue);
+  background: #eef4fb;
+  box-shadow: inset 0 0 0 1px var(--blue);
+}
+
+.opsiKode {
+  font-size: 0.9375rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+}
+
+.opsiKet {
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.pilihanNama {
+  margin: 2px 0 0;
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  color: var(--muted);
+}
+
+.note {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.5;
+  color: var(--muted);
+}
+
+.memuat {
+  margin: 0;
+  font-size: 0.9375rem;
+  color: var(--muted);
+}
+
 @media (max-width: 860px) {
   .page {
     grid-template-columns: 1fr;

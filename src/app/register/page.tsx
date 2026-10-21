@@ -63,13 +63,29 @@ export default function RegisterPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Tampilkan kegagalan OAuth Google (?google=...) yang dikirim /auth/callback
+  // Param URL:
+  //   ?google=<alasan>            -> kegagalan OAuth dari /auth/callback
+  //   ?verifikasi=1&email=<email> -> kode OTP baru dikirim setelah data sekolah
+  //                                  diisi di /register/lengkapi
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
+
     const alasan = params.get("google");
-    if (!alasan) return;
-    setError(PESAN_GOOGLE[alasan] ?? PESAN_GOOGLE.gagal);
+    if (alasan) {
+      setError(PESAN_GOOGLE[alasan] ?? PESAN_GOOGLE.gagal);
+    }
+
+    if (params.get("verifikasi") === "1") {
+      const emailDariUrl = params.get("email")?.trim().toLowerCase();
+      if (emailDariUrl) setEmail(emailDariUrl);
+      setStep(2);
+      setResendCooldown(60);
+      setSuccess("Kode verifikasi 6 digit telah dikirimkan ke email Anda.");
+    }
+
     params.delete("google");
+    params.delete("verifikasi");
+    params.delete("email");
     const sisa = params.toString();
     window.history.replaceState(
       null,
@@ -145,20 +161,10 @@ export default function RegisterPage() {
         return;
       }
 
-      // Jika Supabase tidak memerlukan konfirmasi email (langsung aktif)
-      if (!data.needsVerification) {
-        setSuccess("Pendaftaran berhasil! Mengalihkan ke dashboard...");
-        setTimeout(() => {
-          router.push(data.redirectTo || "/dashboard");
-          router.refresh();
-        }, 1200);
-        return;
-      }
-
-      // Jika membutuhkan kode verifikasi email
-      setStep(2);
-      setResendCooldown(60);
-      setSuccess("Kode verifikasi 6 digit telah dikirimkan ke email Anda.");
+      // Akun dibuat. Siswa wajib mengisi jurusan & kelas lebih dulu; kode
+      // verifikasi baru dikirim setelah data itu tersimpan.
+      setSuccess(data.message || "Akun dibuat. Lengkapi jurusan dan kelas Anda...");
+      router.push(data.redirectTo || "/register/lengkapi");
     } catch {
       setError("Gagal terhubung ke server. Pastikan koneksi internet Anda stabil.");
     } finally {
@@ -335,7 +341,8 @@ export default function RegisterPage() {
             <>
               <h2 className={styles.cardTitle}>Buat Akun</h2>
               <p className={styles.cardHint}>
-                Isi data berikut untuk mendaftar akun sekolah.
+                Isi data berikut untuk mendaftar akun sekolah. Jurusan dan kelas diisi
+                pada langkah berikutnya.
               </p>
 
               <div role="alert" aria-live="polite">

@@ -149,7 +149,7 @@ function Nav() {
   );
 }
 
-function Profile() {
+function Profile() {  
   return (
     <section
       id="profil"

@@ -80,6 +80,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, message: pesan }, { status: 400 });
   }
 
+  // Tujuan setelah verifikasi: siswa tanpa jurusan/kelas masih harus melengkapi.
+  let redirectTo = "/dashboard";
+
   // Jika ada service role key, simpan data ke tabel `users`
   if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
     try {
@@ -99,6 +102,17 @@ export async function POST(request: Request) {
         },
         { onConflict: "id" }
       );
+
+      const { data: profil } = await admin
+        .from("users")
+        .select("role, jurusan, kelas")
+        .eq("id", data.user.id)
+        .maybeSingle();
+
+      if (profil && profil.role !== "admin" && profil.role !== "guru") {
+        // Data sekolah belum lengkap (mis. alur lama) -> arahkan ke formulir.
+        redirectTo = profil.jurusan && profil.kelas ? "/" : "/register/lengkapi";
+      }
     } catch (err) {
       console.warn("[verify-otp] Gagal upsert tabel users:", err);
     }
@@ -107,6 +121,6 @@ export async function POST(request: Request) {
   return NextResponse.json({
     ok: true,
     message: "Verifikasi berhasil! Akun Anda telah aktif.",
-    redirectTo: "/dashboard",
+    redirectTo,
   });
 }

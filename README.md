@@ -56,7 +56,9 @@
 /jurusan/[id]           - Halaman Detail Program Keahlian (PPLG, TJKT, DKV, TKR) & Model 3D Interaktif
 /berita                 - Portal Berita Publik (Grid Berita, Pencarian, & Skeleton Loading)
 /berita/[id]            - Halaman Pembacaan Artikel Berita (Format Markdown)
-/login                  - Portal Autentikasi Login Admin / Guru
+/register               - Pendaftaran akun (email + Google) & verifikasi kode OTP
+/register/lengkapi      - Pengisian jurusan & kelas sebelum kode verifikasi dikirim
+/login                  - Portal Autentikasi Login Admin / Guru / Siswa
 /admin/dashboard        - Panel CMS Admin (Tambah, Edit, & Hapus Berita)
 ```
 
@@ -125,6 +127,42 @@ verifikasi dipastikan `terverifikasi`, lalu email Supabase Auth milik akun itu d
 login. Status `belum` / `menunggu` / `ditolak` akan ditolak dengan pesan yang sesuai.
 NISN tidak menggantikan kata sandi — akun yang mendaftar lewat Google tetap harus memakai
 tombol “Masuk dengan Google”.
+
+### 8. Data Jurusan & Kelas Siswa
+
+Setiap siswa **wajib** memilih jurusan dan kelas setelah membuat akun. Kode verifikasi email
+baru dikirim setelah data ini tersimpan. Jalankan migrasi berikut (atau
+`supabase/migrations/20261021000000_add_jurusan_kelas.sql`) di Supabase SQL Editor:
+
+```sql
+alter table public.users add column if not exists jurusan text;
+alter table public.users add column if not exists kelas text;
+
+alter table public.users drop constraint if exists users_jurusan_check;
+alter table public.users add constraint users_jurusan_check
+  check (jurusan is null or jurusan in ('PPLG', 'TJKT', 'DKV', 'TKR'));
+
+alter table public.users drop constraint if exists users_kelas_check;
+alter table public.users add constraint users_kelas_check
+  check (kelas is null or kelas in ('X', 'XI', 'XII'));
+
+create index if not exists users_jurusan_kelas_idx
+  on public.users (jurusan, kelas);
+```
+
+Alur pendaftaran:
+
+1. `/register` — siswa mengisi nama, email, kata sandi. Akun dibuat di Supabase Auth
+   (`email_confirm = false`) **tanpa** mengirim email apa pun.
+2. `/register/lengkapi` — siswa memilih **jurusan** (PPLG / TJKT / DKV / TKR) dan
+   **kelas** (X / XI / XII). Endpoint `src/app/api/auth/lengkapi/route.ts` menyimpannya ke
+   tabel `users`, lalu **baru** meminta Supabase mengirim kode verifikasi.
+3. `/register?verifikasi=1` — siswa memasukkan 6 digit kode.
+
+Pendaftar lewat Google juga diarahkan ke `/register/lengkapi` dan tidak menerima kode email
+(email sudah diverifikasi Google). Daftar pilihan ada di `src/lib/sekolah.ts`, sedangkan
+validasi di server memakai berkas yang sama. Login siswa yang datanya belum lengkap juga
+diarahkan kembali ke halaman tersebut.
 
 ---
 

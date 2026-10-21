@@ -183,16 +183,37 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, message: PESAN_KREDENSIAL }, { status: 401 });
   }
 
-  // 4. Ambil role memakai client service role (tanpa cookie/session) --------
-  const { data: profil } = await admin
+  // 4. Ambil role + data sekolah memakai client service role -----------------
+  let role: string | null = null;
+  let dataSekolahLengkap = true;
+
+  const lengkap = await admin
     .from("users")
-    .select("role")
+    .select("role, jurusan, kelas")
     .eq("id", data.user.id)
     .maybeSingle();
 
-  // 5. Tentukan tujuan berdasarkan role -------------------------------------
-  const role = profil?.role;
-  const redirectTo = role === "admin" || role === "guru" ? "/dashboard" : "/";
+  if (lengkap.error) {
+    // Kolom jurusan/kelas belum ada (migrasi belum dijalankan) -> pakai role saja.
+    console.warn("[auth/login] fallback tanpa kolom jurusan/kelas:", lengkap.error.message);
+    const cadangan = await admin
+      .from("users")
+      .select("role")
+      .eq("id", data.user.id)
+      .maybeSingle();
+    role = cadangan.data?.role ?? null;
+  } else {
+    role = lengkap.data?.role ?? null;
+    dataSekolahLengkap = Boolean(lengkap.data?.jurusan && lengkap.data?.kelas);
+  }
+
+  // 5. Tentukan tujuan berdasarkan role & kelengkapan data -------------------
+  const redirectTo =
+    role === "admin" || role === "guru"
+      ? "/dashboard"
+      : dataSekolahLengkap
+        ? "/"
+        : "/register/lengkapi";
 
   return NextResponse.json({ ok: true, redirectTo });
 }
