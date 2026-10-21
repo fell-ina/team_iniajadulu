@@ -1893,6 +1893,18 @@ export default function Home(){
 
     <HeroSection/>
     <Profile/><Majors/><News/><Facilities/><Partners/><Achievements/><Future/>
+    <section
+      aria-label="Gedung SMK Telekomunikasi Tunas Harapan"
+      className="relative w-screen overflow-hidden bg-[#F4F9FF] px-0 pb-0"
+    >
+      <div className="w-full overflow-hidden">
+        <img
+          src="/images/school/gedung.png"
+          alt="Gedung SMK Telekomunikasi Tunas Harapan"
+          className="block h-auto w-full"
+        />
+      </div>
+    </section>
     <Footer status={status} onLogout={handleLogout}/>
     <Chatbot/>
 
