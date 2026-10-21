@@ -115,7 +115,7 @@ const jurusan: Record<Slug, JurusanData> = {
     full: "Teknik Jaringan Komputer dan Telekomunikasi",
     hero: "/images/school/building-main.png",
     activity: "/images/school/tkj1.jpg",
-    model: "/models/pakjoko.glb",
+    model: "/models/pakjoko2.glb",
     desc: "Mempelajari jaringan komputer, telekomunikasi, infrastruktur, dan teknologi konektivitas.",
     about:
       "TJKT mempelajari bagaimana perangkat komputer dan jaringan saling terhubung, mulai dari infrastruktur jaringan hingga teknologi telekomunikasi.",
@@ -153,7 +153,7 @@ const jurusan: Record<Slug, JurusanData> = {
     full: "Teknik Kendaraan Ringan",
     hero: "/images/school/building-secondary.png",
     activity: "/images/school/tkr.jpg",
-    model: "/models/Tkr_berwarna.glb",
+    model: "/models/Tkr_berwarna2.glb",
     desc: "Mempelajari perawatan, perbaikan, diagnosis, dan teknologi kendaraan ringan.",
     about:
       "TKR membekali siswa dengan pengetahuan dan keterampilan dalam perawatan, pemeriksaan, diagnosis, serta perbaikan kendaraan ringan.",

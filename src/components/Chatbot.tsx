@@ -5,7 +5,6 @@ import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { X } from "lucide-react";
 import Image from "next/image";
 
-// Import Semua Child Component & Hooks yang baru kita buat
 import { useFiskaSpeech } from "@/hooks/useFiskaSpeech";
 import ChatHeader from "./chat/ChatHeader";
 import ChatMessages from "./chat/ChatMessages";
@@ -40,7 +39,7 @@ export default function Chatbot() {
   const isScrolledUpRef = useRef(false);
   const reduceMotion = useReducedMotion();
 
-  // Memanggil Custom Hook Logika Suara
+  // AMBIL mouthLevelRef DARI HOOKS
   const {
     isSpeaking,
     isVoiceLoading,
@@ -49,9 +48,9 @@ export default function Chatbot() {
     stopAudio,
     toggleListening,
     spokenTextRef,
+    mouthLevelRef,
   } = useFiskaSpeech(isAudioEnabled, (text) => setMessage(text));
 
-  // --- EFEK SISTEM & UI ---
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
     const mq = window.matchMedia("(pointer: coarse)");
@@ -97,7 +96,6 @@ export default function Chatbot() {
     };
   }, [open, isFullscreen]);
 
-  // --- LOGIKA SCROLL ---
   const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
     const el = contentRef.current;
     if (!el) return;
@@ -120,7 +118,6 @@ export default function Chatbot() {
       scrollToBottom(reduceMotion ? "auto" : "smooth");
   }, [chatHistory, isLoading, open, scrollToBottom, reduceMotion]);
 
-  // --- ACTIONS ---
   const toggleOpen = useCallback(() => {
     stopAudio();
     if (open) {
@@ -137,7 +134,6 @@ export default function Chatbot() {
     localStorage.removeItem("fiska_chat_history");
   };
 
-  // --- LOGIKA FETCH KE AI (API) ---
   const sendMessageToBot = async (userMsg: string) => {
     if (!userMsg.trim() || isLoading) return;
     stopAudio();
@@ -173,17 +169,18 @@ export default function Chatbot() {
     <div
       className={
         open && isFullscreen
-          ? "fixed inset-0 z-[80] flex flex-col md:flex-row items-center justify-center gap-6 bg-black/85 p-0 pt-[env(safe-area-inset-top)] backdrop-blur-md transition-all duration-300 sm:p-4 md:p-8"
-          : "fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[max(1rem,env(safe-area-inset-bottom))] z-[80]"
+          ? "fixed inset-0 z-80 flex flex-col md:flex-row items-center justify-center gap-6 bg-black/85 p-0 pt-[env(safe-area-inset-top)] backdrop-blur-md transition-all duration-300 sm:p-4 md:p-8"
+          : "fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[max(1rem,env(safe-area-inset-bottom))] z-80"
       }
     >
       <AnimatePresence>
         {open && (
           <>
+            {/* PASSING LEVEL BUKAAN MULUT KE AVATAR FISKA */}
             <FiskaAvatar
               isFullscreen={isFullscreen}
               botEmotion={botEmotion}
-              isSpeaking={isSpeaking}
+              mouthLevelRef={mouthLevelRef}
             />
             <motion.div
               key="chat-window"
