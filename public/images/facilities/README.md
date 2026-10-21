@@ -26,11 +26,11 @@ Alasan spesifikasinya: kartu memakai `aspect-[16/10]` dengan lebar maksimum 520 
 | 06 | Lapangan Basket Atap | `lapangan-basket-atap.jpg` | ⬜️ belum ada — masih pakai foto lain |
 | 07 | Lapangan Rumput | `lapangan-rumput.jpg` | ✅ sudah ada |
 | 08 | Masjid | `masjid.png` | ✅ sudah ada |
-| 09 | Toilet | `toilet.jpg` | ⬜️ belum ada — masih pakai foto lain |
+| 09 | Toilet | `toilet.png` | ✅ sudah ada |
 | 10 | Parkiran | `parkiran.png` | ✅ sudah ada |
 | 11 | Aula | `aula.jpg` | ⬜️ belum ada — sedang tampil `placeholder.svg` |
 | 12 | Lab & Bengkel Praktik | `lab-bengkel.png` | ✅ sudah ada |
-| 13 | Kantin | `kantin.jpg` | ⬜️ belum ada — sedang tampil `placeholder.svg` |
+| 13 | Kantin | `kantin.png` | ✅ sudah ada |
 | 14 | UKS | `uks.png` | ✅ sudah ada |
 
 ## Cara memasang foto baru

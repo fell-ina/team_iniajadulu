@@ -415,7 +415,7 @@ function Facilities() {
       subtitle: "Teaching Factory",
       detail:
         "Model belajar yang menggabungkan teori dengan praktik produksi nyata. Program ini didukung kolaborasi industri untuk mengembangkan kompetensi guru dan karya siswa.",
-      image: "/images/school/tefa.jpeg",
+      image: "/images/facilities/tefa.jpg",
       imageAlt: "Kegiatan Teaching Factory di SMK Tunas Harapan",
     },
     {
@@ -423,7 +423,7 @@ function Facilities() {
       subtitle: "Pusat Sumber Belajar",
       detail:
         "Ruang untuk membaca, mencari referensi, dan mendukung kegiatan belajar mandiri siswa.",
-      image: "/images/school/perpustakaan.jpeg",
+      image: "/images/facilities/perpustakaan.png",
       imageAlt: "Perpustakaan SMK Tunas Harapan",
     },
     {
@@ -432,7 +432,7 @@ function Facilities() {
       detail:
         "Kanal media sekolah yang membagikan karya dan kegiatan warga SMK Telekomunikasi Tunas Harapan.",
       href: "https://www.youtube.com/channel/UCiQWJxhNpa_mq_WxnvbEBQQ",
-      image: "/images/school/tv.png",
+      image: "/images/facilities/telsa-tv.png",
       imageAlt: "Telsa TV, televisi sekolah",
     },
     {
@@ -440,7 +440,7 @@ function Facilities() {
       subtitle: "Lingkungan tinggal siswa",
       detail:
         "Asrama putra berupa gedung di lingkungan sekolah yang hijau dan asri. Dilengkapi ruang makan, pembinaan dan pengawasan ketat, serta kegiatan minat dan olahraga. Informasi biaya dapat ditanyakan langsung kepada pihak sekolah.",
-      image: "/images/school/asrama.jpeg",
+      image: "/images/facilities/asrama-putra.jpg",
       imageAlt: "Gedung asrama putra SMK Tunas Harapan",
     },
     {
@@ -448,8 +448,8 @@ function Facilities() {
       subtitle: "Lingkungan tinggal siswi",
       detail:
         "Asrama putri berbentuk komplek perumahan dengan banyak unit yang terbagi dalam beberapa ruangan. Dilengkapi ruang makan, pembinaan dan pengawasan ketat, serta kegiatan minat dan olahraga. Informasi biaya dapat ditanyakan langsung kepada pihak sekolah.",
-      image: "/images/facilities/placeholder.svg",
-      imageAlt: "Asrama putri (foto segera hadir)",
+      image: "/images/facilities/asrama-putri.jpg",
+      imageAlt: "Gedung asrama putri SMK Tunas Harapan",
     },
     {
       title: "Lapangan Basket Atap",
@@ -464,32 +464,32 @@ function Facilities() {
       subtitle: "Area Olahraga & Upacara",
       detail:
         "Lapangan rumput serbaguna untuk sepak bola, upacara bendera, dan berbagai kegiatan luar ruang sekolah.",
-      image: "/images/school/hero-courtyard.jpg",
-      imageAlt: "Lapangan rumput (foto sementara)",
+      image: "/images/facilities/lapangan-rumput.jpg",
+      imageAlt: "Lapangan rumput sekolah",
     },
     {
       title: "Masjid",
       subtitle: "Tempat Ibadah",
       detail:
         "Masjid sekolah sebagai pusat ibadah dan pembinaan rohani warga sekolah dalam lingkungan yang nyaman.",
-      image: "/images/school/building-main.png",
-      imageAlt: "Masjid sekolah (foto sementara)",
+      image: "/images/facilities/masjid.png",
+      imageAlt: "Masjid sekolah",
     },
     {
       title: "Toilet",
       subtitle: "Sanitasi Siswa",
       detail:
         "Fasilitas toilet yang bersih dan terawat untuk menunjang kenyamanan siswa selama beraktivitas di sekolah.",
-      image: "/images/school/building-secondary.png",
-      imageAlt: "Toilet sekolah (foto sementara)",
+      image: "/images/facilities/toilet.png",
+      imageAlt: "Toilet sekolah",
     },
     {
       title: "Parkiran",
       subtitle: "Area Parkir",
       detail:
         "Area parkir yang tertata untuk kendaraan siswa, guru, dan tamu di lingkungan sekolah.",
-      image: "/images/school/tkr.jpg",
-      imageAlt: "Parkiran sekolah (foto sementara)",
+      image: "/images/facilities/parkiran.png",
+      imageAlt: "Parkiran sekolah",
     },
     {
       title: "Aula",
@@ -504,24 +504,24 @@ function Facilities() {
       subtitle: "Praktik Kejuruan",
       detail:
         "Ruang Praktik Siswa (RPS), bengkel/gedung TKR, dan GameLab untuk pembelajaran praktik sesuai bidang keahlian.",
-      image: "/images/school/hero-lab.jpg",
-      imageAlt: "Lab dan bengkel praktik (foto sementara)",
+      image: "/images/facilities/lab-bengkel.png",
+      imageAlt: "Lab dan bengkel praktik",
     },
     {
       title: "Kantin",
       subtitle: "Kuliner Sekolah",
       detail:
         "Area kantin dengan beragam pilihan makanan dan minuman untuk siswa selama waktu istirahat.",
-      image: "/images/facilities/placeholder.svg",
-      imageAlt: "Kantin sekolah (foto segera hadir)",
+      image: "/images/facilities/kantin.png",
+      imageAlt: "Kantin sekolah",
     },
     {
       title: "UKS",
       subtitle: "Kesehatan Siswa",
       detail:
         "Layanan kesehatan dasar dan pertolongan pertama bagi siswa yang membutuhkan selama beraktivitas di sekolah.",
-      image: "/images/facilities/placeholder.svg",
-      imageAlt: "Ruang UKS (foto segera hadir)",
+      image: "/images/facilities/uks.png",
+      imageAlt: "Ruang UKS",
     },
   ];
 
