@@ -70,6 +70,8 @@ export async function GET(request: Request) {
 
   const user = data.user;
   let role: string | null = null;
+  // Jurusan & kelas wajib diisi siswa sebelum akun bisa dipakai sepenuhnya.
+  let profilLengkap = true;
 
   // --- Pastikan profil ada di tabel `users` (hanya untuk akun baru) --------
   if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -81,7 +83,7 @@ export async function GET(request: Request) {
 
     const { data: profil, error: errorProfil } = await admin
       .from("users")
-      .select("role")
+      .select("role, jurusan, kelas")
       .eq("id", user.id)
       .maybeSingle();
 
@@ -92,6 +94,7 @@ export async function GET(request: Request) {
     if (profil) {
       // Akun lama (mis. sudah terdaftar lewat email) -> jangan ubah apa pun.
       role = profil.role ?? null;
+      profilLengkap = Boolean(profil.jurusan && profil.kelas);
     } else {
       const meta = user.user_metadata ?? {};
       const nama =
@@ -110,10 +113,17 @@ export async function GET(request: Request) {
         console.warn("[auth/callback] Gagal membuat profil:", errorInsert.message);
       } else {
         role = "siswa";
+        // Akun baru (termasuk lewat Google) harus mengisi jurusan & kelas dulu.
+        profilLengkap = false;
       }
     }
   }
 
-  const tujuan = role === "admin" || role === "guru" ? "/dashboard" : "/";
+  const tujuan =
+    role === "admin" || role === "guru"
+      ? "/dashboard"
+      : profilLengkap
+        ? "/"
+        : "/register/lengkapi";
   return NextResponse.redirect(new URL(tujuan, origin));
 }

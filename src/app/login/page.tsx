@@ -140,8 +140,6 @@ export default function LoginPage() {
         <div className={styles.card}>
           <h2 className={styles.cardTitle}>Masuk</h2>
           <p className={styles.cardHint}>
-            Masuk dengan email, username, atau NISN — NISN hanya bisa dipakai setelah akun Anda
-            diverifikasi sebagai pelajar.
           </p>
 
           <TombolGoogle className={styles.google} label="Masuk dengan Google" />

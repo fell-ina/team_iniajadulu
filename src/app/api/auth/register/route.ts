@@ -1,20 +1,34 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
+import { simpanCookiePendaftaran } from "@/lib/pendaftaran";
 
 /**
  * app/api/auth/register/route.ts
  * ---------------------------------------------------------------------------
- * Endpoint pendaftaran akun baru:
+ * Langkah 1 pendaftaran: buat akun, TANPA mengirim kode verifikasi.
+ *
  *   1. Menerima nama, email, password
- *   2. Mendaftarkan user ke Supabase Auth lewat supabase.auth.signUp()
- *   3. Jika konfirmasi email aktif di Supabase, kode verifikasi 6 digit dikirim ke email
+ *   2. Membuat user di Supabase Auth dengan email_confirm = false
+ *      (admin API tidak mengirim email apa pun)
+ *   3. Menyimpan id user di cookie sementara bertanda tangan
+ *   4. Mengalihkan front-end ke /register/lengkapi untuk pilih jurusan & kelas
+ *
+ * Kode verifikasi baru dikirim setelah jurusan & kelas tersimpan
+ * (lihat app/api/auth/lengkapi/route.ts).
  * ---------------------------------------------------------------------------
  */
 export async function POST(request: Request) {
-  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    !process.env.SUPABASE_SERVICE_ROLE_KEY
+  ) {
     return NextResponse.json(
-      { ok: false, message: "Layanan autentikasi Supabase belum dikonfigurasi di Environment Variable." },
+      {
+        ok: false,
+        message:
+          "Layanan autentikasi Supabase belum dikonfigurasi di Environment Variable (termasuk SUPABASE_SERVICE_ROLE_KEY).",
+      },
       { status: 503 }
     );
   }
@@ -62,76 +76,41 @@ export async function POST(request: Request) {
     );
   }
 
-  const cookieStore = await cookies();
-  const supabase = createServerClient(
+  const admin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            // abaikan bila dipanggil dari konteks yang tidak boleh set cookie
-          }
-        },
-      },
-    }
+    process.env.SUPABASE_SERVICE_ROLE_KEY,
+    { auth: { persistSession: false } }
   );
 
-  // Deteksi origin dinamis (mis. https://team-iniajadulu-branch.vercel.app saat di Vercel)
-  const originHeader = request.headers.get("origin") || request.headers.get("referer");
-  let emailRedirectTo: string | undefined = undefined;
-  if (originHeader) {
-    try {
-      const parsed = new URL(originHeader);
-      emailRedirectTo = `${parsed.origin}/auth/callback`;
-    } catch {
-      // abaikan
-    }
-  }
-
-  const { data, error } = await supabase.auth.signUp({
+  // Akun dibuat lewat admin API: password langsung tersimpan, email belum
+  // dikonfirmasi, dan TIDAK ada email yang dikirim ke pengguna.
+  const { data, error } = await admin.auth.admin.createUser({
     email,
     password,
-    options: {
-      data: {
-        nama,
-      },
-      emailRedirectTo,
-    },
+    email_confirm: false,
+    user_metadata: { nama },
   });
 
-  if (error) {
-    let pesan = error.message;
-    if (pesan.includes("already registered") || pesan.includes("User already registered")) {
-      pesan = "Email ini sudah terdaftar. Silakan masuk melalui halaman login.";
-    } else if (pesan.includes("weak_password") || pesan.includes("Password should be")) {
+  if (error || !data.user) {
+    let pesan = error?.message || "Gagal membuat akun. Silakan coba lagi.";
+    if (/already registered|already been registered|email address has already/i.test(pesan)) {
+      pesan =
+        "Email ini sudah terdaftar. Silakan masuk melalui halaman login, atau hubungi admin bila akun belum terverifikasi.";
+    } else if (/weak_password|Password should be/i.test(pesan)) {
       pesan = "Kata sandi terlalu lemah. Gunakan minimal 6 karakter.";
+    } else if (/invalid.*email|email.*invalid/i.test(pesan)) {
+      pesan = "Format email tidak valid.";
     }
     return NextResponse.json({ ok: false, message: pesan }, { status: 400 });
   }
 
-  // Jika session langsung terbentuk (email confirmation dinonaktifkan di Supabase)
-  if (data.session) {
-    return NextResponse.json({
-      ok: true,
-      needsVerification: false,
-      message: "Pendaftaran berhasil! Akun Anda telah aktif.",
-      redirectTo: "/dashboard",
-    });
-  }
+  // Izinkan tahap pengisian jurusan & kelas untuk akun yang baru dibuat ini.
+  await simpanCookiePendaftaran(data.user.id);
 
-  // Kode verifikasi 6-digit dikirim ke email
   return NextResponse.json({
     ok: true,
-    needsVerification: true,
     email,
-    message: "Kode verifikasi 6-digit telah dikirim ke email Anda.",
+    redirectTo: "/register/lengkapi",
+    message: "Akun dibuat. Lengkapi jurusan dan kelas untuk menerima kode verifikasi.",
   });
 }
