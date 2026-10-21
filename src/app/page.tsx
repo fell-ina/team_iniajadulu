@@ -415,7 +415,7 @@ function Facilities() {
       subtitle: "Teaching Factory",
       detail:
         "Model belajar yang menggabungkan teori dengan praktik produksi nyata. Program ini didukung kolaborasi industri untuk mengembangkan kompetensi guru dan karya siswa.",
-      image: "/images/school/tefa.jpeg",
+      image: "/images/facilities/tefa.jpg",
       imageAlt: "Kegiatan Teaching Factory di SMK Tunas Harapan",
     },
     {
@@ -423,7 +423,7 @@ function Facilities() {
       subtitle: "Pusat Sumber Belajar",
       detail:
         "Ruang untuk membaca, mencari referensi, dan mendukung kegiatan belajar mandiri siswa.",
-      image: "/images/school/perpustakaan.jpeg",
+      image: "/images/facilities/perpustakaan.png",
       imageAlt: "Perpustakaan SMK Tunas Harapan",
     },
     {
@@ -432,7 +432,7 @@ function Facilities() {
       detail:
         "Kanal media sekolah yang membagikan karya dan kegiatan warga SMK Telekomunikasi Tunas Harapan.",
       href: "https://www.youtube.com/channel/UCiQWJxhNpa_mq_WxnvbEBQQ",
-      image: "/images/school/tv.png",
+      image: "/images/facilities/telsa-tv.png",
       imageAlt: "Telsa TV, televisi sekolah",
     },
     {
@@ -440,7 +440,7 @@ function Facilities() {
       subtitle: "Lingkungan tinggal siswa",
       detail:
         "Asrama putra berupa gedung di lingkungan sekolah yang hijau dan asri. Dilengkapi ruang makan, pembinaan dan pengawasan ketat, serta kegiatan minat dan olahraga. Informasi biaya dapat ditanyakan langsung kepada pihak sekolah.",
-      image: "/images/school/asrama.jpeg",
+      image: "/images/facilities/asrama-putra.jpg",
       imageAlt: "Gedung asrama putra SMK Tunas Harapan",
     },
     {
@@ -448,8 +448,8 @@ function Facilities() {
       subtitle: "Lingkungan tinggal siswi",
       detail:
         "Asrama putri berbentuk komplek perumahan dengan banyak unit yang terbagi dalam beberapa ruangan. Dilengkapi ruang makan, pembinaan dan pengawasan ketat, serta kegiatan minat dan olahraga. Informasi biaya dapat ditanyakan langsung kepada pihak sekolah.",
-      image: "/images/facilities/placeholder.svg",
-      imageAlt: "Asrama putri (foto segera hadir)",
+      image: "/images/facilities/asrama-putri.jpg",
+      imageAlt: "Gedung asrama putri SMK Tunas Harapan",
     },
     {
       title: "Lapangan Basket Atap",
@@ -464,32 +464,32 @@ function Facilities() {
       subtitle: "Area Olahraga & Upacara",
       detail:
         "Lapangan rumput serbaguna untuk sepak bola, upacara bendera, dan berbagai kegiatan luar ruang sekolah.",
-      image: "/images/school/hero-courtyard.jpg",
-      imageAlt: "Lapangan rumput (foto sementara)",
+      image: "/images/facilities/lapangan-rumput.jpg",
+      imageAlt: "Lapangan rumput sekolah",
     },
     {
       title: "Masjid",
       subtitle: "Tempat Ibadah",
       detail:
         "Masjid sekolah sebagai pusat ibadah dan pembinaan rohani warga sekolah dalam lingkungan yang nyaman.",
-      image: "/images/school/building-main.png",
-      imageAlt: "Masjid sekolah (foto sementara)",
+      image: "/images/facilities/masjid.png",
+      imageAlt: "Masjid sekolah",
     },
     {
       title: "Toilet",
       subtitle: "Sanitasi Siswa",
       detail:
         "Fasilitas toilet yang bersih dan terawat untuk menunjang kenyamanan siswa selama beraktivitas di sekolah.",
-      image: "/images/school/building-secondary.png",
-      imageAlt: "Toilet sekolah (foto sementara)",
+      image: "/images/facilities/toilet.png",
+      imageAlt: "Toilet sekolah",
     },
     {
       title: "Parkiran",
       subtitle: "Area Parkir",
       detail:
         "Area parkir yang tertata untuk kendaraan siswa, guru, dan tamu di lingkungan sekolah.",
-      image: "/images/school/tkr.jpg",
-      imageAlt: "Parkiran sekolah (foto sementara)",
+      image: "/images/facilities/parkiran.png",
+      imageAlt: "Parkiran sekolah",
     },
     {
       title: "Aula",
@@ -504,24 +504,24 @@ function Facilities() {
       subtitle: "Praktik Kejuruan",
       detail:
         "Ruang Praktik Siswa (RPS), bengkel/gedung TKR, dan GameLab untuk pembelajaran praktik sesuai bidang keahlian.",
-      image: "/images/school/hero-lab.jpg",
-      imageAlt: "Lab dan bengkel praktik (foto sementara)",
+      image: "/images/facilities/lab-bengkel.png",
+      imageAlt: "Lab dan bengkel praktik",
     },
     {
       title: "Kantin",
       subtitle: "Kuliner Sekolah",
       detail:
         "Area kantin dengan beragam pilihan makanan dan minuman untuk siswa selama waktu istirahat.",
-      image: "/images/facilities/placeholder.svg",
-      imageAlt: "Kantin sekolah (foto segera hadir)",
+      image: "/images/facilities/kantin.png",
+      imageAlt: "Kantin sekolah",
     },
     {
       title: "UKS",
       subtitle: "Kesehatan Siswa",
       detail:
         "Layanan kesehatan dasar dan pertolongan pertama bagi siswa yang membutuhkan selama beraktivitas di sekolah.",
-      image: "/images/facilities/placeholder.svg",
-      imageAlt: "Ruang UKS (foto segera hadir)",
+      image: "/images/facilities/uks.png",
+      imageAlt: "Ruang UKS",
     },
   ];
 
@@ -1554,6 +1554,63 @@ function Future() {
 }
 type AuthStatus = "loading" | "loggedIn" | "loggedOut";
 
+function Aurora(){return <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+    <motion.img
+      src="/images/footer/aurora-tr.png"
+      alt=""
+      className="absolute -right-4 -top-4 w-[22rem] max-w-none opacity-95 sm:w-[30rem] lg:w-[38rem]"
+      style={{ filter: 'brightness(1.5) saturate(1.25)' }}
+      animate={{ opacity: [0.8, 1, 0.8], scale: [1, 1.05, 1], x: [0, -10, 0], y: [0, 8, 0] }}
+      transition={{ duration: 17, repeat: Infinity, ease: 'easeInOut' }}
+    />
+    <motion.img
+      src="/images/footer/aurora-bl.png"
+      alt=""
+      className="absolute -bottom-4 -left-4 w-[22rem] max-w-none opacity-95 sm:w-[30rem] lg:w-[38rem]"
+      style={{ filter: 'brightness(1.5) saturate(1.25)' }}
+      animate={{ opacity: [0.8, 1, 0.8], scale: [1, 1.05, 1], x: [0, 10, 0], y: [0, -8, 0] }}
+      transition={{ duration: 19, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+    />
+    {particles.map((p, index) => <motion.span
+      key={index}
+      className="absolute rounded-full bg-[#EAF6FF]"
+      style={{ left: p.left, top: p.top, width: p.size, height: p.size }}
+      animate={{ opacity: [0.3, 1, 0.3], y: [0, -10, 0], x: [0, index % 2 === 0 ? 5 : -5, 0] }}
+      transition={{
+        opacity: { duration: 3.5, delay: p.twinkleDelay, repeat: Infinity, repeatDelay: 2 + (index % 6) * 0.5 },
+        y: { duration: p.float, delay: p.delay, repeat: Infinity, ease: 'easeInOut' },
+        x: { duration: p.float + 2, delay: p.delay, repeat: Infinity, ease: 'easeInOut' },
+      }}
+    >
+      <span className="block h-full w-full rounded-full bg-[#EAF6FF]" style={{ boxShadow: '0 0 8px 2px rgba(193,232,255,.9)' }} />
+    </motion.span>)}
+  </div>;
+}
+const particles = [
+  { left: '22%', top: '22%', size: 5, delay: 0, float: 8, twinkleDelay: 1.2 },
+  { left: '30%', top: '40%', size: 4, delay: 1.4, float: 9, twinkleDelay: 3.1 },
+  { left: '26%', top: '62%', size: 6, delay: 0.6, float: 7.5, twinkleDelay: 2.2 },
+  { left: '34%', top: '78%', size: 4, delay: 2.2, float: 8.5, twinkleDelay: 4.4 },
+  { left: '20%', top: '48%', size: 5, delay: 3.1, float: 7, twinkleDelay: 2.7 },
+  { left: '40%', top: '16%', size: 4, delay: 1.1, float: 9, twinkleDelay: 3.9 },
+  { left: '44%', top: '34%', size: 6, delay: 2.7, float: 8, twinkleDelay: 1.8 },
+  { left: '42%', top: '58%', size: 4, delay: 0.4, float: 7.5, twinkleDelay: 5.2 },
+  { left: '38%', top: '84%', size: 5, delay: 3.5, float: 8.5, twinkleDelay: 3.3 },
+  { left: '50%', top: '24%', size: 4, delay: 1.7, float: 7, twinkleDelay: 2.4 },
+  { left: '52%', top: '50%', size: 6, delay: 2.4, float: 9, twinkleDelay: 4.1 },
+  { left: '48%', top: '72%', size: 4, delay: 0.9, float: 8, twinkleDelay: 1.5 },
+  { left: '56%', top: '18%', size: 5, delay: 3.2, float: 7.5, twinkleDelay: 3.6 },
+  { left: '58%', top: '44%', size: 4, delay: 1.3, float: 8.5, twinkleDelay: 4.8 },
+  { left: '60%', top: '68%', size: 6, delay: 2.1, float: 7, twinkleDelay: 2.0 },
+  { left: '62%', top: '86%', size: 4, delay: 0.7, float: 9, twinkleDelay: 5.5 },
+  { left: '68%', top: '26%', size: 5, delay: 2.9, float: 8, twinkleDelay: 2.6 },
+  { left: '70%', top: '52%', size: 4, delay: 1.6, float: 7.5, twinkleDelay: 4.0 },
+  { left: '66%', top: '74%', size: 6, delay: 3.4, float: 8.5, twinkleDelay: 3.0 },
+  { left: '74%', top: '38%', size: 4, delay: 0.5, float: 7, twinkleDelay: 1.9 },
+  { left: '76%', top: '64%', size: 5, delay: 2.6, float: 9, twinkleDelay: 4.6 },
+  { left: '78%', top: '20%', size: 4, delay: 1.9, float: 8, twinkleDelay: 2.9 },
+];
+
 function WelcomeCard({
   nama,
   verificationStatus,
@@ -1893,6 +1950,18 @@ export default function Home(){
 
     <HeroSection/>
     <Profile/><Majors/><News/><Facilities/><Partners/><Achievements/><Future/>
+    <section
+      aria-label="Gedung SMK Telekomunikasi Tunas Harapan"
+      className="relative w-screen overflow-hidden bg-[#F4F9FF] px-0 pb-0"
+    >
+      <div className="w-full overflow-hidden">
+        <img
+          src="/images/school/gedung.png"
+          alt="Gedung SMK Telekomunikasi Tunas Harapan"
+          className="block h-auto w-full"
+        />
+      </div>
+    </section>
     <Footer status={status} onLogout={handleLogout}/>
     <Chatbot/>
 
