@@ -8,3 +8,46 @@
 .major-link{--major-accent:#fff}.major-link:hover,.major-link:active,.major-link:focus-visible{background-color:color-mix(in srgb,var(--major-accent) 18%,transparent);box-shadow:inset 3px 0 var(--major-accent)}.major-link:hover h3,.major-link:active h3,.major-link:focus-visible h3,.major-link:hover>svg,.major-link:active>svg,.major-link:focus-visible>svg{color:var(--major-accent)}
 
 .partner-marquee{animation:partner-marquee 34s linear infinite}@keyframes partner-marquee{from{transform:translateX(0)}to{transform:translateX(-50%)}}@media (prefers-reduced-motion:reduce){.partner-marquee{animation:none}}
+
+/* ==== Fiska fullscreen ambience ==== */
+@keyframes fiska-orb-drift{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(26px,-34px,0) scale(1.14)}}
+.fiska-orb{animation:fiska-orb-drift 20s ease-in-out infinite}
+.fiska-orb-slow{animation-duration:29s;animation-direction:alternate-reverse}
+@keyframes fiska-halo-pulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:.85;transform:scale(1.06)}}
+.fiska-halo{animation:fiska-halo-pulse 9s ease-in-out infinite}
+@keyframes fiska-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-9px)}}
+.fiska-float{animation:fiska-float 7.5s ease-in-out infinite}
+@keyframes fiska-spark{0%,100%{opacity:.1;transform:translateY(6px) scale(.8)}50%{opacity:.9;transform:translateY(-8px) scale(1)}}
+.fiska-spark{animation:fiska-spark 6s ease-in-out infinite}
+@keyframes fiska-sweep{0%{transform:translateX(-160%) rotate(10deg)}60%,100%{transform:translateX(420%) rotate(10deg)}}
+.fiska-sweep{animation:fiska-sweep 9s ease-in-out infinite}
+@keyframes fiska-ring{0%{opacity:.45;transform:scale(1)}100%{opacity:0;transform:scale(1.045)}}
+.fiska-ring{animation:fiska-ring 2.6s ease-out infinite}
+@keyframes fiska-eq{0%,100%{transform:scaleY(.28)}50%{transform:scaleY(1)}}
+.fiska-eq{transform-origin:bottom;animation:fiska-eq .78s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){.fiska-orb,.fiska-halo,.fiska-float,.fiska-spark,.fiska-sweep,.fiska-ring,.fiska-eq{animation:none!important}}
+
+/* ==== Koreografi dekorasi Fiska ==== */
+@keyframes fiska-orbit{to{transform:rotate(360deg)}}
+.fiska-orbit{animation:fiska-orbit 26s linear infinite}
+.fiska-orbit-rev{animation-direction:reverse;animation-duration:38s}
+
+@keyframes fiska-drift{0%{opacity:0;transform:translate3d(0,14px,0) rotate(0deg) scale(.7)}22%{opacity:.75}55%{opacity:.5;transform:translate3d(12px,-30px,0) rotate(24deg) scale(1)}80%{opacity:.2}100%{opacity:0;transform:translate3d(-8px,-64px,0) rotate(-18deg) scale(.85)}}
+.fiska-drift{animation:fiska-drift 11s ease-in-out infinite}
+
+@keyframes fiska-corner-pulse{0%,100%{opacity:.3}50%{opacity:.95}}
+.fiska-corner{animation:fiska-corner-pulse 4.6s ease-in-out infinite}
+
+@keyframes fiska-streak{0%{opacity:0;transform:scaleY(.2)}35%{opacity:.8}100%{opacity:0;transform:scaleY(1)}}
+.fiska-streak{transform-origin:bottom;animation:fiska-streak 6.5s ease-in-out infinite}
+
+@keyframes fiska-scan{0%{opacity:0;transform:translateY(-10%)}18%{opacity:.55}82%{opacity:.55}100%{opacity:0;transform:translateY(620%)}}
+.fiska-scan{animation:fiska-scan 8s linear infinite}
+
+@keyframes fiska-glint{0%,100%{opacity:.15;transform:scale(.9)}50%{opacity:.7;transform:scale(1.05)}}
+.fiska-glint{animation:fiska-glint 5.5s ease-in-out infinite}
+
+@keyframes fiska-ripple{0%{opacity:.5;transform:scale(.6)}100%{opacity:0;transform:scale(1.6)}}
+.fiska-ripple{animation:fiska-ripple 5s ease-out infinite}
+
+@media (prefers-reduced-motion:reduce){.fiska-orbit,.fiska-drift,.fiska-corner,.fiska-streak,.fiska-scan,.fiska-glint,.fiska-ripple{animation:none!important}}

@@ -169,16 +169,30 @@ export default function Chatbot() {
     <div
       className={
         open && isFullscreen
-          ? "fixed inset-0 z-80 flex flex-col md:flex-row items-center justify-center gap-6 bg-black/85 p-0 pt-[env(safe-area-inset-top)] backdrop-blur-md transition-all duration-300 sm:p-4 md:p-8"
+          ? "isolate fixed inset-0 z-80 flex flex-col md:flex-row items-center justify-center gap-6 overflow-hidden bg-[radial-gradient(ellipse_at_28%_38%,#0a2749_0%,#04142b_42%,#010912_100%)] p-0 pt-[env(safe-area-inset-top)] backdrop-blur-md transition-all duration-300 sm:p-4 md:p-8"
           : "fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[max(1rem,env(safe-area-inset-bottom))] z-80"
       }
     >
+      {/* Ambience layar penuh: cahaya, grid, dan pantulan lantai */}
+      {open && isFullscreen && (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 -z-10 overflow-hidden"
+        >
+          <div className="fiska-orb absolute -left-1/4 top-[-12%] size-[34rem] rounded-full bg-[#0d3b6b]/55 blur-[110px]" />
+          <div className="fiska-orb fiska-orb-slow absolute -right-1/3 bottom-[-18%] size-[38rem] rounded-full bg-[#2b6fa3]/35 blur-[120px]" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(125,160,202,0.055)_1px,transparent_1px),linear-gradient(to_bottom,rgba(125,160,202,0.055)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_at_50%_45%,black,transparent_78%)]" />
+          <div className="absolute inset-x-0 bottom-0 h-1/3 bg-[radial-gradient(ellipse_at_50%_100%,rgba(84,131,179,0.28),transparent_70%)]" />
+        </div>
+      )}
+
       <AnimatePresence>
         {open && (
           <>
             {/* PASSING LEVEL BUKAAN MULUT KE AVATAR FISKA */}
             <FiskaAvatar
               isFullscreen={isFullscreen}
+              isSpeaking={isSpeaking}
               botEmotion={botEmotion}
               mouthLevelRef={mouthLevelRef}
             />
