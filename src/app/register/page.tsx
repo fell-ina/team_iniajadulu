@@ -340,10 +340,6 @@ export default function RegisterPage() {
           {step === 1 ? (
             <>
               <h2 className={styles.cardTitle}>Buat Akun</h2>
-              <p className={styles.cardHint}>
-                Isi data berikut untuk mendaftar akun sekolah. Jurusan dan kelas diisi
-                pada langkah berikutnya.
-              </p>
 
               <div role="alert" aria-live="polite">
                 {error && <p className={styles.error}>{error}</p>}
