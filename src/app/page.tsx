@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -13,7 +13,6 @@ import {
   UserRound,
   UsersRound,
   X,
-  Handshake,
   Trophy,
   BadgeCheck
 } from "lucide-react";
@@ -21,6 +20,7 @@ import Link from "next/link";
 import HeroSection from "@/components/HeroSection";
 import Chatbot from "@/components/Chatbot";
 import ModalKirimNisn from '@/components/ModalKirimNisn';
+import { ringkasKonten } from '@/lib/ringkasTeks';
 
 const nav = [
   ["Profil", "#profil"],
@@ -348,7 +348,7 @@ function News() {
             const date = isDb
               ? formatTanggalBerita(b.created_at, "Baru saja")
               : (tanggalFallback[slug] ?? "");
-            const desc = b.subjudul || b.konten.slice(0, 120);
+            const desc = b.subjudul || ringkasKonten(b.konten, 120);
             return (
               <motion.article
                 key={slug}
@@ -526,14 +526,10 @@ function Facilities() {
   ];
 
   const count = items.length;
-  const dragMoved = useRef(false);
   const goTo = (index: number, dir?: number) => {
     const next = ((index % count) + count) % count;
     setDirection(dir ?? (next > active ? 1 : -1));
     setActive(next);
-  };
-  const peekTo = (index: number) => {
-    if (!dragMoved.current) goTo(index);
   };
   const goNext = () => goTo(active + 1, 1);
   const goPrev = () => goTo(active - 1, -1);
@@ -870,7 +866,7 @@ function Facilities() {
             <ArrowLeft size={20} />
           </button>
           <motion.div
-            className="relative mx-auto h-[440px] w-full max-w-[520px] flex-1 touch-pan-y sm:h-[470px]"
+            className="relative mx-auto h-[440px] w-full max-w-[520px] flex-1 touch-pan-y select-none cursor-grab active:cursor-grabbing sm:h-[470px]"
             role="region"
             aria-roledescription="carousel"
             aria-label="Kartu fasilitas. Geser untuk pindah, ketuk kartu untuk detail."
@@ -879,64 +875,32 @@ function Facilities() {
             dragElastic={0.6}
             dragMomentum={false}
             onDragEnd={(_, info) => {
-              if (Math.abs(info.offset.x) > 10) {
-                dragMoved.current = true;
-                window.setTimeout(() => {
-                  dragMoved.current = false;
-                }, 150);
-              }
               if (info.offset.x < -60) goNext();
               else if (info.offset.x > 60) goPrev();
             }}
           >
             {items.map((item, index) => {
               const pos = (((index - active) % count) + count) % count;
-              const xMap = [0, 40, -40, 0];
-              const yMap = [0, 18, 36, 54];
-              const rotateMap = [0, 5, -5, 0];
-              const x = xMap[Math.min(pos, 3)];
-              const y = yMap[Math.min(pos, 3)];
-              const rotate = rotateMap[Math.min(pos, 3)];
-              const baseScale = 1 - Math.min(pos, 3) * 0.06;
-              const isPeekable = pos === 1 || pos === 2;
-              const peekX = pos === 1 ? -14 : 14;
+              const isAktif = pos === 0;
               return (
                 <motion.article
                   key={item.title}
                   initial={false}
                   animate={{
-                    x,
-                    y,
-                    rotate,
-                    scale: baseScale,
-                    opacity:
-                      pos === 0 ? 1 : pos === 1 ? 0.85 : pos === 2 ? 0.7 : 0,
-                    filter:
-                      pos === 0
-                        ? "brightness(1)"
-                        : `brightness(${Math.max(0.72, 0.94 - pos * 0.08)})`,
+                    x: 0,
+                    y: 0,
+                    rotate: 0,
+                    scale: 1,
+                    opacity: isAktif ? 1 : 0,
                   }}
-                  whileHover={
-                    pos === 0
-                      ? { y: -6, scale: 1.015 }
-                      : isPeekable
-                        ? {
-                            x: x + peekX,
-                            y: y - 6,
-                            scale: baseScale + 0.03,
-                            filter: "brightness(1)",
-                          }
-                        : undefined
-                  }
-                  whileTap={pos <= 2 ? { scale: baseScale - 0.015 } : undefined}
+                  whileHover={isAktif ? { y: -6, scale: 1.015 } : undefined}
+                  whileTap={isAktif ? { scale: 0.985 } : undefined}
                   transition={{ type: "spring", stiffness: 240, damping: 28 }}
                   style={{ zIndex: count - pos }}
-                  aria-hidden={pos !== 0}
-                  onClick={isPeekable ? () => peekTo(index) : undefined}
-                  title={isPeekable ? `Tampilkan ${item.title}` : undefined}
-                  className={`absolute inset-x-1 top-0 overflow-hidden rounded-[1.75rem] border border-[#021024]/8 bg-[#F4F9FF] transition-shadow duration-300 sm:inset-x-12 ${pos === 0 ? "shadow-[0_32px_70px_-28px_rgba(2,16,36,.4)] hover:shadow-[0_44px_90px_-28px_rgba(2,16,36,.55)]" : isPeekable ? "cursor-pointer hover:shadow-[0_24px_50px_-24px_rgba(2,16,36,.45)]" : "pointer-events-none"} ${pos > 2 ? "invisible" : ""}`}
+                  aria-hidden={!isAktif}
+                  className={`absolute inset-x-1 top-0 overflow-hidden rounded-[1.75rem] border border-[#021024]/8 bg-[#F4F9FF] transition-shadow duration-300 sm:inset-x-12 ${isAktif ? "shadow-[0_32px_70px_-28px_rgba(2,16,36,.4)] hover:shadow-[0_44px_90px_-28px_rgba(2,16,36,.55)]" : "pointer-events-none"}`}
                 >
-                  {pos === 0 ? (
+                  {isAktif ? (
                     <button
                       type="button"
                       onClick={() => setSelected(index)}
@@ -1036,7 +1000,7 @@ function Facilities() {
             <ArrowRight size={20} />
           </button>
         </div>
-        <div className="mt-8 flex items-center justify-center gap-4 sm:mt-10">
+        <div className="mt-8 flex select-none items-center justify-center gap-4 sm:mt-10">
           <span
             className="font-mono text-xs tracking-[.2em] text-[#021024]/50"
             aria-live="polite"
@@ -1185,11 +1149,6 @@ function Partners() {
               Terhubung dengan dunia nyata.
             </h2>
           </div>
-          <Handshake
-            className="hidden text-[#C1E8FF]/35 sm:block"
-            size={34}
-            strokeWidth={1.2}
-          />
         </div>
       </div>
       <div className="relative mt-12 overflow-hidden">
@@ -1211,11 +1170,6 @@ function Partners() {
             </div>
           ))}
         </div>
-      </div>
-      <div className="mx-auto max-w-7xl px-6">
-        <p className="mt-5 text-[10px] uppercase tracking-[.16em] text-white/25">
-          np.
-        </p>
       </div>
     </section>
   );
