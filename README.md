@@ -59,6 +59,8 @@
 /register               - Pendaftaran akun (email + Google) & verifikasi kode OTP
 /register/lengkapi      - Pengisian jurusan & kelas sebelum kode verifikasi dikirim
 /login                  - Portal Autentikasi Login Admin / Guru / Siswa
+/lupa-password          - Minta tautan reset kata sandi lewat email
+/reset-password         - Isi kata sandi baru (dibuka dari tautan email)
 /dashboard              - Ringkasan panel admin & guru (sidebar biru di kiri)
 /dashboard/pengguna     - Kelola data pengguna (khusus admin)
 /dashboard/verifikasi   - Terima / tolak pengajuan NISN
@@ -186,6 +188,36 @@ Pendaftar lewat Google juga diarahkan ke `/register/lengkapi` dan tidak menerima
 (email sudah diverifikasi Google). Daftar pilihan ada di `src/lib/sekolah.ts`, sedangkan
 validasi di server memakai berkas yang sama. Login siswa yang datanya belum lengkap juga
 diarahkan kembali ke halaman tersebut.
+
+---
+
+## 🔑 Lupa Kata Sandi
+
+Alur reset memakai tautan email Supabase Auth (bukan kode OTP):
+
+1. `/lupa-password` — pengguna mengetik email akun, dikirim ke
+   `src/app/api/auth/lupa-password/route.ts` yang memanggil
+   `supabase.auth.resetPasswordForEmail()` dengan
+   `redirectTo = <origin>/auth/callback?next=/reset-password`.
+   Balasannya selalu generik agar tidak membocorkan email mana yang terdaftar.
+2. Tautan di email membuka `/auth/callback?next=/reset-password`. Route itu menukar `code`
+   menjadi session (cookie `httpOnly`) lalu mengalihkan ke `/reset-password`.
+3. `/reset-password` menampilkan formulir kata sandi baru; `POST
+   /api/auth/reset-password` memanggil `updateUser({ password })`, mengakhiri session
+   recovery, lalu mengarahkan ke `/login?reset=berhasil`.
+
+Catatan:
+
+- Tautan reset hanya bisa dipakai **sekali** dan harus dibuka di peramban yang sama dengan
+  saat meminta reset (PKCE menyimpan verifier di cookie). Kalau tautan kedaluwarsa, minta
+  ulang dari `/lupa-password`.
+- Pastikan **Redirect URLs** di Supabase memuat `/auth/callback` dan pola `/**` untuk setiap
+  domain (termasuk domain Vercel), sama seperti syarat Google OAuth di atas.
+- Email reset dikirim oleh Supabase. Kalau pengiriman email bawaan Supabase kena batas
+  frekuensi, atur **Authentication → Emails → SMTP Settings** dengan SMTP sendiri.
+- Akun yang hanya punya NISN/username (`<nama>@sekolah.local`) tidak punya kotak surat,
+  jadi tidak bisa memakai alur ini — admin sekolah perlu mengatur ulang kata sandinya.
+  Akun Google cukup memakai tombol “Masuk dengan Google”.
 
 ---
 

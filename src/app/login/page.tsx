@@ -1,20 +1,6 @@
 "use client";
 
-/**
- * app/login/page.tsx
- * ---------------------------------------------------------------------------
- * Halaman login SMK Telekomunikasi Tunas Harapan (Next.js App Router).
- *
- * Halaman ini HANYA front-end. Semua logika database ada di:
- *   -> app/api/auth/login/route.ts  (server side)
- * Halaman ini cuma mengirim data ke endpoint tersebut lewat fetch().
- *
- * Yang perlu Anda siapkan
- *   2. Ubah LOGIN_ENDPOINT / DEFAULT_REDIRECT di bawah kalau route Anda berbeda.
- * ---------------------------------------------------------------------------
- */
-
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -42,7 +28,17 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  // Pesan setelah reset kata sandi (?reset=berhasil). Dibaca dari window agar
+  // halaman tidak perlu Suspense untuk useSearchParams.
+  useEffect(() => {
+    const status = new URLSearchParams(window.location.search).get("reset");
+    if (status === "berhasil") {
+      setNotice("Kata sandi berhasil diperbarui. Silakan masuk dengan kata sandi baru.");
+    }
+  }, []);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -146,6 +142,15 @@ export default function LoginPage() {
           <div className={styles.divider}>atau masuk dengan akun sekolah</div>
 
           <form onSubmit={handleSubmit} noValidate className={styles.form}>
+            {/* Pesan sukses setelah reset kata sandi */}
+            <div role="status" aria-live="polite">
+              {notice && (
+                <p className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-[13px] font-medium leading-relaxed text-emerald-900">
+                  {notice}
+                </p>
+              )}
+            </div>
+
             {/* Pesan error dari client / back-end */}
             <div role="alert" aria-live="polite">
               {error && <p className={styles.error}>{error}</p>}
@@ -212,7 +217,6 @@ export default function LoginPage() {
                 <span>Ingat saya</span>
               </label>
 
-              {/* TODO: buat halaman /lupa-password (kirim email / reset lewat admin) */}
               <Link href="/lupa-password" className={styles.forgot}>
                 Lupa kata sandi?
               </Link>
