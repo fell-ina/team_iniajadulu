@@ -449,6 +449,13 @@ export default function RegisterPage() {
                   Masuk di sini
                 </Link>
               </p>
+
+              <p className={styles.footerText}>
+                Lupa kata sandi?
+                <Link href="/lupa-password" className={styles.footerLink}>
+                  Reset di sini
+                </Link>
+              </p>
             </>
           ) : (
             <>
