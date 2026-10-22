@@ -14,7 +14,9 @@ import {
   UsersRound,
   X,
   Trophy,
-  BadgeCheck
+  BadgeCheck,
+  ExternalLink,
+  MapPin,
 } from "lucide-react";
 import Link from "next/link";
 import HeroSection from "@/components/HeroSection";
@@ -26,6 +28,7 @@ const nav = [
   ["Profil", "#profil"],
   ["Jurusan", "#jurusan"],
   ["Berita", "#berita"],
+  ["Lokasi", "#lokasi"],
   ["Fasilitas", "#fasilitas"],
   ["Mitra Industri", "#industri"],
   ["Prestasi", "#prestasi"],
@@ -848,7 +851,7 @@ function Facilities() {
         </svg>
       </motion.div>
       <div className="relative mx-auto max-w-7xl">
-        <p className="eyebrow text-[#2F5F8F]">04 / FASILITAS</p>
+        <p className="eyebrow text-[#2F5F8F]">05 / FASILITAS</p>
         <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <h2 className="display text-4xl sm:text-6xl">
             Ruang untuk
@@ -1115,6 +1118,53 @@ function Facilities() {
   );
 }
 
+function LocationSection() {
+  return (
+    <section id="lokasi" className="bg-[#021024] px-6 py-24 text-white sm:py-32">
+      <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[.8fr_1.2fr] lg:items-stretch">
+        <div className="flex flex-col justify-between rounded-[2rem] border border-white/10 bg-[#021024] p-7 sm:p-10">
+          <div>
+            <p className="eyebrow text-[#C1E8FF]/70">04 / LOKASI SEKOLAH</p>
+            <h2 className="display mt-5 max-w-lg text-4xl sm:text-6xl">Temui kami di sekolah.</h2>
+            <p className="mt-5 max-w-md text-sm leading-7 text-white/65 sm:text-base">
+              Datang dan rasakan langsung lingkungan belajar SMK Telekomunikasi Tunas Harapan.
+            </p>
+          </div>
+          <div className="mt-10 border-t border-white/15 pt-5">
+            <div className="flex items-start gap-3">
+              <MapPin size={22} className="mt-0.5 shrink-0 text-[#C1E8FF]" aria-hidden="true" />
+              <address className="not-italic text-sm leading-6 text-white/70">
+                Jl. Umbul Senjoyo I, No. 3, Desa Bener,
+                <br />
+                Kec. Tengaran, Kabupaten Semarang,
+                <br />
+                Jawa Tengah.
+              </address>
+            </div>
+            <a
+              href="https://www.google.com/maps/search/?api=1&query=SMK+Telekomunikasi+Tunas+Harapan+Tengaran"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#C1E8FF] px-5 py-3 text-[10px] font-bold uppercase tracking-[.15em] text-[#021024] transition hover:bg-white"
+            >
+              Buka di Google Maps <ExternalLink size={14} />
+            </a>
+          </div>
+        </div>
+        <div className="min-h-[360px] overflow-hidden rounded-[2rem] border border-white/10 bg-[#021024] shadow-xl sm:min-h-[480px]">
+          <iframe
+            title="Peta lokasi SMK Telekomunikasi Tunas Harapan"
+            src="https://www.google.com/maps?q=SMK+Telekomunikasi+Tunas+Harapan+Tengaran&output=embed"
+            className="h-full min-h-[360px] w-full border-0 sm:min-h-[480px]"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Partners() {
   const partners = [
     { name: "Sinarmas", file: "/images/partners/sinarmas.png" },
@@ -1145,7 +1195,7 @@ function Partners() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="eyebrow text-[#C1E8FF]/60">05 / MITRA INDUSTRI</p>
+            <p className="eyebrow text-[#C1E8FF]/60">06 / MITRA INDUSTRI</p>
             <h2 className="display mt-5 max-w-3xl text-4xl sm:text-6xl">
               Terhubung dengan dunia nyata.
             </h2>
@@ -1184,7 +1234,7 @@ function Achievements() {
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="eyebrow text-[#2F5F8F]">06 / PRESTASI</p>
+        <p className="eyebrow text-[#2F5F8F]">07 / PRESTASI</p>
             <h2 className="display mt-5 max-w-3xl text-4xl sm:text-6xl">
               Karya siswa yang
               <br />
@@ -1383,7 +1433,7 @@ function Future() {
   return (
     <section className="bg-[#F4F9FF] px-6 py-28 text-[#021024] sm:py-36">
       <div className="mx-auto max-w-7xl rounded-[2rem] bg-[#C1E8FF] px-7 pb-0 pt-7 sm:px-12 sm:pt-12 lg:px-14 lg:pt-14">
-        <p className="eyebrow text-[#052659]/60">07 / YOUR NEXT STEP</p>
+        <p className="eyebrow text-[#052659]/60">08 / YOUR NEXT STEP</p>
         <h2 className="display mt-5 max-w-4xl text-4xl sm:text-6xl">
           Kawal langkahmu setelah lulus.
         </h2>
@@ -1904,7 +1954,7 @@ export default function Home(){
     </AnimatePresence>
 
     <HeroSection/>
-    <Profile/><Majors/><News/><Facilities/><Partners/><Achievements/><Future/>
+    <Profile/><Majors/><News/><LocationSection/><Facilities/><Partners/><Achievements/><Future/>
     <section
       aria-label="Gedung SMK Telekomunikasi Tunas Harapan"
       className="relative w-screen overflow-hidden bg-[#F4F9FF] px-0 pb-0"
