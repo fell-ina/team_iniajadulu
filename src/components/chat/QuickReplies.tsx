@@ -88,10 +88,12 @@ export default function QuickReplies({
         ref={quickRepliesRef}
         onWheel={handleWheel}
         onPointerDown={handlePointerDown}
-        className={`mx-auto flex w-full max-w-[42rem] snap-x gap-2 select-none px-3.5 py-2.5 sm:px-4 ${
+        className={`mx-auto flex w-full max-w-[42rem] snap-x touch-pan-x gap-2 select-none px-3.5 py-2.5 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden lg:touch-auto sm:px-4 ${
           isFullscreen
-            ? "max-h-36 flex-wrap justify-center overflow-y-auto"
-            : "cursor-grab touch-pan-x overflow-x-auto overscroll-x-contain active:cursor-grabbing [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
+            ? // HP & tablet: satu baris geser supaya area pesan tetap tinggi
+              // (landscape HP cuma ~390px). Desktop: wrap penuh tanpa terpotong.
+              "overflow-x-auto overscroll-x-contain lg:flex-wrap lg:justify-center lg:overflow-x-hidden"
+            : "cursor-grab overflow-x-auto overscroll-x-contain active:cursor-grabbing"
         }`}
       >
         {QUICK_REPLIES.map((text, i) => (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowLeft,
@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Clock3,
   GraduationCap,
+  LayoutDashboard,
   LogOut,
   Menu,
   UserRound,
@@ -32,11 +33,20 @@ const nav = [
   ["Berita", "#berita"],
   ["Lokasi", "#lokasi"],
   ["Fasilitas", "#fasilitas"],
+  ["Forum", "/forum"],
   ["Mitra Industri", "#industri"],
   ["Prestasi", "#prestasi"],
 ];
 
-function Nav() {
+function Nav({
+  role,
+  status,
+  onLogout,
+}: {
+  role: string | null;
+  status: AuthStatus;
+  onLogout: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<string>("#profil");
@@ -106,15 +116,32 @@ function Nav() {
           })}
         </nav>
 
-        <div className="hidden md:block">
-          <a
-            href="https://spmb.tunasharapan.info"
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-full bg-white px-4 py-2 text-[10px] font-bold uppercase tracking-[.15em] text-[#021024]"
-          >
-            PPDB / SPMB
-          </a>
+        <div className="hidden items-center gap-2 md:flex">
+          {/* Hanya admin: role berasal dari /api/auth/me (dibaca server dari tabel users). */}
+          {role === "admin" && (
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[10px] font-bold uppercase tracking-[.15em] text-[#C1E8FF] transition hover:bg-white/20 hover:text-white"
+            >
+              <LayoutDashboard size={13} /> Dashboard
+            </Link>
+          )}
+          {status === "loggedIn" ? (
+            <button
+              type="button"
+              onClick={onLogout}
+              className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[10px] font-bold uppercase tracking-[.15em] text-[#C1E8FF] transition hover:bg-white/20 hover:text-white"
+            >
+              Logout <LogOut size={13} />
+            </button>
+          ) : status === "loading" ? null : (
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-[10px] font-bold uppercase tracking-[.15em] text-[#021024]"
+            >
+              Login <ArrowUpRight size={13} />
+            </Link>
+          )}
         </div>
 
         <button
@@ -140,14 +167,35 @@ function Nav() {
               {n}
             </a>
           ))}
-          <a
-            href="https://spmb.tunasharapan.info"
-            target="_blank"
-            rel="noreferrer"
-            className="mt-2 block rounded-2xl bg-white px-4 py-3 text-center text-sm font-semibold text-[#021024]"
-          >
-            PPDB / SPMB
-          </a>
+          {status === "loggedIn" ? (
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                onLogout();
+              }}
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl border border-white/25 bg-white/10 px-4 py-3 text-sm font-semibold text-[#C1E8FF]"
+            >
+              Logout <LogOut size={15} />
+            </button>
+          ) : status === "loading" ? null : (
+            <Link
+              href="/login"
+              onClick={() => setOpen(false)}
+              className="mt-2 block rounded-2xl bg-white px-4 py-3 text-center text-sm font-semibold text-[#021024]"
+            >
+              Login
+            </Link>
+          )}
+          {role === "admin" && (
+            <Link
+              href="/dashboard"
+              onClick={() => setOpen(false)}
+              className="mt-2 flex items-center justify-center gap-2 rounded-2xl border border-white/25 bg-white/10 px-4 py-3 text-sm font-semibold text-[#C1E8FF]"
+            >
+              <LayoutDashboard size={15} /> Dashboard Admin
+            </Link>
+          )}
         </div>
       )}
     </header>
@@ -249,7 +297,8 @@ function Profile() {
 }
 
 const majors=[['01','PPLG','Pengembangan Perangkat Lunak dan Gim','/images/school/hero-lab.jpg','pplg','#BA0000'],['02','TJKT','Teknik Jaringan Komputer dan Telekomunikasi','/images/school/tkj1.jpg','tjkt','#00c53b'],['03','DKV','Desain Komunikasi Visual','/images/school/dkv.jpg','dkv','#152DA9'],['04','TKR','Teknik Kendaraan Ringan','/images/school/tkr.jpg','tkr','#C67219']];
-function Majors(){return <section id="jurusan" className="bg-[#021024] px-6 py-28 text-white sm:py-36"><div className="mx-auto max-w-7xl"><div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow text-[#7DA0CA]">02 / PROGRAM KEAHLIAN</p><h2 className="display mt-5 text-4xl sm:text-6xl">Empat bidang.<br/><span className="text-white/35">Satu arah.</span></h2></div><p className="max-w-sm text-sm leading-7 text-white/45">Eksplorasi software, jaringan, desain, dan otomotif melalui pengalaman vokasi yang relevan.</p></div><div className="mt-16 divide-y divide-white/10 border-y border-white/10">{majors.map(([n,title,desc,img,slug,accent])=><Link href={`/jurusan/${slug}`} key={title} style={{'--major-accent':accent} as React.CSSProperties} className="major-link group relative grid grid-cols-[52px_1fr_auto] items-center gap-x-4 gap-y-2 overflow-hidden rounded-lg py-5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C1E8FF] sm:rounded-none sm:grid-cols-[72px_1fr_1.2fr_auto] sm:gap-5 sm:py-8"><div className="relative col-start-1 row-start-2 h-12 w-[52px] overflow-hidden rounded-md sm:absolute sm:inset-y-3 sm:right-16 sm:col-auto sm:row-auto sm:h-20 sm:w-36 sm:rounded-xl sm:opacity-0 sm:transition sm:duration-500 sm:group-hover:opacity-20 lg:h-24 lg:w-44"><img src={img} alt="" className="h-full w-full object-cover"/></div><span className="col-start-1 row-start-1 font-mono text-xs text-white/45 sm:col-auto sm:row-auto sm:text-white/30">{n}</span><h3 className="relative z-10 col-start-2 row-start-1 text-2xl font-medium tracking-tight sm:col-auto sm:row-auto sm:text-3xl lg:text-5xl">{title}</h3><p className="relative z-10 col-start-2 row-start-2 max-w-md text-xs leading-5 text-white/60 sm:col-auto sm:row-auto sm:text-sm sm:leading-6 sm:text-white/45">{desc}</p><ArrowUpRight className="relative z-10 col-start-3 row-span-2 row-start-1 self-center text-white/55 transition group-active:translate-x-1 group-active:-translate-y-1 group-hover:-translate-y-1 group-hover:translate-x-1 sm:col-auto sm:row-auto sm:self-auto"/></Link>)}</div></div></section>}
+const mottos=["arah.","hati.","tujuan.","harapan."];
+function Majors(){const[mottoIdx,setMottoIdx]=useState(0);useEffect(()=>{const t=setInterval(()=>setMottoIdx(v=>(v+1)%mottos.length),2800);return()=>clearInterval(t);},[]);return <section id="jurusan" className="relative overflow-hidden bg-[#021024] px-6 py-28 text-white sm:py-36"><motion.img src="/images/footer/aurora2.png" alt="" aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full select-none opacity-80 mix-blend-screen" style={{filter:'brightness(1.35) saturate(1.2)'}} animate={{opacity:[0.7,0.9,0.7],scale:[1,1.04,1]}} transition={{duration:17,repeat:Infinity,ease:'easeInOut'}}/><div className="relative mx-auto max-w-7xl"><div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow text-[#7DA0CA]">02 / PROGRAM KEAHLIAN</p><h2 className="display mt-5 text-4xl sm:text-6xl">Empat bidang.<br/><span className="inline-block text-white/55">Satu <AnimatePresence mode="wait"><motion.span key={mottoIdx} className="inline-block" exit={{}}>{mottos[mottoIdx].split("").map((ch,i)=><motion.span key={i} className="inline-block whitespace-pre" initial={{opacity:0,y:"0.4em",filter:"blur(8px)"}} animate={{opacity:1,y:0,filter:"blur(0px)",transition:{duration:0.5,delay:i*0.055,ease:"easeOut"}}} exit={{opacity:0,y:"-0.3em",filter:"blur(8px)",transition:{duration:0.3,delay:(mottos[mottoIdx].length-1-i)*0.02,ease:"easeIn"}}}>{ch}</motion.span>)}</motion.span></AnimatePresence></span></h2></div><p className="max-w-sm text-sm leading-7 text-white/75">Eksplorasi software, jaringan, desain, dan otomotif melalui pengalaman vokasi yang relevan.</p></div><div className="mt-16 divide-y divide-white/10 border-y border-white/10">{majors.map(([n,title,desc,img,slug,accent])=><Link href={`/jurusan/${slug}`} key={title} style={{'--major-accent':accent} as React.CSSProperties} className="major-link group relative grid grid-cols-[52px_1fr_auto] items-center gap-x-4 gap-y-2 overflow-hidden rounded-lg py-5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C1E8FF] sm:rounded-none sm:grid-cols-[72px_1fr_1.2fr_auto] sm:gap-5 sm:py-8"><div className="relative col-start-1 row-start-2 h-12 w-[52px] overflow-hidden rounded-md sm:absolute sm:inset-y-3 sm:right-16 sm:col-auto sm:row-auto sm:h-20 sm:w-36 sm:rounded-xl sm:opacity-0 sm:transition sm:duration-500 sm:group-hover:opacity-20 lg:h-24 lg:w-44"><img src={img} alt="" className="h-full w-full object-cover"/></div><span className="col-start-1 row-start-1 font-mono text-xs text-white/70 sm:col-auto sm:row-auto sm:text-white/55">{n}</span><h3 className="relative z-10 col-start-2 row-start-1 text-2xl font-medium tracking-tight sm:col-auto sm:row-auto sm:text-3xl lg:text-5xl">{title}</h3><p className="relative z-10 col-start-2 row-start-2 max-w-md text-xs leading-5 text-white/75 sm:col-auto sm:row-auto sm:text-sm sm:leading-6 sm:text-white/70">{desc}</p><ArrowUpRight className="relative z-10 col-start-3 row-span-2 row-start-1 self-center text-white/80 transition group-active:translate-x-1 group-active:-translate-y-1 group-hover:-translate-y-1 group-hover:translate-x-1 sm:col-auto sm:row-auto sm:self-auto"/></Link>)}</div></div></section>}
 
 const newsFallback = [
   [
@@ -400,6 +449,7 @@ function Facilities() {
   const [active, setActive] = useState(0);
   const [direction, setDirection] = useState(1);
   const [selected, setSelected] = useState<number | null>(null);
+  const dragMoved = useRef(false);
 
   useEffect(() => {
     if (selected === null) return;
@@ -535,6 +585,9 @@ function Facilities() {
     const next = ((index % count) + count) % count;
     setDirection(dir ?? (next > active ? 1 : -1));
     setActive(next);
+  };
+  const peekTo = (index: number) => {
+    if (!dragMoved.current) goTo(index);
   };
   const goNext = () => goTo(active + 1, 1);
   const goPrev = () => goTo(active - 1, -1);
@@ -879,31 +932,64 @@ function Facilities() {
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.6}
             dragMomentum={false}
+            onDragStart={() => {
+              dragMoved.current = true;
+            }}
             onDragEnd={(_, info) => {
               if (info.offset.x < -60) goNext();
               else if (info.offset.x > 60) goPrev();
+              window.setTimeout(() => {
+                dragMoved.current = false;
+              }, 0);
             }}
           >
             {items.map((item, index) => {
               const pos = (((index - active) % count) + count) % count;
               const isAktif = pos === 0;
+              const xMap = [0, 40, -40, 0];
+              const yMap = [0, 18, 36, 54];
+              const rotateMap = [0, 5, -5, 0];
+              const x = xMap[Math.min(pos, 3)];
+              const y = yMap[Math.min(pos, 3)];
+              const rotate = rotateMap[Math.min(pos, 3)];
+              const baseScale = 1 - Math.min(pos, 3) * 0.06;
+              const isPeekable = pos === 1 || pos === 2;
+              const peekX = pos === 1 ? -14 : 14;
               return (
                 <motion.article
                   key={item.title}
                   initial={false}
                   animate={{
-                    x: 0,
-                    y: 0,
-                    rotate: 0,
-                    scale: 1,
-                    opacity: isAktif ? 1 : 0,
+                    x,
+                    y,
+                    rotate,
+                    scale: baseScale,
+                    opacity:
+                      pos === 0 ? 1 : pos === 1 ? 0.85 : pos === 2 ? 0.7 : 0,
+                    filter:
+                      pos === 0
+                        ? "brightness(1)"
+                        : `brightness(${Math.max(0.72, 0.94 - pos * 0.08)})`,
                   }}
-                  whileHover={isAktif ? { y: -6, scale: 1.015 } : undefined}
-                  whileTap={isAktif ? { scale: 0.985 } : undefined}
+                  whileHover={
+                    pos === 0
+                      ? { y: -6, scale: 1.015 }
+                      : isPeekable
+                        ? {
+                            x: x + peekX,
+                            y: y - 6,
+                            scale: baseScale + 0.03,
+                            filter: "brightness(1)",
+                          }
+                        : undefined
+                  }
+                  whileTap={pos <= 2 ? { scale: baseScale - 0.015 } : undefined}
                   transition={{ type: "spring", stiffness: 240, damping: 28 }}
                   style={{ zIndex: count - pos }}
-                  aria-hidden={!isAktif}
-                  className={`absolute inset-x-1 top-0 overflow-hidden rounded-[1.75rem] border border-[#021024]/8 bg-[#F4F9FF] transition-shadow duration-300 sm:inset-x-12 ${isAktif ? "shadow-[0_32px_70px_-28px_rgba(2,16,36,.4)] hover:shadow-[0_44px_90px_-28px_rgba(2,16,36,.55)]" : "pointer-events-none"}`}
+                  aria-hidden={pos !== 0}
+                  onClick={isPeekable ? () => peekTo(index) : undefined}
+                  title={isPeekable ? `Tampilkan ${item.title}` : undefined}
+                  className={`absolute inset-x-1 top-0 overflow-hidden rounded-[1.75rem] border border-[#021024]/8 bg-[#F4F9FF] transition-shadow duration-300 sm:inset-x-12 ${pos === 0 ? "shadow-[0_32px_70px_-28px_rgba(2,16,36,.4)] hover:shadow-[0_44px_90px_-28px_rgba(2,16,36,.55)]" : isPeekable ? "cursor-pointer hover:shadow-[0_24px_50px_-24px_rgba(2,16,36,.45)]" : "pointer-events-none"} ${pos > 2 ? "invisible" : ""}`}
                 >
                   {isAktif ? (
                     <button
@@ -1790,13 +1876,7 @@ function WelcomeCard({
   );
 }
 
-function Footer({
-  status,
-  onLogout,
-}: {
-  status: AuthStatus;
-  onLogout: () => void;
-}) {
+function Footer() {
   return (
     <footer className="bg-[#021024] px-6 py-16 text-white">
       <div className="mx-auto max-w-7xl">
@@ -1898,7 +1978,7 @@ function Footer({
             </div>
           </div>
           <div>
-            <p className="eyebrow text-[#7DA0CA]">PPDB / LOGIN</p>
+            <p className="eyebrow text-[#7DA0CA]">PPDB</p>
             <a
               href="https://spmb.tunasharapan.info"
               target="_blank"
@@ -1907,22 +1987,6 @@ function Footer({
             >
               Buka SPMB <ArrowUpRight size={14} />
             </a>
-            {status === "loggedIn" ? (
-              <button
-                type="button"
-                onClick={onLogout}
-                className="mt-3 inline-flex rounded-full bg-red-600 px-5 py-3 text-[10px] font-bold uppercase tracking-[.15em] text-white transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-              >
-                Logout <LogOut size={14} />
-              </button>
-            ) : status === "loading" ? null : (
-              <Link
-                href="/login"
-                className="mt-3 inline-flex rounded-full border border-white/15 px-5 py-3 text-[10px] font-bold uppercase tracking-[.15em] text-white/70 transition hover:border-white/30 hover:text-white"
-              >
-                Login <ArrowUpRight size={14} />
-              </Link>
-            )}
           </div>
         </div>
         <p className="pt-7 text-[10px] uppercase tracking-[.18em] text-white/25">
@@ -1995,7 +2059,7 @@ export default function Home(){
 
   return (
     <main id="top" className="relative overflow-x-hidden">
-      <Nav />
+      <Nav role={role} status={status} onLogout={handleLogout} />
 
     <AnimatePresence>
       {status === 'loggedIn' && showWelcome && (
@@ -2034,7 +2098,7 @@ export default function Home(){
         />
       </div>
     </section>
-    <Footer status={status} onLogout={handleLogout}/>
+    <Footer/>
     <Chatbot/>
 
     <AnimatePresence>
