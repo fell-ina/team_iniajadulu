@@ -5,30 +5,25 @@ import { motion, useReducedMotion } from "framer-motion";
 import Image from "next/image";
 import { Angry, Frown, HelpCircle, Smile, Sparkles } from "lucide-react";
 
-const botImages = {
+export const botImages = {
   Netral: {
     diam: "/images/EkspresiBot/netral.png",
-    setengah: "/images/EkspresiBot/netralBuka.png",
     buka: "/images/EkspresiBot/netralBuka.png",
   },
   Happy: {
     diam: "/images/EkspresiBot/happyDiam.png",
-    setengah: "/images/EkspresiBot/HappyBuka.png",
     buka: "/images/EkspresiBot/HappyBuka.png",
   },
   Sad: {
     diam: "/images/EkspresiBot/SadDiam.png",
-    setengah: "/images/EkspresiBot/SadBuka.png",
     buka: "/images/EkspresiBot/SadBuka.png",
   },
   Angry: {
     diam: "/images/EkspresiBot/AngryTutup.png",
-    setengah: "/images/EkspresiBot/AngryBuka.png",
     buka: "/images/EkspresiBot/AngryBuka.png",
   },
   Bingung: {
     diam: "/images/EkspresiBot/BingungTutup.png",
-    setengah: "/images/EkspresiBot/BingungBuka.png",
     buka: "/images/EkspresiBot/BingungBuka.png",
   },
 } as const;
@@ -96,7 +91,7 @@ export default function FiskaAvatar({
 
   // Gambar diam jadi alas, gambar buka ditumpuk di atasnya dengan opacity yang
   // mengikuti volume suara. Tidak ada pergantian gambar dan tidak ada React
-  // render per frame, jadi gerakannya benar-benar mulus.
+  // render per frame, jadi gerakannya mulus.
   useEffect(() => {
     if (!isFullscreen) return;
     const layer = mouthLayerRef.current;
@@ -113,17 +108,18 @@ export default function FiskaAvatar({
     const tick = (now: number) => {
       const dt = Math.min(50, Math.max(1, now - last));
       last = now;
-      const target = Math.min(1, Math.max(0, mouthLevelRef.current ?? 0));
-      // Easing berbasis waktu: perubahan opacity selalu halus, baik di layar
-      // 60Hz maupun 120Hz.
-      shown += (target - shown) * (1 - Math.exp(-dt / 45));
-      layer.style.opacity = shown.toFixed(3);
+      const raw = Math.min(1, Math.max(0, mouthLevelRef.current ?? 0));
+      // Frame "diam" dan "buka" bukan pasangan mulut yang identik (pose kepala
+      // ikut berubah), jadi opacity didorong ke 0/1 supaya tidak ada
+      // double-exposure di tengah transisi.
+      const shaped = Math.min(1, Math.max(0, (raw - 0.16) / 0.24));
+      shown += (shaped - shown) * (1 - Math.exp(-dt / 28));
+      layer.style.opacity =
+        shown < 0.03 ? "0" : shown > 0.97 ? "1" : shown.toFixed(3);
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-    // botEmotion sengaja tidak jadi dependency: layer mulut tidak ikut di-mount
-    // ulang saat emosi berganti, jadi animasinya tidak perlu di-reset.
   }, [isFullscreen, mouthLevelRef, reduceMotion]);
 
   if (!isFullscreen) return null;
@@ -134,10 +130,13 @@ export default function FiskaAvatar({
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -14 }}
       transition={{ duration: 0.35, ease: "easeOut" }}
-      className="relative hidden h-full w-full max-w-lg flex-col items-center justify-end md:flex"
+      className="relative hidden h-full min-h-0 w-[clamp(17rem,30vw,28rem)] shrink-0 flex-col items-center justify-center lg:flex"
     >
       {/* ---------- Ambience di sekitar kartu ---------- */}
-      <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 overflow-hidden"
+      >
         {/* Cahaya dasar */}
         <div className="fiska-halo absolute left-[-15%] top-[2%] h-[62%] w-[130%] rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(84,131,179,0.45),rgba(5,38,89,0.18)_48%,transparent_72%)] blur-2xl" />
         <div className="fiska-orb absolute -left-16 top-[20%] size-56 rounded-full bg-[#1b5b96]/35 blur-3xl" />
@@ -154,23 +153,6 @@ export default function FiskaAvatar({
         <div className="fiska-orbit fiska-orbit-rev absolute -right-24 -top-20 size-64 rounded-full border border-dashed border-[#5483B3]/30" />
         <div className="fiska-orbit absolute -right-12 -top-10 size-36 rounded-full border border-[#C1E8FF]/20">
           <span className="absolute bottom-0 left-1/2 size-1.5 -translate-x-1/2 translate-y-1/2 rounded-full bg-[#C1E8FF]/80 shadow-[0_0_10px_rgba(193,232,255,0.8)]" />
-        </div>
-
-        {/* Bracket sudut panggung, berdenyut bergantian */}
-        <div className="absolute inset-x-1 top-1 bottom-6">
-          <span className="fiska-corner absolute left-0 top-0 h-10 w-10 rounded-tl-lg border-l border-t border-[#C1E8FF]/40" />
-          <span
-            className="fiska-corner absolute right-0 top-0 h-10 w-10 rounded-tr-lg border-r border-t border-[#C1E8FF]/40"
-            style={{ animationDelay: "-1.1s" }}
-          />
-          <span
-            className="fiska-corner absolute bottom-0 left-0 h-10 w-10 rounded-bl-lg border-b border-l border-[#C1E8FF]/40"
-            style={{ animationDelay: "-2.3s" }}
-          />
-          <span
-            className="fiska-corner absolute bottom-0 right-0 h-10 w-10 rounded-br-lg border-b border-r border-[#C1E8FF]/40"
-            style={{ animationDelay: "-3.4s" }}
-          />
         </div>
 
         {/* Kepingan mengapung di sisi kiri & kanan */}
@@ -203,9 +185,6 @@ export default function FiskaAvatar({
           />
         ))}
 
-        {/* Sapuan scan horizontal */}
-        <div className="fiska-scan absolute inset-x-10 top-0 h-px bg-gradient-to-r from-transparent via-[#C1E8FF]/45 to-transparent" />
-
         {/* Partikel */}
         {PARTICLES.map((p, i) => (
           <span
@@ -225,9 +204,12 @@ export default function FiskaAvatar({
         <div className="absolute inset-x-4 bottom-0 h-28 rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(193,232,255,0.22),transparent_70%)] blur-xl" />
       </div>
 
-      {/* ---------- Kartu avatar ---------- */}
-      <div className="relative flex h-[88%] w-full items-end justify-center">
-        <div className="fiska-float relative h-full">
+      {/* ---------- Kartu avatar ----------
+          Kartu mengisi penuh kolom (bukan mengunci tinggi), lalu art di-crop
+          dengan object-cover yang berpatokan ke kepala. Dengan begitu tidak ada
+          area gelap kosong di atas kartu di ukuran layar mana pun. */}
+      <div className="relative flex h-full w-full min-h-0 items-center justify-center">
+        <div className="fiska-float relative h-full w-full">
           {/* Bayangan di bawah kartu */}
           <div
             aria-hidden
@@ -235,7 +217,7 @@ export default function FiskaAvatar({
           />
 
           <div
-            className={`relative h-full overflow-hidden rounded-[1.75rem] border bg-[#021024] transition-[box-shadow,border-color] duration-500 ${
+            className={`relative h-full w-full overflow-hidden rounded-[1.75rem] border bg-[#021024] transition-[box-shadow,border-color] duration-500 ${
               isSpeaking
                 ? "border-[#C1E8FF]/45 shadow-[0_0_0_1px_rgba(193,232,255,0.14),0_28px_80px_-22px_rgba(125,160,202,0.55)]"
                 : "border-[#7DA0CA]/25 shadow-[0_26px_70px_-26px_rgba(84,131,179,0.45)]"
@@ -244,11 +226,10 @@ export default function FiskaAvatar({
             <Image
               src={emotion.diam}
               alt="Fiska, asisten virtual sekolah"
-              width={1189}
-              height={1600}
-              sizes="(max-width: 767px) 0px, (max-width: 1280px) 42vw, 460px"
+              fill
+              sizes="(min-width: 1024px) 50vw, 0px"
               priority
-              className="h-full w-auto max-w-full object-contain object-bottom"
+              className="object-cover object-[50%_16%]"
             />
             <div
               ref={mouthLayerRef}
@@ -260,29 +241,46 @@ export default function FiskaAvatar({
                 src={emotion.buka}
                 alt=""
                 fill
-                sizes="(max-width: 767px) 0px, (max-width: 1280px) 42vw, 460px"
-                priority
-                className="object-contain object-bottom"
+                sizes="(min-width: 1024px) 50vw, 0px"
+                className="object-cover object-[50%_16%]"
               />
             </div>
 
-            {/* Fade lembut supaya tepi gambar menyatu dengan kartu */}
+            {/* Fade lembut supaya tepi bawah menyatu dengan kartu */}
             <div
               aria-hidden
-              className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-[#010912]/80 to-transparent"
+              className="pointer-events-none absolute inset-x-0 bottom-0 h-1/4 bg-gradient-to-t from-[#010912]/85 to-transparent"
+            />
+
+            {/* Sapuan scan - sekarang di atas art supaya benar-benar terlihat */}
+            <div
+              aria-hidden
+              className="fiska-scan pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-[#C1E8FF]/45 to-transparent"
             />
 
             {/* Sudut bingkai */}
-            <div aria-hidden className="pointer-events-none absolute inset-2.5">
-              <span className="absolute left-0 top-0 size-4 rounded-tl-[0.45rem] border-l border-t border-[#C1E8FF]/45" />
-              <span className="absolute right-0 top-0 size-4 rounded-tr-[0.45rem] border-r border-t border-[#C1E8FF]/45" />
-              <span className="absolute bottom-0 left-0 size-4 rounded-bl-[0.45rem] border-b border-l border-[#C1E8FF]/45" />
-              <span className="absolute bottom-0 right-0 size-4 rounded-br-[0.45rem] border-b border-r border-[#C1E8FF]/45" />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-2.5"
+            >
+              <span className="fiska-corner absolute left-0 top-0 size-4 rounded-tl-[0.45rem] border-l border-t border-[#C1E8FF]/45" />
+              <span
+                className="fiska-corner absolute right-0 top-0 size-4 rounded-tr-[0.45rem] border-r border-t border-[#C1E8FF]/45"
+                style={{ animationDelay: "-1.1s" }}
+              />
+              <span
+                className="fiska-corner absolute bottom-0 left-0 size-4 rounded-bl-[0.45rem] border-b border-l border-[#C1E8FF]/45"
+                style={{ animationDelay: "-2.3s" }}
+              />
+              <span
+                className="fiska-corner absolute bottom-0 right-0 size-4 rounded-br-[0.45rem] border-b border-r border-[#C1E8FF]/45"
+                style={{ animationDelay: "-3.4s" }}
+              />
             </div>
 
             {/* HUD atas */}
-            <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3.5">
-              <div className="flex items-center gap-2 rounded-full border border-[#C1E8FF]/25 bg-[#021024]/70 px-2.5 py-1 backdrop-blur-md">
+            <div className="absolute inset-x-0 top-0 flex items-start justify-between gap-2 p-3">
+              <div className="flex items-center gap-2 rounded-full border border-[#C1E8FF]/25 bg-[#021024]/75 px-2.5 py-1 backdrop-blur-md">
                 <span className="relative flex size-1.5">
                   {isSpeaking && !reduceMotion && (
                     <span className="absolute inline-flex size-full animate-ping rounded-full bg-[#C1E8FF] opacity-80" />
@@ -300,7 +298,7 @@ export default function FiskaAvatar({
 
               <div
                 aria-hidden
-                className="flex h-6 items-end gap-[3px] rounded-full border border-[#C1E8FF]/20 bg-[#021024]/70 px-2.5 py-1.5 backdrop-blur-md"
+                className="flex h-6 items-end gap-[3px] rounded-full border border-[#C1E8FF]/20 bg-[#021024]/75 px-2.5 py-1.5 backdrop-blur-md"
               >
                 {isSpeaking ? (
                   [0, 1, 2, 3, 4].map((i) => (
@@ -327,13 +325,13 @@ export default function FiskaAvatar({
             </div>
 
             {/* HUD bawah */}
-            <div className="absolute inset-x-0 bottom-0 flex items-end p-3.5">
+            <div className="absolute inset-x-0 bottom-0 flex items-end p-3">
               <motion.div
                 key={botEmotion}
                 initial={reduceMotion ? false : { opacity: 0, y: 6 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.25, ease: "easeOut" }}
-                className="flex items-center gap-1.5 rounded-full border border-[#7DA0CA]/30 bg-[#021024]/75 px-2.5 py-1 text-[11px] font-medium text-[#C1E8FF] backdrop-blur-md"
+                className="flex items-center gap-1.5 rounded-full border border-[#7DA0CA]/30 bg-[#021024]/80 px-2.5 py-1 text-[11px] font-medium text-[#C1E8FF] backdrop-blur-md"
               >
                 <EmotionIcon size={12} />
                 <span>{meta.label}</span>

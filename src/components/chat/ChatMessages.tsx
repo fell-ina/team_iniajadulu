@@ -1,11 +1,13 @@
 "use client";
 
+import { memo, useMemo } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Loader2, Square, Volume2, ChevronDown } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import Image from "next/image";
 import Link from "next/link";
 import { cleanTextForSpeech } from "@/lib/speech";
+
+import FiskaFace, { type FiskaEmotion } from "./FiskaFace";
 
 const MARKDOWN_COMPONENTS = {
   a: ({
@@ -59,7 +61,101 @@ const MARKDOWN_WRAPPER =
 const SCROLLBAR =
   "[scrollbar-width:thin] [scrollbar-color:#5483B3_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#5483B3]/60";
 
-type ChatMessage = { sender: "bot" | "user"; text: string };
+type ChatMessage = {
+  sender: "bot" | "user";
+  text: string;
+  emotion?: FiskaEmotion;
+};
+
+/* -------------------------------------------------------------------------- */
+/* Baris pesan di-memoize: riwayat lama tidak perlu re-render (dan re-parse    */
+/* markdown) setiap kali ada pesan baru atau status suara berubah.             */
+/* -------------------------------------------------------------------------- */
+
+type BotRowProps = {
+  text: string;
+  emotion: FiskaEmotion;
+  spokenTextRef: React.MutableRefObject<string | null>;
+  onSpeak: (text: string) => void;
+  isSpeaking: boolean;
+  isVoiceLoading: boolean;
+  reduceMotion: boolean;
+};
+
+const BotRow = memo(function BotRow({
+  text,
+  emotion,
+  spokenTextRef,
+  onSpeak,
+  isSpeaking,
+  isVoiceLoading,
+  reduceMotion,
+}: BotRowProps) {
+  // Normalisasi TTS cukup sekali per pesan, bukan tiap render.
+  const spoken = useMemo(() => cleanTextForSpeech(text), [text]);
+  const isActive = spokenTextRef.current === spoken;
+
+  return (
+    <motion.div
+      initial={reduceMotion ? false : { opacity: 0, x: -8 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="flex items-start gap-2.5"
+    >
+      <FiskaFace
+        emotion={emotion}
+        className="mt-0.5 size-8 shrink-0 rounded-full border border-[#7DA0CA]/40"
+        sizes="32px"
+      />
+      <div className="min-w-0 max-w-[92%] break-words rounded-2xl rounded-tl-sm border border-white/10 bg-white/[0.06] px-3.5 py-2.5 text-[15px] leading-relaxed text-white/90 [overflow-wrap:anywhere] sm:max-w-[85%]">
+        <div className={MARKDOWN_WRAPPER}>
+          <ReactMarkdown components={MARKDOWN_COMPONENTS}>
+            {text}
+          </ReactMarkdown>
+        </div>
+        <button
+          type="button"
+          onClick={() => onSpeak(text)}
+          className="mt-1.5 flex items-center gap-1 text-[11px] text-[#C1E8FF] opacity-70 transition-opacity hover:opacity-100"
+        >
+          {isVoiceLoading && isActive ? (
+            <>
+              <Loader2 size={12} className="animate-spin" />
+              <span>Memuat suara...</span>
+            </>
+          ) : isSpeaking && isActive ? (
+            <>
+              <Square size={12} />
+              <span>Berhenti</span>
+            </>
+          ) : (
+            <>
+              <Volume2 size={12} />
+              <span>Dengar</span>
+            </>
+          )}
+        </button>
+      </div>
+    </motion.div>
+  );
+});
+
+const UserRow = memo(function UserRow({
+  text,
+  reduceMotion,
+}: {
+  text: string;
+  reduceMotion: boolean;
+}) {
+  return (
+    <motion.div
+      initial={reduceMotion ? false : { opacity: 0, x: 8 }}
+      animate={{ opacity: 1, x: 0 }}
+      className="ml-auto max-w-[90%] break-words rounded-2xl rounded-tr-sm bg-[#C1E8FF] px-3.5 py-2.5 text-[15px] font-medium leading-relaxed text-[#021024] [overflow-wrap:anywhere] sm:max-w-[80%] sm:text-sm"
+    >
+      {text}
+    </motion.div>
+  );
+});
 
 type Props = {
   chatHistory: ChatMessage[];
@@ -93,74 +189,29 @@ export default function ChatMessages({
       <div
         ref={contentRef}
         onScroll={handleContentScroll}
-        className={`min-h-0 flex-1 overflow-y-auto px-3.5 py-4 sm:px-4 ${SCROLLBAR}`}
+        className={`min-h-0 flex-1 overflow-y-auto overscroll-contain px-3.5 py-4 sm:px-4 ${SCROLLBAR}`}
         aria-live="polite"
       >
         <div className="mx-auto w-full max-w-[42rem] space-y-3.5">
           {chatHistory.map((chat, index) =>
             chat.sender === "bot" ? (
-              <motion.div
-                initial={reduceMotion ? false : { opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
+              <BotRow
                 key={index}
-                className="flex items-start gap-2.5"
-              >
-                <div className="relative mt-1 size-7 shrink-0 overflow-hidden rounded-full border border-[#7DA0CA]/30 bg-[#052659]">
-                  <Image
-                    src="/images/school/bot.png"
-                    alt="Bot Avatar"
-                    fill
-                    sizes="28px"
-                    className="object-cover"
-                  />
-                </div>
-                <div className="min-w-0 max-w-[92%] break-words [overflow-wrap:anywhere] rounded-2xl rounded-tl-sm border border-white/10 bg-white/[0.06] px-3.5 py-2.5 text-[15px] leading-relaxed text-white/90 sm:max-w-[85%]">
-                  <div className={MARKDOWN_WRAPPER}>
-                    <ReactMarkdown components={MARKDOWN_COMPONENTS}>
-                      {chat.text}
-                    </ReactMarkdown>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => onSpeak(chat.text)}
-                    className="mt-1.5 flex items-center gap-1 text-[11px] text-[#C1E8FF] opacity-70 transition-opacity hover:opacity-100"
-                  >
-                    {isVoiceLoading &&
-                    spokenTextRef.current === cleanTextForSpeech(chat.text) ? (
-                      <>
-                        <Loader2 size={12} className="animate-spin" />
-                        <span>Memuat suara...</span>
-                      </>
-                    ) : isSpeaking &&
-                      spokenTextRef.current ===
-                        cleanTextForSpeech(chat.text) ? (
-                      <>
-                        <Square size={12} />
-                        <span>Berhenti</span>
-                      </>
-                    ) : (
-                      <>
-                        <Volume2 size={12} />
-                        <span>Dengar</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              </motion.div>
+                text={chat.text}
+                emotion={chat.emotion ?? "Netral"}
+                spokenTextRef={spokenTextRef}
+                onSpeak={onSpeak}
+                isSpeaking={isSpeaking}
+                isVoiceLoading={isVoiceLoading}
+                reduceMotion={reduceMotion}
+              />
             ) : (
-              <motion.div
-                initial={reduceMotion ? false : { opacity: 0, x: 8 }}
-                animate={{ opacity: 1, x: 0 }}
-                key={index}
-                className="ml-auto max-w-[90%] break-words [overflow-wrap:anywhere] rounded-2xl rounded-tr-sm bg-[#C1E8FF] px-3.5 py-2.5 text-[15px] leading-relaxed font-medium text-[#021024] sm:max-w-[80%] sm:text-sm"
-              >
-                {chat.text}
-              </motion.div>
+              <UserRow key={index} text={chat.text} reduceMotion={reduceMotion} />
             ),
           )}
           {isLoading && (
             <div className="flex items-center gap-2.5">
-              <div className="grid size-7 shrink-0 place-items-center rounded-full bg-[#5483B3]/20 text-[#C1E8FF]">
+              <div className="grid size-8 shrink-0 place-items-center rounded-full bg-[#5483B3]/20 text-[#C1E8FF]">
                 <Loader2 size={14} className="animate-spin" />
               </div>
               <div className="flex items-center gap-2 rounded-2xl rounded-tl-sm border border-white/10 bg-white/[0.06] px-3.5 py-2.5 text-xs text-white/60">
@@ -187,6 +238,7 @@ export default function ChatMessages({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 8, scale: 0.9 }}
             onClick={() => scrollToBottom()}
+            aria-label="Ke pesan terbaru"
             className="absolute right-3.5 bottom-3 z-10 grid size-9 place-items-center rounded-full border border-[#7DA0CA]/40 bg-[#052659]/90 text-[#C1E8FF] shadow-lg backdrop-blur transition-colors hover:bg-[#5483B3]/50 sm:right-4"
           >
             <ChevronDown size={16} />

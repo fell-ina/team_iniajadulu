@@ -59,7 +59,13 @@
 /register               - Pendaftaran akun (email + Google) & verifikasi kode OTP
 /register/lengkapi      - Pengisian jurusan & kelas sebelum kode verifikasi dikirim
 /login                  - Portal Autentikasi Login Admin / Guru / Siswa
-/admin/dashboard        - Panel CMS Admin (Tambah, Edit, & Hapus Berita)
+/lupa-password          - Minta tautan reset kata sandi lewat email
+/reset-password         - Isi kata sandi baru (dibuka dari tautan email)
+/dashboard              - Ringkasan panel admin & guru (sidebar biru di kiri)
+/dashboard/pengguna     - Kelola data pengguna (khusus admin)
+/dashboard/verifikasi   - Terima / tolak pengajuan NISN
+/dashboard/berita       - Tambah, edit, & hapus berita (popup yang sama)
+/admin/berita           - Rute lama, dialihkan ke /dashboard/berita
 ```
 
 ---
@@ -110,8 +116,27 @@ Client ID & Client Secret Google **tidak disimpan di repo ini**, melainkan di Su
 2. Tambahkan **Authorized redirect URI**: `https://<project-ref>.supabase.co/auth/v1/callback`
    (project-ref adalah bagian dari `NEXT_PUBLIC_SUPABASE_URL`).
 3. Salin **Client ID** dan **Client Secret** ke Supabase Dashboard → **Authentication → Providers → Google** → aktifkan provider tersebut.
-4. Di Supabase → **Authentication → URL Configuration**, pastikan *Site URL* dan *Redirect URLs* memuat
-   `http://localhost:3000/auth/callback` serta `https://domain-anda.vercel.app/auth/callback`.
+4. Di Supabase → **Authentication → URL Configuration**:
+   - **Site URL** = domain produksi tanpa path, mis. `https://team-iniajadulu.vercel.app`
+     (bukan URL deployment preview/branch).
+   - **Redirect URLs** harus memuat path callback untuk **setiap** domain yang dipakai:
+     ```
+     http://localhost:3000/auth/callback
+     http://localhost:3000/**
+     https://team-iniajadulu.vercel.app/auth/callback
+     https://team-iniajadulu.vercel.app/**
+     https://*-fell-ina.vercel.app/**
+     ```
+
+   Kalau URL callback tidak ada di daftar itu, Supabase **mengabaikan** `redirectTo` dan
+   mengembalikan kode ke *Site URL* apa adanya — gejalanya pengguna mendarat di
+   `https://domain-anda/?code=...` alih-alih `.../auth/callback?code=...`. Sebagai jaring
+   pengaman, `src/proxy.ts` meneruskan `?code=...` di path mana pun ke `/auth/callback`
+   supaya session tetap bisa ditukar.
+
+5. Pastikan build terbaru benar-benar ter-deploy di domain tersebut. Route
+   `/api/auth/google` dan `/register/lengkapi` harus mengembalikan `200/307`, bukan `404`;
+   kalau `404`, domain itu masih menyajikan build lama.
 
 Alur kodenya: `src/components/TombolGoogle.tsx` → `src/app/api/auth/google/route.ts` → Google →
 `src/app/auth/callback/route.ts` (membuat baris di tabel `users` dengan role `siswa`, lalu mengalihkan sesuai role).
@@ -163,6 +188,68 @@ Pendaftar lewat Google juga diarahkan ke `/register/lengkapi` dan tidak menerima
 (email sudah diverifikasi Google). Daftar pilihan ada di `src/lib/sekolah.ts`, sedangkan
 validasi di server memakai berkas yang sama. Login siswa yang datanya belum lengkap juga
 diarahkan kembali ke halaman tersebut.
+
+---
+
+## 🔑 Lupa Kata Sandi
+
+Alur reset memakai tautan email Supabase Auth (bukan kode OTP):
+
+1. `/lupa-password` — pengguna mengetik email akun, dikirim ke
+   `src/app/api/auth/lupa-password/route.ts` yang memanggil
+   `supabase.auth.resetPasswordForEmail()` dengan
+   `redirectTo = <origin>/auth/callback?next=/reset-password`.
+   Balasannya selalu generik agar tidak membocorkan email mana yang terdaftar.
+2. Tautan di email membuka `/auth/callback?next=/reset-password`. Route itu menukar `code`
+   menjadi session (cookie `httpOnly`) lalu mengalihkan ke `/reset-password`.
+3. `/reset-password` menampilkan formulir kata sandi baru; `POST
+   /api/auth/reset-password` memanggil `updateUser({ password })`, mengakhiri session
+   recovery, lalu mengarahkan ke `/login?reset=berhasil`.
+
+Catatan:
+
+- Tautan reset hanya bisa dipakai **sekali** dan harus dibuka di peramban yang sama dengan
+  saat meminta reset (PKCE menyimpan verifier di cookie). Kalau tautan kedaluwarsa, minta
+  ulang dari `/lupa-password`.
+- Pastikan **Redirect URLs** di Supabase memuat `/auth/callback` dan pola `/**` untuk setiap
+  domain (termasuk domain Vercel), sama seperti syarat Google OAuth di atas.
+- Email reset dikirim oleh Supabase. Kalau pengiriman email bawaan Supabase kena batas
+  frekuensi, atur **Authentication → Emails → SMTP Settings** dengan SMTP sendiri.
+- Akun yang hanya punya NISN/username (`<nama>@sekolah.local`) tidak punya kotak surat,
+  jadi tidak bisa memakai alur ini — admin sekolah perlu mengatur ulang kata sandinya.
+  Akun Google cukup memakai tombol “Masuk dengan Google”.
+
+---
+
+## 🧭 Panel Dashboard (Admin & Guru)
+
+Semua halaman panel berada di bawah `/dashboard` dan memakai sidebar biru di kiri
+(`src/components/dashboard/SidebarDashboard.tsx`). `src/app/dashboard/layout.tsx`
+menjaga akses di server: belum login → `/login`, role siswa → beranda.
+
+| Halaman | Akses | Isi |
+|---|---|---|
+| `/dashboard` | admin, guru | Ringkasan jumlah pengguna, pengajuan NISN, dan berita |
+| `/dashboard/pengguna` | **admin** | Daftar pengguna, pencarian, filter role, paginasi |
+| `/dashboard/verifikasi` | admin, guru | Verifikasi / tolak NISN siswa |
+| `/dashboard/berita` | admin, guru | CRUD berita lewat popup yang sudah ada |
+
+### Data pengguna (`/dashboard/pengguna`)
+
+- Setiap baris punya checkbox; checkbox di kepala tabel memilih **semua pengguna di
+  halaman itu**. Pilihan otomatis dikosongkan saat pindah halaman / mengganti filter.
+- **Naikkan kelas** menaikkan semua siswa terpilih satu tingkat: `X → XI`, `XI → XII`.
+  Siswa kelas `XII`, akun tanpa kelas, dan akun guru/admin dilewati (jumlahnya dilaporkan).
+- **Hapus** memakai **dua konfirmasi**: ringkasan akun yang akan dihapus, lalu mengetik
+  `HAPUS`. Penghapusan menghapus baris `public.users` sekaligus akun Supabase Auth.
+- Tombol pensil membuka modal edit: nama, NISN, jurusan, kelas, dan role
+  (`siswa` / `guru` / `admin`). **Password tidak dapat diubah** dari panel ini.
+- Pengaman: admin tidak bisa menurunkan role akunnya sendiri, menghapus akunnya sendiri,
+  atau menghilangkan admin terakhir.
+
+Endpoint yang dipakai: `src/app/api/admin/pengguna/route.ts`
+(`GET` daftar + paginasi, `PATCH` edit satu pengguna, `POST` aksi massal
+`naikkan-kelas` / `hapus`). Hanya role admin yang lolos (401/403 untuk lainnya).
 
 ---
 

@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import FormBeritaModal, { type BeritaItem } from "./FormBeritaModal";
 import TombolTambahBerita from "./TombolTambahBerita";
+import { ringkasKonten } from "@/lib/ringkasTeks";
 
 function formatTanggal(iso: string | null | undefined): string {
   if (!iso) return "—";
@@ -27,17 +28,6 @@ function formatTanggal(iso: string | null | undefined): string {
   } catch {
     return "—";
   }
-}
-
-function potong(teks: string, maks = 120): string {
-  const bersih = (teks || "")
-    .replace(/!\[.*?\]\(.*?\)/g, " ")
-    .replace(/\[([^\]]+)\]\(.*?\)/g, "$1")
-    .replace(/[#*_>`-]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-  if (bersih.length <= maks) return bersih;
-  return bersih.slice(0, maks).trimEnd() + "…";
 }
 
 export default function DaftarBeritaAdmin() {
@@ -262,7 +252,7 @@ export default function DaftarBeritaAdmin() {
                     </p>
                   ) : null}
                   <p className="mt-2 line-clamp-3 text-[13px] leading-relaxed text-[#021024]/55">
-                    {potong(b.konten)}
+                    {ringkasKonten(b.konten, 120)}
                   </p>
 
                   <div className="mt-4 flex items-center gap-2 border-t border-[#021024]/8 pt-4">

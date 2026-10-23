@@ -13,7 +13,12 @@ import { createClient } from "@supabase/supabase-js";
  *   2. Pastikan user punya baris di tabel `users` (role default: siswa)
  *   3. Alihkan sesuai role: admin/guru -> /dashboard, siswa -> /
  *
- * Jika gagal, pengguna dikembalikan ke /register?google=<alasan>.
+ * Memakai ?next=/path: setelah session ditukar, pengguna langsung diarahkan ke
+ * `path` (dipakai tautan reset kata sandi: /auth/callback?next=/reset-password).
+ * `next` hanya diterima bila berupa path relatif di situs ini.
+ *
+ * Jika gagal, pengguna dikembalikan ke /register?google=<alasan> (atau ke
+ * `next` dengan ?status=gagal bila memakai alur reset).
  * ---------------------------------------------------------------------------
  */
 export const dynamic = "force-dynamic";
@@ -32,11 +37,27 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const code = url.searchParams.get("code");
 
+  // Tujuan khusus (mis. /reset-password). Hanya path relatif yang diterima agar
+  // tidak bisa dipakai untuk open redirect.
+  const nextMentah = url.searchParams.get("next");
+  const next =
+    nextMentah && nextMentah.startsWith("/") && !nextMentah.startsWith("//")
+      ? nextMentah
+      : null;
+
+  /** Kembali ke `next` dengan penanda gagal, atau ke halaman pendaftaran. */
+  function gagal(alasan: string) {
+    console.warn("[auth/callback] Gagal menukar kode:", alasan);
+    if (!next) return NextResponse.redirect(new URL("/register?google=sesi-gagal", origin));
+    const tujuan = new URL(next, origin);
+    tujuan.searchParams.set("status", "gagal");
+    return NextResponse.redirect(tujuan);
+  }
+
   // Google / Supabase bisa mengembalikan error sebelum sampai ke sini.
   if (url.searchParams.get("error") || !code) {
     const alasan = url.searchParams.get("error_code") || url.searchParams.get("error");
-    console.warn("[auth/callback] OAuth dibatalkan atau tanpa kode:", alasan);
-    return NextResponse.redirect(new URL("/register?google=gagal", origin));
+    return gagal(alasan ?? "tanpa-kode");
   }
 
   const cookieStore = await cookies();
@@ -64,8 +85,13 @@ export async function GET(request: Request) {
   const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
   if (error || !data.user) {
-    console.warn("[auth/callback] Gagal menukar kode:", error?.message);
-    return NextResponse.redirect(new URL("/register?google=sesi-gagal", origin));
+    return gagal(error?.message ?? "tanpa-user");
+  }
+
+  // Alur dengan tujuan khusus (reset kata sandi) tidak perlu sinkronisasi
+  // profil: akunnya sudah ada dan session-nya sudah siap dipakai.
+  if (next) {
+    return NextResponse.redirect(new URL(next, origin));
   }
 
   const user = data.user;

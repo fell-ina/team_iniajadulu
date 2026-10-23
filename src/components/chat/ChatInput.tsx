@@ -12,6 +12,8 @@ type Props = {
   onToggleListening: () => void;
   isCoarsePointer: boolean;
   open: boolean;
+  /** Dipakai kartu Fiska mobile untuk auto-ringkas saat keyboard terbuka. */
+  onFocusChange?: (focused: boolean) => void;
 };
 
 export default function ChatInput({
@@ -23,6 +25,7 @@ export default function ChatInput({
   onToggleListening,
   isCoarsePointer,
   open,
+  onFocusChange,
 }: Props) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -64,6 +67,12 @@ export default function ChatInput({
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleInputKeyDown}
+            onFocus={() => onFocusChange?.(true)}
+            onBlur={() => onFocusChange?.(false)}
+            enterKeyHint="send"
+            autoComplete="off"
+            autoCorrect="on"
+            spellCheck={false}
             placeholder={
               isListening
                 ? "Sedang mendengarkan..."
@@ -78,6 +87,7 @@ export default function ChatInput({
             type="button"
             onClick={onToggleListening}
             disabled={isLoading}
+            aria-label={isListening ? "Berhenti mendengarkan" : "Mulai bicara"}
             className={`grid size-11 shrink-0 place-items-center rounded-xl transition-colors sm:size-10 ${isListening ? "animate-pulse bg-red-500/80 text-white" : "text-[#C1E8FF] hover:bg-white/10"}`}
           >
             {isListening ? <MicOff size={16} /> : <Mic size={16} />}
@@ -85,6 +95,7 @@ export default function ChatInput({
           <button
             type="submit"
             disabled={isLoading || !message.trim()}
+            aria-label="Kirim pesan"
             className="grid size-11 shrink-0 place-items-center rounded-xl bg-[#C1E8FF] text-[#021024] transition-colors hover:bg-white disabled:opacity-30 sm:size-10"
           >
             <Send size={15} />

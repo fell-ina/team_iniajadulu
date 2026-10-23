@@ -13,19 +13,22 @@ import {
   UserRound,
   UsersRound,
   X,
-  Handshake,
   Trophy,
-  BadgeCheck
+  BadgeCheck,
+  ExternalLink,
+  MapPin,
 } from "lucide-react";
 import Link from "next/link";
 import HeroSection from "@/components/HeroSection";
 import Chatbot from "@/components/Chatbot";
 import ModalKirimNisn from '@/components/ModalKirimNisn';
+import { ringkasKonten } from '@/lib/ringkasTeks';
 
 const nav = [
   ["Profil", "#profil"],
   ["Jurusan", "#jurusan"],
   ["Berita", "#berita"],
+  ["Lokasi", "#lokasi"],
   ["Fasilitas", "#fasilitas"],
   ["Forum", "/forum"],
   ["Mitra Industri", "#industri"],
@@ -245,7 +248,8 @@ function Profile() {
 }
 
 const majors=[['01','PPLG','Pengembangan Perangkat Lunak dan Gim','/images/school/hero-lab.jpg','pplg','#BA0000'],['02','TJKT','Teknik Jaringan Komputer dan Telekomunikasi','/images/school/tkj1.jpg','tjkt','#00c53b'],['03','DKV','Desain Komunikasi Visual','/images/school/dkv.jpg','dkv','#152DA9'],['04','TKR','Teknik Kendaraan Ringan','/images/school/tkr.jpg','tkr','#C67219']];
-function Majors(){return <section id="jurusan" className="bg-[#021024] px-6 py-28 text-white sm:py-36"><div className="mx-auto max-w-7xl"><div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow text-[#7DA0CA]">02 / PROGRAM KEAHLIAN</p><h2 className="display mt-5 text-4xl sm:text-6xl">Empat bidang.<br/><span className="text-white/35">Satu arah.</span></h2></div><p className="max-w-sm text-sm leading-7 text-white/45">Eksplorasi software, jaringan, desain, dan otomotif melalui pengalaman vokasi yang relevan.</p></div><div className="mt-16 divide-y divide-white/10 border-y border-white/10">{majors.map(([n,title,desc,img,slug,accent])=><Link href={`/jurusan/${slug}`} key={title} style={{'--major-accent':accent} as React.CSSProperties} className="major-link group relative grid grid-cols-[52px_1fr_auto] items-center gap-x-4 gap-y-2 overflow-hidden rounded-lg py-5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C1E8FF] sm:rounded-none sm:grid-cols-[72px_1fr_1.2fr_auto] sm:gap-5 sm:py-8"><div className="relative col-start-1 row-start-2 h-12 w-[52px] overflow-hidden rounded-md sm:absolute sm:inset-y-3 sm:right-16 sm:col-auto sm:row-auto sm:h-20 sm:w-36 sm:rounded-xl sm:opacity-0 sm:transition sm:duration-500 sm:group-hover:opacity-20 lg:h-24 lg:w-44"><img src={img} alt="" className="h-full w-full object-cover"/></div><span className="col-start-1 row-start-1 font-mono text-xs text-white/45 sm:col-auto sm:row-auto sm:text-white/30">{n}</span><h3 className="relative z-10 col-start-2 row-start-1 text-2xl font-medium tracking-tight sm:col-auto sm:row-auto sm:text-3xl lg:text-5xl">{title}</h3><p className="relative z-10 col-start-2 row-start-2 max-w-md text-xs leading-5 text-white/60 sm:col-auto sm:row-auto sm:text-sm sm:leading-6 sm:text-white/45">{desc}</p><ArrowUpRight className="relative z-10 col-start-3 row-span-2 row-start-1 self-center text-white/55 transition group-active:translate-x-1 group-active:-translate-y-1 group-hover:-translate-y-1 group-hover:translate-x-1 sm:col-auto sm:row-auto sm:self-auto"/></Link>)}</div></div></section>}
+const mottos=["arah.","hati.","tujuan.","harapan."];
+function Majors(){const[mottoIdx,setMottoIdx]=useState(0);useEffect(()=>{const t=setInterval(()=>setMottoIdx(v=>(v+1)%mottos.length),2800);return()=>clearInterval(t);},[]);return <section id="jurusan" className="relative overflow-hidden bg-[#021024] px-6 py-28 text-white sm:py-36"><motion.img src="/images/footer/aurora2.png" alt="" aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full select-none opacity-80 mix-blend-screen" style={{filter:'brightness(1.35) saturate(1.2)'}} animate={{opacity:[0.7,0.9,0.7],scale:[1,1.04,1]}} transition={{duration:17,repeat:Infinity,ease:'easeInOut'}}/><div className="relative mx-auto max-w-7xl"><div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow text-[#7DA0CA]">02 / PROGRAM KEAHLIAN</p><h2 className="display mt-5 text-4xl sm:text-6xl">Empat bidang.<br/><span className="inline-block text-white/55">Satu <AnimatePresence mode="wait"><motion.span key={mottoIdx} className="inline-block" exit={{}}>{mottos[mottoIdx].split("").map((ch,i)=><motion.span key={i} className="inline-block whitespace-pre" initial={{opacity:0,y:"0.4em",filter:"blur(8px)"}} animate={{opacity:1,y:0,filter:"blur(0px)",transition:{duration:0.5,delay:i*0.055,ease:"easeOut"}}} exit={{opacity:0,y:"-0.3em",filter:"blur(8px)",transition:{duration:0.3,delay:(mottos[mottoIdx].length-1-i)*0.02,ease:"easeIn"}}}>{ch}</motion.span>)}</motion.span></AnimatePresence></span></h2></div><p className="max-w-sm text-sm leading-7 text-white/75">Eksplorasi software, jaringan, desain, dan otomotif melalui pengalaman vokasi yang relevan.</p></div><div className="mt-16 divide-y divide-white/10 border-y border-white/10">{majors.map(([n,title,desc,img,slug,accent])=><Link href={`/jurusan/${slug}`} key={title} style={{'--major-accent':accent} as React.CSSProperties} className="major-link group relative grid grid-cols-[52px_1fr_auto] items-center gap-x-4 gap-y-2 overflow-hidden rounded-lg py-5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C1E8FF] sm:rounded-none sm:grid-cols-[72px_1fr_1.2fr_auto] sm:gap-5 sm:py-8"><div className="relative col-start-1 row-start-2 h-12 w-[52px] overflow-hidden rounded-md sm:absolute sm:inset-y-3 sm:right-16 sm:col-auto sm:row-auto sm:h-20 sm:w-36 sm:rounded-xl sm:opacity-0 sm:transition sm:duration-500 sm:group-hover:opacity-20 lg:h-24 lg:w-44"><img src={img} alt="" className="h-full w-full object-cover"/></div><span className="col-start-1 row-start-1 font-mono text-xs text-white/70 sm:col-auto sm:row-auto sm:text-white/55">{n}</span><h3 className="relative z-10 col-start-2 row-start-1 text-2xl font-medium tracking-tight sm:col-auto sm:row-auto sm:text-3xl lg:text-5xl">{title}</h3><p className="relative z-10 col-start-2 row-start-2 max-w-md text-xs leading-5 text-white/75 sm:col-auto sm:row-auto sm:text-sm sm:leading-6 sm:text-white/70">{desc}</p><ArrowUpRight className="relative z-10 col-start-3 row-span-2 row-start-1 self-center text-white/80 transition group-active:translate-x-1 group-active:-translate-y-1 group-hover:-translate-y-1 group-hover:translate-x-1 sm:col-auto sm:row-auto sm:self-auto"/></Link>)}</div></div></section>}
 
 const newsFallback = [
   [
@@ -349,7 +353,7 @@ function News() {
             const date = isDb
               ? formatTanggalBerita(b.created_at, "Baru saja")
               : (tanggalFallback[slug] ?? "");
-            const desc = b.subjudul || b.konten.slice(0, 120);
+            const desc = b.subjudul || ringkasKonten(b.konten, 120);
             return (
               <motion.article
                 key={slug}
@@ -396,6 +400,7 @@ function Facilities() {
   const [active, setActive] = useState(0);
   const [direction, setDirection] = useState(1);
   const [selected, setSelected] = useState<number | null>(null);
+  const dragMoved = useRef(false);
 
   useEffect(() => {
     if (selected === null) return;
@@ -416,7 +421,7 @@ function Facilities() {
       subtitle: "Teaching Factory",
       detail:
         "Model belajar yang menggabungkan teori dengan praktik produksi nyata. Program ini didukung kolaborasi industri untuk mengembangkan kompetensi guru dan karya siswa.",
-      image: "/images/school/tefa.jpeg",
+      image: "/images/facilities/tefa.jpg",
       imageAlt: "Kegiatan Teaching Factory di SMK Tunas Harapan",
     },
     {
@@ -424,7 +429,7 @@ function Facilities() {
       subtitle: "Pusat Sumber Belajar",
       detail:
         "Ruang untuk membaca, mencari referensi, dan mendukung kegiatan belajar mandiri siswa.",
-      image: "/images/school/perpustakaan.jpeg",
+      image: "/images/facilities/perpustakaan.png",
       imageAlt: "Perpustakaan SMK Tunas Harapan",
     },
     {
@@ -433,7 +438,7 @@ function Facilities() {
       detail:
         "Kanal media sekolah yang membagikan karya dan kegiatan warga SMK Telekomunikasi Tunas Harapan.",
       href: "https://www.youtube.com/channel/UCiQWJxhNpa_mq_WxnvbEBQQ",
-      image: "/images/school/tv.png",
+      image: "/images/facilities/telsa-tv.png",
       imageAlt: "Telsa TV, televisi sekolah",
     },
     {
@@ -441,7 +446,7 @@ function Facilities() {
       subtitle: "Lingkungan tinggal siswa",
       detail:
         "Asrama putra berupa gedung di lingkungan sekolah yang hijau dan asri. Dilengkapi ruang makan, pembinaan dan pengawasan ketat, serta kegiatan minat dan olahraga. Informasi biaya dapat ditanyakan langsung kepada pihak sekolah.",
-      image: "/images/school/asrama.jpeg",
+      image: "/images/facilities/asrama-putra.jpg",
       imageAlt: "Gedung asrama putra SMK Tunas Harapan",
     },
     {
@@ -449,8 +454,8 @@ function Facilities() {
       subtitle: "Lingkungan tinggal siswi",
       detail:
         "Asrama putri berbentuk komplek perumahan dengan banyak unit yang terbagi dalam beberapa ruangan. Dilengkapi ruang makan, pembinaan dan pengawasan ketat, serta kegiatan minat dan olahraga. Informasi biaya dapat ditanyakan langsung kepada pihak sekolah.",
-      image: "/images/facilities/placeholder.svg",
-      imageAlt: "Asrama putri (foto segera hadir)",
+      image: "/images/facilities/asrama-putri.jpg",
+      imageAlt: "Gedung asrama putri SMK Tunas Harapan",
     },
     {
       title: "Lapangan Basket Atap",
@@ -465,32 +470,32 @@ function Facilities() {
       subtitle: "Area Olahraga & Upacara",
       detail:
         "Lapangan rumput serbaguna untuk sepak bola, upacara bendera, dan berbagai kegiatan luar ruang sekolah.",
-      image: "/images/school/hero-courtyard.jpg",
-      imageAlt: "Lapangan rumput (foto sementara)",
+      image: "/images/facilities/lapangan-rumput.jpg",
+      imageAlt: "Lapangan rumput sekolah",
     },
     {
       title: "Masjid",
       subtitle: "Tempat Ibadah",
       detail:
         "Masjid sekolah sebagai pusat ibadah dan pembinaan rohani warga sekolah dalam lingkungan yang nyaman.",
-      image: "/images/school/building-main.png",
-      imageAlt: "Masjid sekolah (foto sementara)",
+      image: "/images/facilities/masjid.png",
+      imageAlt: "Masjid sekolah",
     },
     {
       title: "Toilet",
       subtitle: "Sanitasi Siswa",
       detail:
         "Fasilitas toilet yang bersih dan terawat untuk menunjang kenyamanan siswa selama beraktivitas di sekolah.",
-      image: "/images/school/building-secondary.png",
-      imageAlt: "Toilet sekolah (foto sementara)",
+      image: "/images/facilities/toilet.png",
+      imageAlt: "Toilet sekolah",
     },
     {
       title: "Parkiran",
       subtitle: "Area Parkir",
       detail:
         "Area parkir yang tertata untuk kendaraan siswa, guru, dan tamu di lingkungan sekolah.",
-      image: "/images/school/tkr.jpg",
-      imageAlt: "Parkiran sekolah (foto sementara)",
+      image: "/images/facilities/parkiran.png",
+      imageAlt: "Parkiran sekolah",
     },
     {
       title: "Aula",
@@ -505,29 +510,28 @@ function Facilities() {
       subtitle: "Praktik Kejuruan",
       detail:
         "Ruang Praktik Siswa (RPS), bengkel/gedung TKR, dan GameLab untuk pembelajaran praktik sesuai bidang keahlian.",
-      image: "/images/school/hero-lab.jpg",
-      imageAlt: "Lab dan bengkel praktik (foto sementara)",
+      image: "/images/facilities/lab-bengkel.png",
+      imageAlt: "Lab dan bengkel praktik",
     },
     {
       title: "Kantin",
       subtitle: "Kuliner Sekolah",
       detail:
         "Area kantin dengan beragam pilihan makanan dan minuman untuk siswa selama waktu istirahat.",
-      image: "/images/facilities/placeholder.svg",
-      imageAlt: "Kantin sekolah (foto segera hadir)",
+      image: "/images/facilities/kantin.png",
+      imageAlt: "Kantin sekolah",
     },
     {
       title: "UKS",
       subtitle: "Kesehatan Siswa",
       detail:
         "Layanan kesehatan dasar dan pertolongan pertama bagi siswa yang membutuhkan selama beraktivitas di sekolah.",
-      image: "/images/facilities/placeholder.svg",
-      imageAlt: "Ruang UKS (foto segera hadir)",
+      image: "/images/facilities/uks.png",
+      imageAlt: "Ruang UKS",
     },
   ];
 
   const count = items.length;
-  const dragMoved = useRef(false);
   const goTo = (index: number, dir?: number) => {
     const next = ((index % count) + count) % count;
     setDirection(dir ?? (next > active ? 1 : -1));
@@ -852,7 +856,7 @@ function Facilities() {
         </svg>
       </motion.div>
       <div className="relative mx-auto max-w-7xl">
-        <p className="eyebrow text-[#2F5F8F]">04 / FASILITAS</p>
+        <p className="eyebrow text-[#2F5F8F]">05 / FASILITAS</p>
         <div className="mt-5 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <h2 className="display text-4xl sm:text-6xl">
             Ruang untuk
@@ -871,7 +875,7 @@ function Facilities() {
             <ArrowLeft size={20} />
           </button>
           <motion.div
-            className="relative mx-auto h-[440px] w-full max-w-[520px] flex-1 touch-pan-y sm:h-[470px]"
+            className="relative mx-auto h-[440px] w-full max-w-[520px] flex-1 touch-pan-y select-none cursor-grab active:cursor-grabbing sm:h-[470px]"
             role="region"
             aria-roledescription="carousel"
             aria-label="Kartu fasilitas. Geser untuk pindah, ketuk kartu untuk detail."
@@ -879,19 +883,20 @@ function Facilities() {
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.6}
             dragMomentum={false}
+            onDragStart={() => {
+              dragMoved.current = true;
+            }}
             onDragEnd={(_, info) => {
-              if (Math.abs(info.offset.x) > 10) {
-                dragMoved.current = true;
-                window.setTimeout(() => {
-                  dragMoved.current = false;
-                }, 150);
-              }
               if (info.offset.x < -60) goNext();
               else if (info.offset.x > 60) goPrev();
+              window.setTimeout(() => {
+                dragMoved.current = false;
+              }, 0);
             }}
           >
             {items.map((item, index) => {
               const pos = (((index - active) % count) + count) % count;
+              const isAktif = pos === 0;
               const xMap = [0, 40, -40, 0];
               const yMap = [0, 18, 36, 54];
               const rotateMap = [0, 5, -5, 0];
@@ -937,7 +942,7 @@ function Facilities() {
                   title={isPeekable ? `Tampilkan ${item.title}` : undefined}
                   className={`absolute inset-x-1 top-0 overflow-hidden rounded-[1.75rem] border border-[#021024]/8 bg-[#F4F9FF] transition-shadow duration-300 sm:inset-x-12 ${pos === 0 ? "shadow-[0_32px_70px_-28px_rgba(2,16,36,.4)] hover:shadow-[0_44px_90px_-28px_rgba(2,16,36,.55)]" : isPeekable ? "cursor-pointer hover:shadow-[0_24px_50px_-24px_rgba(2,16,36,.45)]" : "pointer-events-none"} ${pos > 2 ? "invisible" : ""}`}
                 >
-                  {pos === 0 ? (
+                  {isAktif ? (
                     <button
                       type="button"
                       onClick={() => setSelected(index)}
@@ -1037,7 +1042,7 @@ function Facilities() {
             <ArrowRight size={20} />
           </button>
         </div>
-        <div className="mt-8 flex items-center justify-center gap-4 sm:mt-10">
+        <div className="mt-8 flex select-none items-center justify-center gap-4 sm:mt-10">
           <span
             className="font-mono text-xs tracking-[.2em] text-[#021024]/50"
             aria-live="polite"
@@ -1151,6 +1156,53 @@ function Facilities() {
   );
 }
 
+function LocationSection() {
+  return (
+    <section id="lokasi" className="bg-[#021024] px-6 py-24 text-white sm:py-32">
+      <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[.8fr_1.2fr] lg:items-stretch">
+        <div className="flex flex-col justify-between rounded-[2rem] border border-white/10 bg-[#021024] p-7 sm:p-10">
+          <div>
+            <p className="eyebrow text-[#C1E8FF]/70">04 / LOKASI SEKOLAH</p>
+            <h2 className="display mt-5 max-w-lg text-4xl sm:text-6xl">Temui kami di sekolah.</h2>
+            <p className="mt-5 max-w-md text-sm leading-7 text-white/65 sm:text-base">
+              Datang dan rasakan langsung lingkungan belajar SMK Telekomunikasi Tunas Harapan.
+            </p>
+          </div>
+          <div className="mt-10 border-t border-white/15 pt-5">
+            <div className="flex items-start gap-3">
+              <MapPin size={22} className="mt-0.5 shrink-0 text-[#C1E8FF]" aria-hidden="true" />
+              <address className="not-italic text-sm leading-6 text-white/70">
+                Jl. Umbul Senjoyo I, No. 3, Desa Bener,
+                <br />
+                Kec. Tengaran, Kabupaten Semarang,
+                <br />
+                Jawa Tengah.
+              </address>
+            </div>
+            <a
+              href="https://www.google.com/maps/search/?api=1&query=SMK+Telekomunikasi+Tunas+Harapan+Tengaran"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-6 inline-flex items-center gap-2 rounded-full bg-[#C1E8FF] px-5 py-3 text-[10px] font-bold uppercase tracking-[.15em] text-[#021024] transition hover:bg-white"
+            >
+              Buka di Google Maps <ExternalLink size={14} />
+            </a>
+          </div>
+        </div>
+        <div className="min-h-[360px] overflow-hidden rounded-[2rem] border border-white/10 bg-[#021024] shadow-xl sm:min-h-[480px]">
+          <iframe
+            title="Peta lokasi SMK Telekomunikasi Tunas Harapan"
+            src="https://www.google.com/maps?q=SMK+Telekomunikasi+Tunas+Harapan+Tengaran&output=embed"
+            className="h-full min-h-[360px] w-full border-0 sm:min-h-[480px]"
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function Partners() {
   const partners = [
     { name: "Sinarmas", file: "/images/partners/sinarmas.png" },
@@ -1181,16 +1233,11 @@ function Partners() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="eyebrow text-[#C1E8FF]/60">05 / MITRA INDUSTRI</p>
+            <p className="eyebrow text-[#C1E8FF]/60">06 / MITRA INDUSTRI</p>
             <h2 className="display mt-5 max-w-3xl text-4xl sm:text-6xl">
               Terhubung dengan dunia nyata.
             </h2>
           </div>
-          <Handshake
-            className="hidden text-[#C1E8FF]/35 sm:block"
-            size={34}
-            strokeWidth={1.2}
-          />
         </div>
       </div>
       <div className="relative mt-12 overflow-hidden">
@@ -1213,11 +1260,6 @@ function Partners() {
           ))}
         </div>
       </div>
-      <div className="mx-auto max-w-7xl px-6">
-        <p className="mt-5 text-[10px] uppercase tracking-[.16em] text-white/25">
-          np.
-        </p>
-      </div>
     </section>
   );
 }
@@ -1230,7 +1272,7 @@ function Achievements() {
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="eyebrow text-[#2F5F8F]">06 / PRESTASI</p>
+        <p className="eyebrow text-[#2F5F8F]">07 / PRESTASI</p>
             <h2 className="display mt-5 max-w-3xl text-4xl sm:text-6xl">
               Karya siswa yang
               <br />
@@ -1429,7 +1471,7 @@ function Future() {
   return (
     <section className="bg-[#F4F9FF] px-6 py-28 text-[#021024] sm:py-36">
       <div className="mx-auto max-w-7xl rounded-[2rem] bg-[#C1E8FF] px-7 pb-0 pt-7 sm:px-12 sm:pt-12 lg:px-14 lg:pt-14">
-        <p className="eyebrow text-[#052659]/60">07 / YOUR NEXT STEP</p>
+        <p className="eyebrow text-[#052659]/60">08 / YOUR NEXT STEP</p>
         <h2 className="display mt-5 max-w-4xl text-4xl sm:text-6xl">
           Kawal langkahmu setelah lulus.
         </h2>
@@ -1554,6 +1596,63 @@ function Future() {
   );
 }
 type AuthStatus = "loading" | "loggedIn" | "loggedOut";
+
+function Aurora(){return <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+    <motion.img
+      src="/images/footer/aurora-tr.png"
+      alt=""
+      className="absolute -right-4 -top-4 w-[22rem] max-w-none opacity-95 sm:w-[30rem] lg:w-[38rem]"
+      style={{ filter: 'brightness(1.5) saturate(1.25)' }}
+      animate={{ opacity: [0.8, 1, 0.8], scale: [1, 1.05, 1], x: [0, -10, 0], y: [0, 8, 0] }}
+      transition={{ duration: 17, repeat: Infinity, ease: 'easeInOut' }}
+    />
+    <motion.img
+      src="/images/footer/aurora-bl.png"
+      alt=""
+      className="absolute -bottom-4 -left-4 w-[22rem] max-w-none opacity-95 sm:w-[30rem] lg:w-[38rem]"
+      style={{ filter: 'brightness(1.5) saturate(1.25)' }}
+      animate={{ opacity: [0.8, 1, 0.8], scale: [1, 1.05, 1], x: [0, 10, 0], y: [0, -8, 0] }}
+      transition={{ duration: 19, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+    />
+    {particles.map((p, index) => <motion.span
+      key={index}
+      className="absolute rounded-full bg-[#EAF6FF]"
+      style={{ left: p.left, top: p.top, width: p.size, height: p.size }}
+      animate={{ opacity: [0.3, 1, 0.3], y: [0, -10, 0], x: [0, index % 2 === 0 ? 5 : -5, 0] }}
+      transition={{
+        opacity: { duration: 3.5, delay: p.twinkleDelay, repeat: Infinity, repeatDelay: 2 + (index % 6) * 0.5 },
+        y: { duration: p.float, delay: p.delay, repeat: Infinity, ease: 'easeInOut' },
+        x: { duration: p.float + 2, delay: p.delay, repeat: Infinity, ease: 'easeInOut' },
+      }}
+    >
+      <span className="block h-full w-full rounded-full bg-[#EAF6FF]" style={{ boxShadow: '0 0 8px 2px rgba(193,232,255,.9)' }} />
+    </motion.span>)}
+  </div>;
+}
+const particles = [
+  { left: '22%', top: '22%', size: 5, delay: 0, float: 8, twinkleDelay: 1.2 },
+  { left: '30%', top: '40%', size: 4, delay: 1.4, float: 9, twinkleDelay: 3.1 },
+  { left: '26%', top: '62%', size: 6, delay: 0.6, float: 7.5, twinkleDelay: 2.2 },
+  { left: '34%', top: '78%', size: 4, delay: 2.2, float: 8.5, twinkleDelay: 4.4 },
+  { left: '20%', top: '48%', size: 5, delay: 3.1, float: 7, twinkleDelay: 2.7 },
+  { left: '40%', top: '16%', size: 4, delay: 1.1, float: 9, twinkleDelay: 3.9 },
+  { left: '44%', top: '34%', size: 6, delay: 2.7, float: 8, twinkleDelay: 1.8 },
+  { left: '42%', top: '58%', size: 4, delay: 0.4, float: 7.5, twinkleDelay: 5.2 },
+  { left: '38%', top: '84%', size: 5, delay: 3.5, float: 8.5, twinkleDelay: 3.3 },
+  { left: '50%', top: '24%', size: 4, delay: 1.7, float: 7, twinkleDelay: 2.4 },
+  { left: '52%', top: '50%', size: 6, delay: 2.4, float: 9, twinkleDelay: 4.1 },
+  { left: '48%', top: '72%', size: 4, delay: 0.9, float: 8, twinkleDelay: 1.5 },
+  { left: '56%', top: '18%', size: 5, delay: 3.2, float: 7.5, twinkleDelay: 3.6 },
+  { left: '58%', top: '44%', size: 4, delay: 1.3, float: 8.5, twinkleDelay: 4.8 },
+  { left: '60%', top: '68%', size: 6, delay: 2.1, float: 7, twinkleDelay: 2.0 },
+  { left: '62%', top: '86%', size: 4, delay: 0.7, float: 9, twinkleDelay: 5.5 },
+  { left: '68%', top: '26%', size: 5, delay: 2.9, float: 8, twinkleDelay: 2.6 },
+  { left: '70%', top: '52%', size: 4, delay: 1.6, float: 7.5, twinkleDelay: 4.0 },
+  { left: '66%', top: '74%', size: 6, delay: 3.4, float: 8.5, twinkleDelay: 3.0 },
+  { left: '74%', top: '38%', size: 4, delay: 0.5, float: 7, twinkleDelay: 1.9 },
+  { left: '76%', top: '64%', size: 5, delay: 2.6, float: 9, twinkleDelay: 4.6 },
+  { left: '78%', top: '20%', size: 4, delay: 1.9, float: 8, twinkleDelay: 2.9 },
+];
 
 function WelcomeCard({
   nama,
@@ -1893,7 +1992,7 @@ export default function Home(){
     </AnimatePresence>
 
     <HeroSection/>
-    <Profile/><Majors/><News/><Facilities/><Partners/><Achievements/><Future/>
+    <Profile/><Majors/><News/><LocationSection/><Facilities/><Partners/><Achievements/><Future/>
     <section
       aria-label="Gedung SMK Telekomunikasi Tunas Harapan"
       className="relative w-screen overflow-hidden bg-[#F4F9FF] px-0 pb-0"

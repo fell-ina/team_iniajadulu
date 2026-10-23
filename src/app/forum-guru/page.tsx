@@ -159,7 +159,7 @@ export default function ForumGuruPage() {
           <div className="mt-8 grid max-w-2xl grid-cols-3 gap-3 sm:gap-5">
             {[
               [String(topics.length), "Diskusi aktif"],
-              ["68", "Guru terhubung"],
+              ["67", "Guru terhubung"],
               [String(topics.filter((topic) => topic.solved).length), "Topik terjawab"],
             ].map(([value, label]) => (
               <div key={label} className="rounded-2xl border border-white/10 bg-white/8 p-4">
@@ -262,10 +262,7 @@ export default function ForumGuruPage() {
           </div>
 
           {selectedTopic && (
-            <div
-              className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
-              role="presentation"
-            >
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6" role="presentation">
               <button
                 type="button"
                 aria-label="Tutup pop-up diskusi"
@@ -276,81 +273,48 @@ export default function ForumGuruPage() {
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby={`discussion-title-${selectedTopic.id}`}
-                className="relative z-10 flex h-[92vh] max-h-[92vh] w-full max-w-7xl flex-col overflow-hidden rounded-3xl border border-[#7DA0CA]/25 bg-white p-5 shadow-2xl sm:p-8"
+                className="relative z-10 h-[92vh] max-h-[92vh] w-full max-w-7xl overflow-y-auto rounded-3xl border border-[#7DA0CA]/25 bg-white p-5 shadow-2xl sm:p-8"
               >
-                <div className="flex shrink-0 items-start justify-between gap-4 border-b border-[#021024]/8 pb-5">
+                <div className="flex items-start justify-between gap-4 border-b border-[#021024]/8 pb-5">
                   <div>
-                    <p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#2F5F8F]/65">
-                      Thread diskusi
-                    </p>
-                    <h2
-                      id={`discussion-title-${selectedTopic.id}`}
-                      className="mt-2 text-xl font-bold leading-snug"
-                    >
-                      {selectedTopic.title}
-                    </h2>
-                    <p className="mt-2 text-sm leading-6 text-[#2F5F8F]/75">
-                      {selectedTopic.excerpt}
-                    </p>
+                    <p className="text-[10px] font-bold uppercase tracking-[.16em] text-[#2F5F8F]/65">Thread diskusi</p>
+                    <h2 id={`discussion-title-${selectedTopic.id}`} className="mt-2 text-xl font-bold leading-snug">{selectedTopic.title}</h2>
+                    <p className="mt-2 text-sm leading-6 text-[#2F5F8F]/75">{selectedTopic.excerpt}</p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedTopicId(null)}
-                    aria-label="Tutup diskusi"
-                    className="grid size-9 shrink-0 place-items-center rounded-full text-[#2F5F8F]/60 transition hover:bg-[#021024]/5 hover:text-[#021024]"
-                  >
-                    <X size={18} />
-                  </button>
+                  <button type="button" onClick={() => setSelectedTopicId(null)} aria-label="Tutup diskusi" className="grid size-9 shrink-0 place-items-center rounded-full text-[#2F5F8F]/60 transition hover:bg-[#021024]/5 hover:text-[#021024]"><X size={18} /></button>
                 </div>
 
-                <div className="mt-5 min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
-                  {(replies[selectedTopic.id] ?? []).length ? (
-                    (replies[selectedTopic.id] ?? []).map((reply) => (
-                      <div key={reply.id} className="flex gap-3">
-                        <div className="grid size-9 shrink-0 place-items-center rounded-full bg-[#E4F3FF] text-[10px] font-bold text-[#052659]">
-                          {reply.initials}
+                <div className="mt-5 space-y-4">
+                  {(replies[selectedTopic.id] ?? []).length ? (replies[selectedTopic.id] ?? []).map((reply) => (
+                    <div key={reply.id} className="flex gap-3">
+                      <div className="grid size-9 shrink-0 place-items-center rounded-full bg-[#E4F3FF] text-[10px] font-bold text-[#052659]">{reply.initials}</div>
+                      <div className="min-w-0 flex-1 rounded-2xl bg-[#F4F9FF] px-4 py-3">
+                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                          <p className="text-xs font-bold text-[#021024]">{reply.author}</p>
+                          <p className="text-[11px] text-[#2F5F8F]/60">{reply.time}</p>
                         </div>
-                        <div className="min-w-0 flex-1 rounded-2xl bg-[#F4F9FF] px-4 py-3">
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                            <p className="text-xs font-bold text-[#021024]">{reply.author}</p>
-                            <p className="text-[11px] text-[#2F5F8F]/60">{reply.time}</p>
-                          </div>
-                          <p className="mt-2 text-sm leading-6 text-[#2F5F8F]">{reply.message}</p>
-                        </div>
+                        <p className="mt-2 text-sm leading-6 text-[#2F5F8F]">{reply.message}</p>
                       </div>
-                    ))
-                  ) : (
-                    <p className="rounded-2xl bg-[#F4F9FF] px-4 py-5 text-center text-sm text-[#2F5F8F]/70">
-                      Belum ada balasan. Jadilah yang pertama menanggapi.
-                    </p>
+                    </div>
+                  )) : (
+                    <p className="rounded-2xl bg-[#F4F9FF] px-4 py-5 text-center text-sm text-[#2F5F8F]/70">Belum ada balasan. Jadilah yang pertama menanggapi.</p>
                   )}
                 </div>
 
-                <form
-                  onSubmit={sendReply}
-                  className="mt-6 flex shrink-0 gap-3 border-t border-[#021024]/8 bg-white pb-1 pt-5"
-                >
-                  <div className="grid size-9 shrink-0 place-items-center rounded-full bg-[#052659] text-[10px] font-bold text-[#C1E8FF]">
-                    AN
-                  </div>
+                <form onSubmit={sendReply} className="mt-6 flex gap-3 border-t border-[#021024]/8 pt-5">
+                  <div className="grid size-9 shrink-0 place-items-center rounded-full bg-[#052659] text-[10px] font-bold text-[#C1E8FF]">AN</div>
                   <div className="min-w-0 flex-1">
                     <textarea
+                      rows={3}
+                      required
                       value={replyDraft}
                       onChange={(event) => setReplyDraft(event.target.value)}
                       placeholder="Tulis balasan Anda..."
-                      rows={3}
-                      required
                       className="w-full resize-none rounded-2xl border border-[#021024]/12 px-4 py-3 text-sm outline-none transition placeholder:text-[#2F5F8F]/45 focus:border-[#5483B3]"
                     />
-                    <div className="mt-2 flex justify-end">
-                      <button
-                        type="submit"
-                        disabled={!replyDraft.trim()}
-                        className="inline-flex items-center gap-2 rounded-xl bg-[#052659] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-[#021024] disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        <Send size={14} /> Kirim balasan
-                      </button>
-                    </div>
+                    <button type="submit" className="mt-3 inline-flex items-center gap-2 rounded-xl bg-[#052659] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-[#021024]">
+                      <Send size={14} /> Kirim balasan
+                    </button>
                   </div>
                 </form>
               </section>
@@ -360,7 +324,10 @@ export default function ForumGuruPage() {
 
         <aside className="space-y-5">
           <div className="rounded-3xl bg-[#E4F3FF] p-6">
-            <div className="flex items-center gap-3"><div className="grid size-10 place-items-center rounded-2xl bg-white text-[#052659]"><Users size={19} /></div><h2 className="font-bold">Panduan ruang guru</h2></div>
+            <div className="flex items-center gap-3">
+              <div className="grid size-10 place-items-center rounded-2xl bg-white text-[#052659]"><Users size={19} /></div>
+              <h2 className="font-bold">Panduan ruang guru</h2>
+            </div>
             <p className="mt-4 text-sm leading-6 text-[#2F5F8F]">Jaga forum tetap nyaman, relevan, dan bermanfaat untuk semua rekan pendidik.</p>
             <ul className="mt-4 space-y-3 text-xs leading-5 text-[#2F5F8F]">
               <li className="flex gap-2"><CheckCircle2 size={15} className="mt-0.5 shrink-0 text-[#5483B3]" /> Gunakan judul yang jelas dan spesifik.</li>
@@ -369,9 +336,14 @@ export default function ForumGuruPage() {
             </ul>
           </div>
           <div className="rounded-3xl border border-[#021024]/8 bg-white p-6 shadow-sm">
-            <div className="flex items-center justify-between"><h2 className="font-bold">Dokumen bersama</h2><FileText size={18} className="text-[#5483B3]" /></div>
+            <div className="flex items-center justify-between">
+              <h2 className="font-bold">Dokumen bersama</h2>
+              <FileText size={18} className="text-[#5483B3]" />
+            </div>
             <p className="mt-2 text-sm leading-6 text-[#2F5F8F]/70">Tempat berbagi perangkat ajar dan referensi sekolah.</p>
-            <button className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-[#052659]">Buka perpustakaan <MoreHorizontal size={15} /></button>
+            <button type="button" className="mt-4 inline-flex items-center gap-2 text-xs font-bold text-[#052659]">
+              Buka perpustakaan <MoreHorizontal size={15} />
+            </button>
           </div>
         </aside>
       </div>
