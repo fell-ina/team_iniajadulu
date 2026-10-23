@@ -8,6 +8,7 @@ import {
   ArrowUpRight,
   Clock3,
   GraduationCap,
+  LayoutDashboard,
   LogOut,
   Menu,
   UserRound,
@@ -31,7 +32,7 @@ const nav = [
   ["Prestasi", "#prestasi"],
 ];
 
-function Nav() {
+function Nav({ role }: { role: string | null }) {
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<string>("#profil");
@@ -101,7 +102,16 @@ function Nav() {
           })}
         </nav>
 
-        <div className="hidden md:block">
+        <div className="hidden items-center gap-2 md:flex">
+          {/* Hanya admin: role berasal dari /api/auth/me (dibaca server dari tabel users). */}
+          {role === "admin" && (
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[10px] font-bold uppercase tracking-[.15em] text-[#C1E8FF] transition hover:bg-white/20 hover:text-white"
+            >
+              <LayoutDashboard size={13} /> Dashboard
+            </Link>
+          )}
           <a
             href="https://spmb.tunasharapan.info"
             target="_blank"
@@ -143,6 +153,15 @@ function Nav() {
           >
             PPDB / SPMB
           </a>
+          {role === "admin" && (
+            <Link
+              href="/dashboard"
+              onClick={() => setOpen(false)}
+              className="mt-2 flex items-center justify-center gap-2 rounded-2xl border border-white/25 bg-white/10 px-4 py-3 text-sm font-semibold text-[#C1E8FF]"
+            >
+              <LayoutDashboard size={15} /> Dashboard Admin
+            </Link>
+          )}
         </div>
       )}
     </header>
@@ -1923,7 +1942,7 @@ export default function Home(){
 
   return (
     <main id="top" className="relative overflow-x-hidden">
-      <Nav />
+      <Nav role={role} />
 
     <AnimatePresence>
       {status === 'loggedIn' && showWelcome && (
