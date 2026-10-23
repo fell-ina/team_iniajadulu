@@ -1,9 +1,9 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useState, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Instrument_Serif, Inter } from "next/font/google";
 import TombolGoogle from "@/components/TombolGoogle";
 import styles from "./login.module.css";
@@ -17,11 +17,14 @@ const sans = Inter({ subsets: ["latin"], variable: "--font-sans" });
 
 // ---- Konfigurasi yang mungkin perlu Anda ubah ------------------------------
 const LOGIN_ENDPOINT = "/api/auth/login"; // endpoint back-end untuk login
-const DEFAULT_REDIRECT = "/dashboard"; // tujuan setelah login berhasil
+const DEFAULT_REDIRECT = "/dashboard"; // tujuan setelah login berhasil (admin/guru)
+const FORUM_REDIRECT = "/forum"; // tujuan setelah login untuk siswa
 // ---------------------------------------------------------------------------
 
-export default function LoginPage() {
+function LoginPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectParam = searchParams.get("redirect");
 
   const [identifier, setIdentifier] = useState(""); // username / NIS / NIP / email
   const [password, setPassword] = useState("");
@@ -36,7 +39,9 @@ export default function LoginPage() {
   useEffect(() => {
     const status = new URLSearchParams(window.location.search).get("reset");
     if (status === "berhasil") {
-      setNotice("Kata sandi berhasil diperbarui. Silakan masuk dengan kata sandi baru.");
+      setNotice(
+        "Kata sandi berhasil diperbarui. Silakan masuk dengan kata sandi baru.",
+      );
     }
   }, []);
 
@@ -82,9 +87,13 @@ export default function LoginPage() {
       }
 
       // Login berhasil -> pindah halaman.
-      // TODO (ROLE): kalau ada beberapa peran (siswa / guru / admin),
-      // kirim `redirectTo` yang berbeda dari back-end.
-      router.push(data.redirectTo ?? DEFAULT_REDIRECT);
+      // Tentukan redirect: pakai parameter redirect jika ada,
+      // atau pakai redirect dari API (yang sudah mengarahkan ke forum kelas yang benar), atau default.
+      const redirectTo = redirectParam
+        ? decodeURIComponent(redirectParam)
+        : (data.redirectTo ?? DEFAULT_REDIRECT);
+
+      router.push(redirectTo);
       router.refresh(); // muat ulang data server component agar status login terbaca
     } catch {
       setError("Tidak dapat terhubung ke server. Coba lagi sebentar lagi.");
@@ -129,14 +138,12 @@ export default function LoginPage() {
       {/* ---------- Panel kanan (form) ---------- */}
       <section className={styles.stage}>
         <span className={styles.watermark} aria-hidden="true">
-          SMK TUNAS HARA
-          PAN
+          SMK TUNAS HARA PAN
         </span>
 
         <div className={styles.card}>
           <h2 className={styles.cardTitle}>Masuk</h2>
-          <p className={styles.cardHint}>
-          </p>
+          <p className={styles.cardHint}></p>
 
           <TombolGoogle className={styles.google} label="Masuk dengan Google" />
           <div className={styles.divider}>atau masuk dengan akun sekolah</div>
@@ -197,7 +204,9 @@ export default function LoginPage() {
                   className={styles.toggle}
                   onClick={() => setShowPassword((v) => !v)}
                   aria-label={
-                    showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"
+                    showPassword
+                      ? "Sembunyikan kata sandi"
+                      : "Tampilkan kata sandi"
                   }
                   aria-pressed={showPassword}
                 >
@@ -257,5 +266,19 @@ function EyeIcon({ open }: { open: boolean }) {
       <circle cx="12" cy="12" r="3" />
       {!open && <path d="M4 4l16 16" />}
     </svg>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-4 border-[#052659] border-t-transparent" />
+        </div>
+      }
+    >
+      <LoginPageContent />
+    </Suspense>
   );
 }
