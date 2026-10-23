@@ -12,10 +12,7 @@ import QuickReplies from "./chat/QuickReplies";
 import ChatInput from "./chat/ChatInput";
 import FiskaAvatar from "./chat/FiskaAvatar";
 import FiskaStage from "./chat/FiskaStage";
-import {
-  normalizeEmotion,
-  type FiskaEmotion,
-} from "./chat/FiskaFace";
+import { normalizeEmotion, type FiskaEmotion } from "./chat/FiskaFace";
 
 type ChatMessage = {
   sender: "bot" | "user";

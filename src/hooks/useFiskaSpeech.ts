@@ -117,12 +117,18 @@ function getVoicesWhenReady(onReady: (voices: SpeechSynthesisVoice[]) => void) {
   synth.onvoiceschanged = finish;
 }
 
-function playFallbackSpeech(text: string, onEnd: () => void) {
+function playFallbackSpeech(
+  text: string,
+  onEnd: () => void,
+): { cancel: () => void } {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) {
     onEnd();
-    return;
+    return { cancel: () => {} };
   }
+
+  // Kalau ada sintesis lain yang lagi jalan, matikan dulu biar nggak tumpang tindih.
   window.speechSynthesis.cancel();
+
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "id-ID";
   utterance.rate = 0.95;
@@ -131,6 +137,7 @@ function playFallbackSpeech(text: string, onEnd: () => void) {
 
   let finished = false;
   let safetyTimer: number | null = null;
+  let cancelled = false;
   const finish = () => {
     if (finished) return;
     finished = true;
@@ -139,6 +146,7 @@ function playFallbackSpeech(text: string, onEnd: () => void) {
   };
 
   getVoicesWhenReady((voices) => {
+    if (cancelled) return;
     const voice =
       cachedFemaleVoice && voices.includes(cachedFemaleVoice)
         ? cachedFemaleVoice
@@ -153,6 +161,18 @@ function playFallbackSpeech(text: string, onEnd: () => void) {
     safetyTimer = window.setTimeout(finish, 60000);
     window.speechSynthesis.speak(utterance);
   });
+
+  const cancel = () => {
+    if (cancelled) return;
+    cancelled = true;
+    if (safetyTimer !== null) window.clearTimeout(safetyTimer);
+    try {
+      window.speechSynthesis.cancel();
+    } catch {}
+    onEnd();
+  };
+
+  return { cancel };
 }
 
 let sharedAudioCtx: AudioContext | null = null;
@@ -329,6 +349,9 @@ export function useFiskaSpeech(
     mouthLevelRef.current = 0;
   }, []);
 
+  // Biat fallback speech synthesis bisa dimati dari stopAudio.
+  const fallbackRef = useRef<{ cancel: () => void } | null>(null);
+
   const stopAudio = useCallback(() => {
     speakSeqRef.current += 1;
     if (speakAbortRef.current) {
@@ -337,8 +360,15 @@ export function useFiskaSpeech(
       } catch {}
       speakAbortRef.current = null;
     }
+    // Matikan sintesis yang lagi jalan (mis. fallback yang lagi bicara).
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
+    }
+    if (fallbackRef.current) {
+      try {
+        fallbackRef.current.cancel();
+      } catch {}
+      fallbackRef.current = null;
     }
     if (audioRef.current) {
       audioRef.current.onended = null;
@@ -513,17 +543,20 @@ export function useFiskaSpeech(
 
           ensure(i + 1);
 
-          if (!blob) {
-            if (i === 0) {
+          if (!blob) {              if (i === 0) {
               setIsVoiceLoading(false);
-              playFallbackSpeech(cleanText, () => {
-                if (!isActive()) return;
-                spokenTextRef.current = null;
-                speakAbortRef.current = null;
-                setIsSpeaking(false);
-                setIsVoiceLoading(false);
-                stopMouthAnimation();
-              });
+              fallbackRef.current = playFallbackSpeech(
+                cleanText,
+                () => {
+                  if (!isActive()) return;
+                  spokenTextRef.current = null;
+                  speakAbortRef.current = null;
+                  setIsSpeaking(false);
+                  setIsVoiceLoading(false);
+                  stopMouthAnimation();
+                  fallbackRef.current = null;
+                },
+              );
               startFakeTalking();
               return;
             }
@@ -566,14 +599,18 @@ export function useFiskaSpeech(
       } catch {
         if (!isActive()) return;
         setIsVoiceLoading(false);
-        playFallbackSpeech(cleanText, () => {
-          if (!isActive()) return;
-          spokenTextRef.current = null;
-          speakAbortRef.current = null;
-          setIsSpeaking(false);
-          setIsVoiceLoading(false);
-          stopMouthAnimation();
-        });
+        fallbackRef.current = playFallbackSpeech(
+          cleanText,
+          () => {
+            if (!isActive()) return;
+            spokenTextRef.current = null;
+            speakAbortRef.current = null;
+            setIsSpeaking(false);
+            setIsVoiceLoading(false);
+            stopMouthAnimation();
+            fallbackRef.current = null;
+          },
+        );
         startFakeTalking();
       }
     },
