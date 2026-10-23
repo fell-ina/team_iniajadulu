@@ -6,6 +6,8 @@ import {
   ArrowLeft,
   ArrowRight,
   ArrowUpRight,
+  ChevronLeft,
+  ChevronRight,
   Clock3,
   GraduationCap,
   LogOut,
@@ -1224,7 +1226,29 @@ function Partners() {
     </section>
   );
 }
+const achievementImages = [
+  "/images/achievements/students-achievement.jpg",
+  "/images/achievements/students-achievement2.png",
+  "/images/achievements/students-achievement3.jpg",
+];
+
 function Achievements() {
+  const [activeAchievementImage, setActiveAchievementImage] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setActiveAchievementImage((current) => (current + 1) % achievementImages.length);
+    }, 10000);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const changeAchievement = (direction: number) => {
+    setActiveAchievementImage(
+      (current) => (current + direction + achievementImages.length) % achievementImages.length,
+    );
+  };
+
   return (
     <section
       id="prestasi"
@@ -1243,12 +1267,56 @@ function Achievements() {
           <Trophy className="text-[#052659]/30" size={42} strokeWidth={1.1} />
         </div>
         <div className="mt-12 grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
-          <div className="overflow-hidden rounded-[1.75rem] bg-[#021024]">
-            <img
-              src="/images/achievements/students-achievement.jpg"
-              alt="Prestasi siswa"
-              className="h-[330px] w-full object-cover opacity-90 sm:h-[470px]"
-            />
+          <div className="relative overflow-hidden rounded-[1.75rem] bg-[#021024]">
+             <AnimatePresence mode="wait" initial={false}>
+               <motion.img
+                 key={achievementImages[activeAchievementImage]}
+                 src={achievementImages[activeAchievementImage]}
+                 alt={`Prestasi siswa ${activeAchievementImage + 1}`}
+                 initial={{ opacity: 0 }}
+                 animate={{ opacity: 0.9 }}
+                 exit={{ opacity: 0 }}
+                 transition={{ duration: 0.8, ease: "easeInOut" }}
+                 className="h-[330px] w-full object-cover sm:h-[470px]"
+               />
+             </AnimatePresence>
+             <div className="absolute inset-x-5 bottom-5 flex items-center justify-between gap-4">
+               <div className="flex items-center gap-2 rounded-full border border-white/15 bg-[#021024]/55 px-3 py-2 backdrop-blur-md">
+                 {achievementImages.map((image, index) => (
+                   <button
+                     key={image}
+                     type="button"
+                     onClick={() => setActiveAchievementImage(index)}
+                     aria-label={`Tampilkan foto prestasi ${index + 1}`}
+                     aria-pressed={activeAchievementImage === index}
+                     className="group flex items-center gap-2"
+                   >
+                     <span
+                       className={`block h-1 rounded-full transition-all duration-300 ${activeAchievementImage === index ? "w-8 bg-white" : "w-4 bg-white/40 group-hover:bg-white/75"}`}
+                     />
+                     <span className="sr-only">Foto {index + 1}</span>
+                   </button>
+                 ))}
+               </div>
+               <div className="flex items-center gap-2">
+                 <button
+                   type="button"
+                   onClick={() => changeAchievement(-1)}
+                   aria-label="Foto prestasi sebelumnya"
+                   className="grid size-9 place-items-center rounded-full border border-white/20 bg-[#021024]/55 text-white backdrop-blur-md transition hover:bg-[#021024]/80"
+                 >
+                   <ChevronLeft size={17} />
+                 </button>
+                 <button
+                   type="button"
+                   onClick={() => changeAchievement(1)}
+                   aria-label="Foto prestasi berikutnya"
+                   className="grid size-9 place-items-center rounded-full border border-white/20 bg-[#021024]/55 text-white backdrop-blur-md transition hover:bg-[#021024]/80"
+                 >
+                   <ChevronRight size={17} />
+                 </button>
+               </div>
+             </div>
           </div>
           <div className="grid gap-3">
             {[

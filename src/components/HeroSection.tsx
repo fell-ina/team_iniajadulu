@@ -68,10 +68,6 @@ export default function HeroSection() {
         <div className="absolute inset-0 bg-gradient-to-t from-[#021024]/90 via-[#021024]/10 to-[#021024]/20" />
 
         <div className="relative z-10 mx-auto flex min-h-[720px] max-w-[1500px] flex-col px-5 pb-24 pt-28 sm:min-h-[760px] sm:px-8 sm:pt-32 lg:min-h-screen lg:px-12">
-          <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-[.25em] text-white/60">
-            <span>SMK TELEKOMUNIKASI TUNAS HARAPAN</span>
-            <span className="hidden sm:block">Semarang · Jawa Tengah</span>
-          </div>
 
           <div className="flex flex-1 items-center py-14 sm:py-20">
             <AnimatePresence mode="wait">
@@ -186,64 +182,6 @@ export default function HeroSection() {
           </div>
         </div>
       </section>
-
-      <div className="relative z-20 -mt-12 px-4 sm:px-6">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 overflow-hidden rounded-md bg-[#343A70] shadow-xl lg:grid-cols-4">
-          {[
-            {
-              title: "TEFA",
-              description: "Teaching Factory",
-              href: "#fasilitas",
-              icon: Cog,
-            },
-            {
-              title: "PERPUSTAKAAN",
-              description: "Pusat Sumber Belajar",
-              href: "#fasilitas",
-              icon: BookOpen,
-            },
-            {
-              title: "TELSA TV",
-              description: "Televisi Sekolah",
-              href: "#fasilitas",
-              icon: Video,
-            },
-            {
-              title: "PPDB",
-              description: "Portal SPMB",
-              href: "https://spmb.tunasharapan.info",
-              icon: ArrowRight,
-            },
-          ].map(({ title, description, href, icon: Icon }, index) => (
-            <a
-              key={title}
-              href={href}
-              target={href.startsWith("http") ? "_blank" : undefined}
-              rel={href.startsWith("http") ? "noreferrer" : undefined}
-              className={`group flex min-h-24 items-center gap-4 px-4 py-4 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-inset focus-visible:outline-[#C1E8FF] sm:px-6 ${index === 3 ? "bg-[#C2410C] text-white hover:bg-[#9A3412]" : "text-white hover:bg-white/[.06] lg:border-r lg:border-white/10"}`}
-            >
-              <Icon
-                aria-hidden="true"
-                size={34}
-                strokeWidth={1.5}
-                className={`shrink-0 ${index === 3 ? "text-white" : "text-[#C1E8FF]/75"}`}
-              />
-              <span className="min-w-0 flex-1">
-                <span
-                  className={`block text-[10px] font-bold uppercase tracking-[.16em] ${index === 3 ? "text-white/75" : "text-[#C1E8FF]/75"}`}
-                >
-                  {title}
-                </span>
-                <span
-                  className={`mt-1 block text-sm leading-5 ${index === 3 ? "text-white" : "text-white/65"}`}
-                >
-                  {description}
-                </span>
-              </span>
-            </a>
-          ))}
-        </div>
-      </div>
     </>
   );
 }
