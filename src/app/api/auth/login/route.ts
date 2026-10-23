@@ -189,7 +189,7 @@ export async function POST(request: Request) {
 
   const lengkap = await admin
     .from("users")
-    .select("role, jurusan, kelas")
+    .select("role, jurusan, kelas, verification_status")
     .eq("id", data.user.id)
     .maybeSingle();
 
@@ -204,16 +204,28 @@ export async function POST(request: Request) {
     role = cadangan.data?.role ?? null;
   } else {
     role = lengkap.data?.role ?? null;
-    dataSekolahLengkap = Boolean(lengkap.data?.jurusan && lengkap.data?.kelas);
+    // Hanya butuh kelas untuk akses forum. Jurusan opsional.
+    dataSekolahLengkap = Boolean(lengkap.data?.kelas);
   }
 
   // 5. Tentukan tujuan berdasarkan role & kelengkapan data -------------------
-  const redirectTo =
-    role === "admin" || role === "guru"
-      ? "/dashboard"
-      : dataSekolahLengkap
-        ? "/"
-        : "/register/lengkapi";
+  let redirectTo: string;
+  let kelas: "X" | "XI" | "XII" | null = null;
 
-  return NextResponse.json({ ok: true, redirectTo });
+  if (role === "admin" || role === "guru") {
+    redirectTo = "/dashboard";
+  } else if (dataSekolahLengkap) {
+    // Siswa dengan kelas terisi: redirect ke forum kelasnya
+    const kelasSiswa = lengkap.data?.kelas;
+    if (kelasSiswa === "X" || kelasSiswa === "XI" || kelasSiswa === "XII") {
+      kelas = kelasSiswa;
+      redirectTo = `/forum/${kelasSiswa}`;
+    } else {
+      redirectTo = "/forum"; // fallback ke landing forum
+    }
+  } else {
+    redirectTo = "/register/lengkapi";
+  }
+
+  return NextResponse.json({ ok: true, redirectTo, kelas, verificationStatus: (lengkap.data as any)?.verification_status ?? "belum" });
 }

@@ -55,7 +55,7 @@ export async function GET() {
   // Selalu baru: status verifikasi bisa berubah dari dashboard admin.
   const lengkap = await admin
     .from("users")
-    .select("nama, role, nisn, verification_status")
+    .select("nama, role, nisn, verification_status, kelas")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -66,7 +66,7 @@ export async function GET() {
     console.warn("[auth/me] fallback tanpa kolom verifikasi:", lengkap.error.message);
     const cadangan = await admin
       .from("users")
-      .select("nama, role")
+      .select("nama, role, kelas")
       .eq("id", user.id)
       .maybeSingle();
     profil = cadangan.data as typeof profil;
@@ -78,10 +78,12 @@ export async function GET() {
   return NextResponse.json(
     {
       ok: true,
+      userId: user.id,
       nama: profil?.nama ?? null,
       role,
       nisn: profil?.nisn ?? null,
       verification_status: profil?.verification_status ?? "belum",
+      kelas: profil?.kelas ?? null,
       perlu_verifikasi: perluVerifikasi,
     },
     { headers: { "Cache-Control": "no-store, max-age=0" } }

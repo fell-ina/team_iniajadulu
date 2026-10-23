@@ -27,6 +27,7 @@ const nav = [
   ["Jurusan", "#jurusan"],
   ["Berita", "#berita"],
   ["Fasilitas", "#fasilitas"],
+  ["Forum", "/forum"],
   ["Mitra Industri", "#industri"],
   ["Prestasi", "#prestasi"],
 ];
