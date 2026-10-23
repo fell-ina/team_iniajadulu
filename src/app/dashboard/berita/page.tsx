@@ -15,12 +15,8 @@ export default function HalamanBerita() {
             Kelola konten
           </p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight text-[#021024] sm:text-4xl">
-            Berita sekolah.
+            Berita Sekolah
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#021024]/55">
-            Unggah berita baru lengkap dengan gambar, judul, subjudul, dan isi berita lewat popup
-            yang sama. Semua berita yang sudah terbit tampil di bawah dan bisa diedit atau dihapus.
-          </p>
         </div>
       </div>
 

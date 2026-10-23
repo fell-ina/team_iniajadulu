@@ -57,7 +57,7 @@
 /berita                 - Portal Berita Publik (Grid Berita, Pencarian, & Skeleton Loading)
 /berita/[id]            - Halaman Pembacaan Artikel Berita (Format Markdown)
 /register               - Pendaftaran akun (email + Google) & verifikasi kode OTP
-/register/lengkapi      - Pengisian jurusan & kelas sebelum kode verifikasi dikirim
+/register/lengkapi      - Pengisian nama, jurusan & kelas sebelum kode verifikasi dikirim
 /login                  - Portal Autentikasi Login Admin / Guru / Siswa
 /lupa-password          - Minta tautan reset kata sandi lewat email
 /reset-password         - Isi kata sandi baru (dibuka dari tautan email)
@@ -179,9 +179,12 @@ Alur pendaftaran:
 
 1. `/register` — siswa mengisi nama, email, kata sandi. Akun dibuat di Supabase Auth
    (`email_confirm = false`) **tanpa** mengirim email apa pun.
-2. `/register/lengkapi` — siswa memilih **jurusan** (PPLG / TJKT / DKV / TKR) dan
-   **kelas** (X / XI / XII). Endpoint `src/app/api/auth/lengkapi/route.ts` menyimpannya ke
-   tabel `users`, lalu **baru** meminta Supabase mengirim kode verifikasi.
+2. `/register/lengkapi` — siswa mengisi **nama lengkap**, memilih **jurusan**
+   (PPLG / TJKT / DKV / TKR), dan **kelas** (X / XI / XII). Nama wajib diisi sendiri dan
+   tidak boleh sama dengan alamat email (termasuk potongan sebelum `@`); isian otomatis
+   dari email dikosongkan supaya pengguna mengetik nama aslinya. Endpoint
+   `src/app/api/auth/lengkapi/route.ts` menyimpannya ke tabel `users`, lalu **baru**
+   meminta Supabase mengirim kode verifikasi.
 3. `/register?verifikasi=1` — siswa memasukkan 6 digit kode.
 
 Pendaftar lewat Google juga diarahkan ke `/register/lengkapi` dan tidak menerima kode email
@@ -230,7 +233,7 @@ menjaga akses di server: belum login → `/login`, role siswa → beranda.
 | Halaman | Akses | Isi |
 |---|---|---|
 | `/dashboard` | admin, guru | Ringkasan jumlah pengguna, pengajuan NISN, dan berita |
-| `/dashboard/pengguna` | **admin** | Daftar pengguna, pencarian, filter role, paginasi |
+| `/dashboard/pengguna` | **admin** | Daftar pengguna, pencarian, dialog filter, urutan, paginasi |
 | `/dashboard/verifikasi` | admin, guru | Verifikasi / tolak NISN siswa |
 | `/dashboard/berita` | admin, guru | CRUD berita lewat popup yang sudah ada |
 
@@ -242,6 +245,10 @@ menjaga akses di server: belum login → `/login`, role siswa → beranda.
   Siswa kelas `XII`, akun tanpa kelas, dan akun guru/admin dilewati (jumlahnya dilaporkan).
 - **Hapus** memakai **dua konfirmasi**: ringkasan akun yang akan dihapus, lalu mengetik
   `HAPUS`. Penghapusan menghapus baris `public.users` sekaligus akun Supabase Auth.
+- Tombol **Filter** membuka popup berisi role, jurusan, kelas, status NISN (termasuk
+  **Belum diisi**), serta urutan **Alfabetis (nama)** atau **Terbaru (tanggal daftar)**
+  dengan arah naik/turun. Filter berlaku bersama pencarian; badge angka menandai filter
+  aktif dan tombol **Atur ulang** mengembalikannya.
 - Tombol pensil membuka modal edit: nama, NISN, jurusan, kelas, dan role
   (`siswa` / `guru` / `admin`). **Password tidak dapat diubah** dari panel ini.
 - Pengaman: admin tidak bisa menurunkan role akunnya sendiri, menghapus akunnya sendiri,

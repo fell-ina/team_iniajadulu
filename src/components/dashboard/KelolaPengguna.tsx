@@ -4,7 +4,8 @@
  * components/dashboard/KelolaPengguna.tsx
  * ---------------------------------------------------------------------------
  * Tabel data pengguna untuk admin:
- *   - cari (nama/NISN), filter role, paginasi
+ *   - cari (nama/NISN), paginasi
+ *   - dialog filter: role, jurusan, kelas, status NISN, urutan & arah
  *   - centang per baris + "pilih semua" di halaman ini
  *   - aksi cepat: Naikkan kelas, Hapus (dua konfirmasi)
  *   - edit nama, NISN, jurusan, kelas, dan role (password tidak diubah)
@@ -28,6 +29,7 @@ import {
   Save,
   Search,
   ShieldCheck,
+  SlidersHorizontal,
   Trash2,
   UserRound,
   Users,
@@ -73,6 +75,31 @@ const ROLE = [
 ] as const;
 
 const PER_PAGE = [10, 25, 50];
+
+const STATUS_NISN = [
+  { nilai: "belum", label: "Belum" },
+  { nilai: "menunggu", label: "Menunggu" },
+  { nilai: "terverifikasi", label: "Terverifikasi" },
+  { nilai: "ditolak", label: "Ditolak" },
+] as const;
+
+interface FilterPengguna {
+  role: string;
+  jurusan: string;
+  kelas: string;
+  status: string;
+  urut: "nama" | "terbaru";
+  arah: "asc" | "desc";
+}
+
+const FILTER_AWAL: FilterPengguna = {
+  role: "semua",
+  jurusan: "semua",
+  kelas: "semua",
+  status: "semua",
+  urut: "nama",
+  arah: "asc",
+};
 
 function labelRole(role: string | null) {
   if (role === "admin") return { teks: "Admin", kelas: "bg-violet-50 text-violet-700 border-violet-200" };
@@ -127,7 +154,8 @@ export default function KelolaPengguna() {
 
   const [cari, setCari] = useState("");
   const [cariDipakai, setCariDipakai] = useState("");
-  const [roleFilter, setRoleFilter] = useState("semua");
+  const [filter, setFilter] = useState<FilterPengguna>(FILTER_AWAL);
+  const [filterTerbuka, setFilterTerbuka] = useState(false);
 
   const [terpilih, setTerpilih] = useState<Set<string>>(new Set());
   const [sibuk, setSibuk] = useState(false);
@@ -144,7 +172,12 @@ export default function KelolaPengguna() {
       const params = new URLSearchParams({
         page: String(page),
         perPage: String(perPage),
-        role: roleFilter,
+        role: filter.role,
+        jurusan: filter.jurusan,
+        kelas: filter.kelas,
+        status: filter.status,
+        urut: filter.urut,
+        arah: filter.arah,
       });
       if (cariDipakai) params.set("q", cariDipakai);
 
@@ -178,7 +211,7 @@ export default function KelolaPengguna() {
     } finally {
       setMemuat(false);
     }
-  }, [page, perPage, cariDipakai, roleFilter]);
+  }, [page, perPage, cariDipakai, filter]);
 
   useEffect(() => {
     muat();
@@ -196,7 +229,17 @@ export default function KelolaPengguna() {
   // Pilihan hanya berlaku untuk halaman/filter yang sedang tampil.
   useEffect(() => {
     setTerpilih(new Set());
-  }, [page, perPage, roleFilter, cariDipakai]);
+  }, [page, perPage, filter, cariDipakai]);
+
+  const jumlahFilter = [
+    filter.role !== "semua",
+    filter.jurusan !== "semua",
+    filter.kelas !== "semua",
+    filter.status !== "semua",
+  ].filter(Boolean).length;
+  const adaFilter = jumlahFilter > 0 || Boolean(cariDipakai);
+  // Urutan bukan filter, tapi tombol Atur ulang juga mengembalikannya.
+  const urutBerubah = filter.urut !== FILTER_AWAL.urut || filter.arah !== FILTER_AWAL.arah;
 
   const idHalaman = useMemo(() => daftar.map((d) => d.id), [daftar]);
   const semuaTerpilih = idHalaman.length > 0 && idHalaman.every((id) => terpilih.has(id));
@@ -312,24 +355,37 @@ export default function KelolaPengguna() {
           />
         </label>
 
-        <label className="flex items-center gap-2 rounded-full border border-[#021024]/12 bg-white px-4 py-2.5 text-sm font-semibold text-[#021024]/70 shadow-sm">
-          <span className="text-[11px] uppercase tracking-[.12em] text-[#021024]/40">Role</span>
-          <select
-            value={roleFilter}
-            onChange={(e) => {
-              setRoleFilter(e.target.value);
+        <button
+          type="button"
+          onClick={() => setFilterTerbuka(true)}
+          aria-haspopup="dialog"
+          className={`inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold shadow-sm transition ${
+            jumlahFilter > 0
+              ? "border-[#052659] bg-[#052659] text-[#C1E8FF] hover:bg-[#021024] hover:text-white"
+              : "border-[#021024]/12 bg-white text-[#021024]/70 hover:bg-[#021024]/5"
+          }`}
+        >
+          <SlidersHorizontal size={15} />
+          Filter
+          {jumlahFilter > 0 && (
+            <span className="grid min-w-5 place-items-center rounded-full bg-[#C1E8FF] px-1.5 text-[10px] font-bold text-[#052659]">
+              {jumlahFilter}
+            </span>
+          )}
+        </button>
+
+        {(jumlahFilter > 0 || urutBerubah) && (
+          <button
+            type="button"
+            onClick={() => {
+              setFilter(FILTER_AWAL);
               setPage(1);
             }}
-            className="bg-transparent pr-1 text-sm font-semibold text-[#021024] outline-none"
+            className="rounded-full px-3 py-2.5 text-xs font-semibold text-[#021024]/50 transition hover:bg-[#021024]/5 hover:text-[#021024]"
           >
-            <option value="semua">Semua</option>
-            {ROLE.map((r) => (
-              <option key={r.nilai} value={r.nilai}>
-                {r.label}
-              </option>
-            ))}
-          </select>
-        </label>
+            Atur ulang
+          </button>
+        )}
 
         <button
           type="button"
@@ -453,13 +509,11 @@ export default function KelolaPengguna() {
                       <Users size={24} />
                     </span>
                     <p className="mt-4 text-lg font-bold text-[#021024]">
-                      {cariDipakai || roleFilter !== "semua"
-                        ? "Tidak ada pengguna yang cocok"
-                        : "Belum ada pengguna"}
+                      {adaFilter ? "Tidak ada pengguna yang cocok" : "Belum ada pengguna"}
                     </p>
                     <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-[#021024]/55">
-                      {cariDipakai || roleFilter !== "semua"
-                        ? "Coba kata kunci atau filter role yang lain."
+                      {adaFilter
+                        ? "Coba kata kunci atau filter yang lain."
                         : "Pengguna akan muncul di sini setelah mereka mendaftar."}
                     </p>
                   </td>
@@ -620,6 +674,19 @@ export default function KelolaPengguna() {
         </div>
       </div>
 
+      {/* Dialog filter & urutan */}
+      {filterTerbuka && (
+        <DialogFilter
+          awal={filter}
+          onTutup={() => setFilterTerbuka(false)}
+          onTerapkan={(baru) => {
+            setFilter(baru);
+            setPage(1);
+            setFilterTerbuka(false);
+          }}
+        />
+      )}
+
       {/* Modal edit */}
       {editTarget && (
         <ModalEdit
@@ -648,6 +715,202 @@ export default function KelolaPengguna() {
         />
       )}
     </div>
+  );
+}
+
+/* ==================== Dialog filter & urutan daftar ==================== */
+function DialogFilter({
+  awal,
+  onTutup,
+  onTerapkan,
+}: {
+  awal: FilterPengguna;
+  onTutup: () => void;
+  onTerapkan: (filter: FilterPengguna) => void;
+}) {
+  const [draf, setDraf] = useState<FilterPengguna>(awal);
+
+  useEffect(() => {
+    const asal = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = asal;
+    };
+  }, []);
+
+  function ubah<K extends keyof FilterPengguna>(kunci: K, nilai: FilterPengguna[K]) {
+    setDraf((lama) => ({ ...lama, [kunci]: nilai }));
+  }
+
+  return (
+    <div
+      className="fixed inset-0 z-[95] flex items-center justify-center bg-[#021024]/60 p-4 backdrop-blur-sm"
+      onClick={onTutup}
+    >
+      <motion.div
+        initial={{ opacity: 0, scale: 0.96, y: 12 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Filter dan urutan pengguna"
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[11px] font-bold uppercase tracking-[.18em] text-[#2F5F8F]/70">
+              Saring daftar
+            </p>
+            <h3 className="mt-1 text-xl font-bold text-[#021024]">Filter pengguna</h3>
+            <p className="mt-1 text-xs leading-relaxed text-[#021024]/45">
+              Pilih kriteria, lalu tekan Terapkan. Filter berlaku bersama pencarian.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onTutup}
+            aria-label="Tutup"
+            className="grid size-8 place-items-center rounded-full text-[#021024]/40 transition hover:bg-[#021024]/5"
+          >
+            <X size={16} />
+          </button>
+        </div>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            onTerapkan(draf);
+          }}
+          className="mt-5"
+        >
+          <div className="grid gap-4 sm:grid-cols-2">
+            <PilihanFilter label="Role" nilai={draf.role} onUbah={(v) => ubah("role", v)}>
+              <option value="semua">Semua role</option>
+              {ROLE.map((r) => (
+                <option key={r.nilai} value={r.nilai}>
+                  {r.label}
+                </option>
+              ))}
+            </PilihanFilter>
+
+            <PilihanFilter label="Jurusan" nilai={draf.jurusan} onUbah={(v) => ubah("jurusan", v)}>
+              <option value="semua">Semua jurusan</option>
+              {JURUSAN.map((j) => (
+                <option key={j.kode} value={j.kode}>
+                  {j.kode} — {j.nama}
+                </option>
+              ))}
+              <option value="kosong">Belum diisi</option>
+            </PilihanFilter>
+
+            <PilihanFilter label="Kelas" nilai={draf.kelas} onUbah={(v) => ubah("kelas", v)}>
+              <option value="semua">Semua kelas</option>
+              {KELAS.map((k) => (
+                <option key={k.kode} value={k.kode}>
+                  {k.nama}
+                </option>
+              ))}
+              <option value="kosong">Belum diisi</option>
+            </PilihanFilter>
+
+            <PilihanFilter label="Status NISN" nilai={draf.status} onUbah={(v) => ubah("status", v)}>
+              <option value="semua">Semua status</option>
+              {STATUS_NISN.map((s) => (
+                <option key={s.nilai} value={s.nilai}>
+                  {s.label}
+                </option>
+              ))}
+            </PilihanFilter>
+          </div>
+
+          <div className="mt-5 rounded-2xl border border-[#021024]/10 bg-[#F4F9FF] p-4">
+            <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[#2F5F8F]/70">
+              Urutan
+            </p>
+            <div className="mt-3 grid gap-4 sm:grid-cols-2">
+              <PilihanFilter
+                label="Urutkan berdasarkan"
+                nilai={draf.urut}
+                onUbah={(v) => ubah("urut", v === "terbaru" ? "terbaru" : "nama")}
+              >
+                <option value="nama">Alfabetis (nama)</option>
+                <option value="terbaru">Terbaru (tanggal daftar)</option>
+              </PilihanFilter>
+
+              <PilihanFilter
+                label="Arah"
+                nilai={draf.arah}
+                onUbah={(v) => ubah("arah", v === "desc" ? "desc" : "asc")}
+              >
+                {draf.urut === "terbaru" ? (
+                  <>
+                    <option value="asc">Naik (terlama dulu)</option>
+                    <option value="desc">Turun (terbaru dulu)</option>
+                  </>
+                ) : (
+                  <>
+                    <option value="asc">Naik (A → Z)</option>
+                    <option value="desc">Turun (Z → A)</option>
+                  </>
+                )}
+              </PilihanFilter>
+            </div>
+          </div>
+
+          <div className="mt-5 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setDraf(FILTER_AWAL)}
+              className="rounded-full border border-[#021024]/15 px-4 py-2.5 text-sm font-semibold text-[#021024]/70 transition hover:bg-[#021024]/5"
+            >
+              Atur ulang
+            </button>
+            <div className="ml-auto flex items-center gap-2">
+              <button
+                type="button"
+                onClick={onTutup}
+                className="rounded-full px-4 py-2.5 text-sm font-semibold text-[#021024]/60 transition hover:bg-[#021024]/5"
+              >
+                Batal
+              </button>
+              <button
+                type="submit"
+                className="rounded-full bg-[#052659] px-5 py-2.5 text-sm font-semibold text-[#C1E8FF] transition hover:bg-[#021024] hover:text-white"
+              >
+                Terapkan
+              </button>
+            </div>
+          </div>
+        </form>
+      </motion.div>
+    </div>
+  );
+}
+
+function PilihanFilter({
+  label,
+  nilai,
+  onUbah,
+  children,
+}: {
+  label: string;
+  nilai: string;
+  onUbah: (nilai: string) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="block">
+      <span className="block text-xs font-bold uppercase tracking-[.14em] text-[#2F5F8F]">
+        {label}
+      </span>
+      <select
+        value={nilai}
+        onChange={(e) => onUbah(e.target.value)}
+        className="mt-2 w-full rounded-xl border border-[#021024]/15 bg-white px-3 py-2.5 text-sm text-[#021024] outline-none transition focus:border-[#5483B3] focus:ring-2 focus:ring-[#5483B3]/25"
+      >
+        {children}
+      </select>
+    </label>
   );
 }
 
@@ -948,9 +1211,6 @@ function DialogHapus({
                 Lanjutkan
               </button>
             </div>
-            <p className="mt-3 text-center text-[11px] text-[#021024]/40">
-              Konfirmasi pertama dari dua.
-            </p>
           </>
         ) : (
           <>
@@ -989,9 +1249,6 @@ function DialogHapus({
                 {sibuk ? "Menghapus..." : "Hapus permanen"}
               </button>
             </div>
-            <p className="mt-3 text-center text-[11px] text-[#021024]/40">
-              Konfirmasi kedua dari dua.
-            </p>
           </>
         )}
       </motion.div>

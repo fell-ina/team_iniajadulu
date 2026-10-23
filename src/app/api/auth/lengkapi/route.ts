@@ -8,14 +8,16 @@ import { jurusanValid, kelasValid } from "@/lib/sekolah";
 /**
  * app/api/auth/lengkapi/route.ts
  * ---------------------------------------------------------------------------
- * Langkah 2 pendaftaran: pilih jurusan & kelas, baru kode verifikasi dikirim.
+ * Langkah 2 pendaftaran: isi nama, pilih jurusan & kelas, baru kode verifikasi
+ * dikirim.
  *
  *   GET  /api/auth/lengkapi
  *        -> data akun yang sedang menyelesaikan pendaftaran
  *           (dari sesi Supabase, mis. daftar lewat Google, atau cookie
  *           pendaftaran untuk akun email yang baru dibuat)
  *
- *   POST /api/auth/lengkapi  { jurusan, kelas }
+ *   POST /api/auth/lengkapi  { nama, jurusan, kelas }
+ *        -> nama wajib diisi sendiri (tidak boleh sama dengan alamat email)
  *        -> simpan ke tabel `users`
  *        -> jika akun belum terverifikasi: kirim kode OTP email
  *        -> jika lewat Google/sesi: langsung selesai
@@ -220,7 +222,7 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { jurusan?: unknown; kelas?: unknown };
+  let body: { nama?: unknown; jurusan?: unknown; kelas?: unknown };
   try {
     body = await request.json();
   } catch {
@@ -230,8 +232,31 @@ export async function POST(request: Request) {
     );
   }
 
+  const nama =
+    typeof body.nama === "string" ? body.nama.trim().replace(/\s+/g, " ") : "";
   const jurusan = typeof body.jurusan === "string" ? body.jurusan.trim().toUpperCase() : "";
   const kelas = typeof body.kelas === "string" ? body.kelas.trim().toUpperCase() : "";
+
+  if (!nama) {
+    return NextResponse.json(
+      { ok: false, message: "Isi nama lengkap Anda terlebih dahulu." },
+      { status: 400 }
+    );
+  }
+
+  if (nama.length < 2) {
+    return NextResponse.json(
+      { ok: false, message: "Nama terlalu pendek (minimal 2 karakter)." },
+      { status: 400 }
+    );
+  }
+
+  if (nama.length > 120) {
+    return NextResponse.json(
+      { ok: false, message: "Nama terlalu panjang (maksimal 120 karakter)." },
+      { status: 400 }
+    );
+  }
 
   if (!jurusanValid(jurusan) || !kelasValid(kelas)) {
     return NextResponse.json(
@@ -250,6 +275,20 @@ export async function POST(request: Request) {
         message: "Sesi pendaftaran tidak ditemukan atau sudah kedaluwarsa. Silakan daftar ulang.",
       },
       { status: 401 }
+    );
+  }
+
+  // Nama harus nama asli, bukan salinan alamat email (mis. "budi123").
+  const surel = pengguna.email.trim().toLowerCase();
+  const lokal = surel.split("@")[0];
+  const namaKecil = nama.toLowerCase();
+  if (surel && (namaKecil === surel || namaKecil === lokal)) {
+    return NextResponse.json(
+      {
+        ok: false,
+        message: "Nama tidak boleh sama dengan alamat email. Isi nama lengkap Anda.",
+      },
+      { status: 400 }
     );
   }
 
@@ -277,7 +316,7 @@ export async function POST(request: Request) {
   // Simpan data: update bila baris profil sudah ada, insert bila belum.
   const { data: terupdate, error: errorUpdate } = await admin
     .from("users")
-    .update({ jurusan, kelas })
+    .update({ nama, jurusan, kelas })
     .eq("id", pengguna.id)
     .select("id");
 
@@ -292,7 +331,7 @@ export async function POST(request: Request) {
   if (!terupdate || terupdate.length === 0) {
     const { error: errorInsert } = await admin.from("users").insert({
       id: pengguna.id,
-      nama: pengguna.nama ?? pengguna.email.split("@")[0] ?? "Pengguna",
+      nama,
       role: "siswa",
       jurusan,
       kelas,

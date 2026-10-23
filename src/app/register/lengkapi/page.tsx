@@ -5,7 +5,9 @@
  * ---------------------------------------------------------------------------
  * Langkah 2 pendaftaran (wajib).
  *
- *   - Siswa memilih jurusan (PPLG / TJKT / DKV / TKR) dan kelas (X / XI / XII).
+ *   - Siswa mengisi nama lengkap, jurusan (PPLG / TJKT / DKV / TKR), dan kelas
+ *     (X / XI / XII). Nama wajib diisi sendiri, juga untuk akun Google, supaya
+ *     tidak ada pengguna yang tersimpan dengan nama dari email (mis. "budi123").
  *   - Kode verifikasi email BELUM dikirim saat akun dibuat; kode baru dikirim
  *     setelah data ini tersimpan dan baru bisa diverifikasi di /register.
  *   - Akun Google juga diarahkan ke halaman ini (mereka sudah punya sesi,
@@ -40,11 +42,27 @@ type InfoPendaftaran = {
   sumber: "sesi" | "pendaftaran";
 };
 
+/**
+ * Nama dari metadata Google boleh dipakai sebagai isian awal, tetapi nama yang
+ * hanya salinan alamat email ("budi123" untuk budi123@gmail.com) dianggap belum
+ * diisi supaya pengguna mengetik nama aslinya.
+ */
+function namaBukanEmail(nama: string | null | undefined, email: string): nama is string {
+  const bersih = (nama ?? "").trim().toLowerCase();
+  if (!bersih) return false;
+
+  const surel = (email ?? "").trim().toLowerCase();
+  if (!surel) return true;
+
+  return bersih !== surel && bersih !== surel.split("@")[0];
+}
+
 export default function LengkapiPendaftaranPage() {
   const router = useRouter();
 
   const [info, setInfo] = useState<InfoPendaftaran | null>(null);
   const [memuat, setMemuat] = useState(true);
+  const [nama, setNama] = useState("");
   const [jurusan, setJurusan] = useState<KodeJurusan | "">("");
   const [kelas, setKelas] = useState<KodeKelas | "">("");
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +101,9 @@ export default function LengkapiPendaftaranPage() {
         }
 
         setInfo(data);
+        // Jangan isi otomatis dengan potongan email (mis. "budi123") — nama
+        // seperti itu harus diketik sendiri oleh pengguna.
+        setNama(namaBukanEmail(data.nama, data.email) ? data.nama : "");
         setJurusan((data.jurusan as KodeJurusan | null) ?? "");
         setKelas((data.kelas as KodeKelas | null) ?? "");
 
@@ -113,6 +134,16 @@ export default function LengkapiPendaftaranPage() {
     setError(null);
     setSuccess(null);
 
+    if (!nama.trim()) {
+      setError("Isi nama lengkap Anda terlebih dahulu.");
+      return;
+    }
+
+    if (info && !namaBukanEmail(nama, info.email)) {
+      setError("Nama tidak boleh sama dengan alamat email. Isi nama lengkap Anda.");
+      return;
+    }
+
     if (!jurusan || !kelas) {
       setError("Pilih jurusan dan kelas terlebih dahulu.");
       return;
@@ -124,7 +155,7 @@ export default function LengkapiPendaftaranPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "same-origin",
-        body: JSON.stringify({ jurusan, kelas }),
+        body: JSON.stringify({ nama: nama.trim(), jurusan, kelas }),
       });
 
       const data = await res.json().catch(() => ({}));
@@ -181,8 +212,8 @@ export default function LengkapiPendaftaranPage() {
           sekolah.
         </h1>
         <p className={styles.lead}>
-          Pilih jurusan dan kelas Anda. Kode verifikasi email baru dikirim setelah data
-          ini tersimpan.
+          Isi nama lengkap, jurusan, dan kelas Anda. Kode verifikasi email baru dikirim
+          setelah data ini tersimpan.
         </p>
       </section>
 
@@ -195,7 +226,7 @@ export default function LengkapiPendaftaranPage() {
         <div className={styles.card}>
           <h2 className={styles.cardTitle}>Lengkapi Data</h2>
           <p className={styles.cardHint}>
-            Kode verifikasi belum dikirim. Isi jurusan dan kelas Anda lebih dulu.
+            Kode verifikasi belum dikirim. Isi nama, jurusan, dan kelas Anda lebih dulu.
           </p>
 
           {info && (
@@ -222,6 +253,23 @@ export default function LengkapiPendaftaranPage() {
 
           {(!error || info) && (
             <form onSubmit={handleSubmit} noValidate className={styles.form}>
+              <div className={styles.field}>
+                <label className={styles.label} htmlFor="nama-lengkap">
+                  Nama lengkap
+                </label>
+                <input
+                  id="nama-lengkap"
+                  className={styles.input}
+                  value={nama}
+                  onChange={(e) => setNama(e.target.value)}
+                  placeholder="Nama sesuai ijazah"
+                  autoComplete="name"
+                  maxLength={120}
+                  required
+                  disabled={loading}
+                />
+              </div>
+
               <div className={styles.field}>
                 <span className={styles.label} id="label-jurusan">
                   Jurusan
@@ -286,7 +334,7 @@ export default function LengkapiPendaftaranPage() {
                 className={styles.submit}
                 disabled={loading || !info}
               >
-                {loading ? "Menyimpan..." : "Simpan & Kirim Kode"}
+                {loading ? "Menyimpan..." : "Simpan"}
               </button>
             </form>
           )}

@@ -14,14 +14,8 @@ export default function HalamanVerifikasi() {
             Verifikasi pelajar
           </p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight text-[#021024] sm:text-4xl">
-            Pengajuan NISN.
+            Pengajuan NISN
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#021024]/55">
-            Periksa NISN yang dikirim siswa, lalu{" "}
-            <strong className="text-[#021024]">verifikasi</strong> atau{" "}
-            <strong className="text-[#021024]">tolak</strong> pengajuannya. Persetujuan langsung
-            mengubah status pelajar pada akun siswa.
-          </p>
         </div>
       </div>
 

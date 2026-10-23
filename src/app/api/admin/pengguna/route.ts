@@ -9,8 +9,13 @@ import { jurusanValid, kelasValid } from "@/lib/sekolah";
  * ---------------------------------------------------------------------------
  * Manajemen pengguna untuk dashboard admin (password TIDAK bisa diubah).
  *
- *  - GET   : daftar pengguna + paginasi + pencarian + filter role
+ *  - GET   : daftar pengguna + paginasi + pencarian + filter
  *            ?page=1&perPage=10&q=&role=siswa|guru|admin|semua
+ *            &jurusan=PPLG|TJKT|DKV|TKR|kosong|semua
+ *            &kelas=X|XI|XII|kosong|semua
+ *            &status=belum|menunggu|terverifikasi|ditolak|semua
+ *            &urut=nama|terbaru&arah=asc|desc
+ *            "terbaru" memakai tanggal pendaftaran akun (auth.users.created_at).
  *  - PATCH : ubah data satu pengguna
  *            body JSON { id, nama?, nisn?, jurusan?, kelas?, role? }
  *  - POST  : aksi massal untuk pengguna yang dicentang
@@ -38,8 +43,11 @@ interface BarisDaftar {
 }
 
 const ROLE_VALID = ["siswa", "guru", "admin"] as const;
+const STATUS_VALID = ["belum", "menunggu", "terverifikasi", "ditolak"] as const;
+const URUT_VALID = ["nama", "terbaru"] as const;
 const NISN_REGEX = /^\d{10}$/;
 const PER_PAGE_DIIZINKAN = [10, 25, 50];
+const UKURAN_CUPLIKAN = 1000;
 const KOLOM_DASAR = "id, nama, role, nisn, verification_status";
 const KOLOM_LENGKAP = `${KOLOM_DASAR}, jurusan, kelas`;
 
@@ -125,20 +133,34 @@ function galatKolomHilang(pesan: string) {
   return /jurusan|kelas|schema cache/i.test(pesan);
 }
 
-/** Peta id -> email dari Supabase Auth (tabel users tidak menyimpan email). */
-async function petaEmail(admin: AdminClient): Promise<Record<string, string>> {
-  const peta: Record<string, string> = {};
+interface PetaAuth {
+  /** id -> email */
+  email: Record<string, string>;
+  /** id -> tanggal pendaftaran (epoch ms), dipakai untuk urutan "terbaru" */
+  dibuat: Record<string, number>;
+}
+
+/**
+ * Peta id -> email & tanggal daftar dari Supabase Auth (tabel users tidak
+ * menyimpan keduanya). Hanya untuk melengkapi tampilan; bila gagal, urutan
+ * "terbaru" jatuh ke urutan nama.
+ */
+async function petaAkun(admin: AdminClient): Promise<PetaAuth> {
+  const peta: PetaAuth = { email: {}, dibuat: {} };
   try {
     for (let page = 1; page <= 10; page += 1) {
       const { data, error } = await admin.auth.admin.listUsers({ page, perPage: 1000 });
       if (error || !data?.users?.length) break;
       data.users.forEach((u) => {
-        if (u.id) peta[u.id] = u.email ?? "";
+        if (!u.id) return;
+        peta.email[u.id] = u.email ?? "";
+        const waktu = u.created_at ? Date.parse(u.created_at) : NaN;
+        if (Number.isFinite(waktu)) peta.dibuat[u.id] = waktu;
       });
       if (data.users.length < 1000) break;
     }
   } catch {
-    /* email hanya pelengkap tampilan */
+    /* email & tanggal hanya pelengkap tampilan */
   }
   return peta;
 }
@@ -148,16 +170,62 @@ function bersihkanKataCari(q: string) {
   return q.replace(/[%,()*"\\]/g, " ").trim();
 }
 
-function susunQuery(admin: AdminClient, kolom: string, q: string, role: string, dari: number, sampai: number) {
-  let query = admin
-    .from("users")
-    .select(kolom, { count: "exact" })
-    .order("nama", { ascending: true })
-    .range(dari, sampai);
+interface FilterDaftar {
+  q: string;
+  role: string;
+  jurusan: string;
+  kelas: string;
+  status: string;
+}
 
-  if (q) query = query.or(`nama.ilike.%${q}%,nisn.ilike.%${q}%`);
-  if (role !== "semua") query = query.eq("role", role);
-  return query;
+/** "semua" tetap, "kosong" berarti kolomnya null, selain itu harus nilai valid. */
+function pilihKode(nilai: string | null, valid: (v: string) => boolean) {
+  const mentah = (nilai ?? "semua").trim();
+  const kecil = mentah.toLowerCase();
+  if (!mentah || kecil === "semua") return "semua";
+  if (kecil === "kosong") return "kosong";
+  const besar = mentah.toUpperCase();
+  return valid(besar) ? besar : "semua";
+}
+
+/**
+ * Ambil SEMUA baris yang cocok (dalam cuplikan 1000 baris) supaya sorting
+ * "terbaru" bisa memakai tanggal daftar dari Auth, bukan kolom database.
+ * PostgREST membatasi jumlah baris per permintaan, jadi cuplikan diperlukan.
+ */
+async function ambilSemuaBaris(
+  admin: AdminClient,
+  kolom: string,
+  f: FilterDaftar
+): Promise<{ error: { message: string } | null; baris: BarisDaftar[] }> {
+  const hasil: BarisDaftar[] = [];
+
+  for (let putaran = 0; putaran < 20; putaran += 1) {
+    const dari = putaran * UKURAN_CUPLIKAN;
+    let query = admin
+      .from("users")
+      .select(kolom)
+      // Urutan tetap saat memotong cuplikan; urutan tampilan diatur di memori.
+      .order("id", { ascending: true })
+      .range(dari, dari + UKURAN_CUPLIKAN - 1);
+
+    if (f.q) query = query.or(`nama.ilike.%${f.q}%,nisn.ilike.%${f.q}%`);
+    if (f.role !== "semua") query = query.eq("role", f.role);
+    if (f.jurusan === "kosong") query = query.is("jurusan", null);
+    else if (f.jurusan !== "semua") query = query.eq("jurusan", f.jurusan);
+    if (f.kelas === "kosong") query = query.is("kelas", null);
+    else if (f.kelas !== "semua") query = query.eq("kelas", f.kelas);
+    if (f.status !== "semua") query = query.eq("verification_status", f.status);
+
+    const { data, error } = await query;
+    if (error) return { error, baris: hasil };
+
+    const baris = (data ?? []) as unknown as BarisDaftar[];
+    hasil.push(...baris);
+    if (baris.length < UKURAN_CUPLIKAN) return { error: null, baris: hasil };
+  }
+
+  return { error: null, baris: hasil };
 }
 
 /* ============================== GET : daftar ============================= */
@@ -172,33 +240,62 @@ export async function GET(request: Request) {
   const perPageMinta = Number.parseInt(searchParams.get("perPage") ?? "10", 10);
   const perPage = PER_PAGE_DIIZINKAN.includes(perPageMinta) ? perPageMinta : 10;
   const q = bersihkanKataCari(searchParams.get("q") ?? "");
-  const roleMinta = (searchParams.get("role") ?? "semua").trim();
+  const roleMinta = (searchParams.get("role") ?? "semua").trim().toLowerCase();
   const role = (ROLE_VALID as readonly string[]).includes(roleMinta) ? roleMinta : "semua";
+  const jurusan = pilihKode(searchParams.get("jurusan"), jurusanValid);
+  const kelas = pilihKode(searchParams.get("kelas"), kelasValid);
+  const statusMinta = (searchParams.get("status") ?? "semua").trim().toLowerCase();
+  const status = (STATUS_VALID as readonly string[]).includes(statusMinta) ? statusMinta : "semua";
+  const urutMinta = (searchParams.get("urut") ?? "nama").trim().toLowerCase();
+  const urut = (URUT_VALID as readonly string[]).includes(urutMinta) ? urutMinta : "nama";
+  const arah = (searchParams.get("arah") ?? "asc").trim().toLowerCase() === "desc" ? "desc" : "asc";
 
-  const dari = (page - 1) * perPage;
-  const sampai = dari + perPage - 1;
+  const filter: FilterDaftar = { q, role, jurusan, kelas, status };
 
   let lengkap = true;
-  let { data, error, count } = await susunQuery(admin, KOLOM_LENGKAP, q, role, dari, sampai);
+  let ambil = await ambilSemuaBaris(admin, KOLOM_LENGKAP, filter);
 
-  if (error && galatKolomHilang(error.message)) {
+  if (ambil.error && galatKolomHilang(ambil.error.message)) {
+    // Filter jurusan/kelas tidak bisa dihormati tanpa kolomnya: beri tahu admin
+    // alih-alih diam-diam menampilkan daftar tanpa filter.
+    if (jurusan !== "semua" || kelas !== "semua") {
+      return NextResponse.json({ ok: false, message: PESAN_KOLOM_HILANG }, { status: 500 });
+    }
     lengkap = false;
-    const cadangan = await susunQuery(admin, KOLOM_DASAR, q, role, dari, sampai);
-    data = cadangan.data;
-    error = cadangan.error;
-    count = cadangan.count;
+    ambil = await ambilSemuaBaris(admin, KOLOM_DASAR, filter);
   }
 
-  if (error) {
-    console.error("[admin/pengguna] gagal ambil daftar:", error.message);
+  if (ambil.error) {
+    console.error("[admin/pengguna] gagal ambil daftar:", ambil.error.message);
     return NextResponse.json(
       { ok: false, message: "Gagal memuat daftar pengguna." },
       { status: 500 }
     );
   }
 
-  const total = count ?? 0;
-  const email = await petaEmail(admin);
+  const peta = await petaAkun(admin);
+  const semua = ambil.baris.map((row) => ({
+    jurusan: null,
+    kelas: null,
+    ...row,
+    email: peta.email[String(row.id)] ?? null,
+  }));
+
+  const namaBaris = (row: (typeof semua)[number]) =>
+    (row.nama ?? row.email ?? "").toLocaleLowerCase("id-ID");
+  const waktuBaris = (row: (typeof semua)[number]) => peta.dibuat[String(row.id)] ?? 0;
+
+  const diurutkan = [...semua].sort((a, b) => {
+    const hasil =
+      urut === "terbaru"
+        ? waktuBaris(a) - waktuBaris(b) || namaBaris(a).localeCompare(namaBaris(b), "id")
+        : namaBaris(a).localeCompare(namaBaris(b), "id") || waktuBaris(a) - waktuBaris(b);
+    return arah === "asc" ? hasil : -hasil;
+  });
+
+  const total = diurutkan.length;
+  const dari = (page - 1) * perPage;
+  const data = diurutkan.slice(dari, dari + perPage);
 
   const [hitungSiswa, hitungGuru, hitungAdmin, hitungMenunggu] = await Promise.all([
     admin.from("users").select("id", { count: "exact", head: true }).eq("role", "siswa"),
@@ -217,12 +314,7 @@ export async function GET(request: Request) {
     total,
     totalPages: Math.max(1, Math.ceil(total / perPage)),
     lengkap,
-    data: ((data ?? []) as unknown as BarisDaftar[]).map((row) => ({
-      jurusan: null,
-      kelas: null,
-      ...row,
-      email: email[String(row.id)] ?? null,
-    })),
+    data,
     ringkasan: {
       total: (hitungSiswa.count ?? 0) + (hitungGuru.count ?? 0) + (hitungAdmin.count ?? 0),
       siswa: hitungSiswa.count ?? 0,

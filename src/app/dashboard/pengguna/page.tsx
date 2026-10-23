@@ -23,13 +23,8 @@ export default async function HalamanPengguna() {
             Manajemen pengguna
           </p>
           <h1 className="mt-1 text-3xl font-bold tracking-tight text-[#021024] sm:text-4xl">
-            Data pengguna.
+            Data Pengguna
           </h1>
-          <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[#021024]/55">
-            Edit nama, NISN, jurusan, kelas, dan role setiap akun. Password tidak dapat diubah
-            dari panel ini. Gunakan centang untuk <strong className="text-[#021024]">naikkan kelas</strong>{" "}
-            atau <strong className="text-[#021024]">hapus</strong> banyak pengguna sekaligus.
-          </p>
         </div>
       </div>
 
