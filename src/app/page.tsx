@@ -36,7 +36,15 @@ const nav = [
   ["Prestasi", "#prestasi"],
 ];
 
-function Nav({ role }: { role: string | null }) {
+function Nav({
+  role,
+  status,
+  onLogout,
+}: {
+  role: string | null;
+  status: AuthStatus;
+  onLogout: () => void;
+}) {
   const [open, setOpen] = useState(false);
   const [hovered, setHovered] = useState<string | null>(null);
   const [activeSection, setActiveSection] = useState<string>("#profil");
@@ -116,14 +124,22 @@ function Nav({ role }: { role: string | null }) {
               <LayoutDashboard size={13} /> Dashboard
             </Link>
           )}
-          <a
-            href="https://spmb.tunasharapan.info"
-            target="_blank"
-            rel="noreferrer"
-            className="rounded-full bg-white px-4 py-2 text-[10px] font-bold uppercase tracking-[.15em] text-[#021024]"
-          >
-            PPDB / SPMB
-          </a>
+          {status === "loggedIn" ? (
+            <button
+              type="button"
+              onClick={onLogout}
+              className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-[10px] font-bold uppercase tracking-[.15em] text-[#C1E8FF] transition hover:bg-white/20 hover:text-white"
+            >
+              Logout <LogOut size={13} />
+            </button>
+          ) : status === "loading" ? null : (
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-[10px] font-bold uppercase tracking-[.15em] text-[#021024]"
+            >
+              Login <ArrowUpRight size={13} />
+            </Link>
+          )}
         </div>
 
         <button
@@ -149,14 +165,26 @@ function Nav({ role }: { role: string | null }) {
               {n}
             </a>
           ))}
-          <a
-            href="https://spmb.tunasharapan.info"
-            target="_blank"
-            rel="noreferrer"
-            className="mt-2 block rounded-2xl bg-white px-4 py-3 text-center text-sm font-semibold text-[#021024]"
-          >
-            PPDB / SPMB
-          </a>
+          {status === "loggedIn" ? (
+            <button
+              type="button"
+              onClick={() => {
+                setOpen(false);
+                onLogout();
+              }}
+              className="mt-2 flex w-full items-center justify-center gap-2 rounded-2xl border border-white/25 bg-white/10 px-4 py-3 text-sm font-semibold text-[#C1E8FF]"
+            >
+              Logout <LogOut size={15} />
+            </button>
+          ) : status === "loading" ? null : (
+            <Link
+              href="/login"
+              onClick={() => setOpen(false)}
+              className="mt-2 block rounded-2xl bg-white px-4 py-3 text-center text-sm font-semibold text-[#021024]"
+            >
+              Login
+            </Link>
+          )}
           {role === "admin" && (
             <Link
               href="/dashboard"
@@ -1780,13 +1808,7 @@ function WelcomeCard({
   );
 }
 
-function Footer({
-  status,
-  onLogout,
-}: {
-  status: AuthStatus;
-  onLogout: () => void;
-}) {
+function Footer() {
   return (
     <footer className="bg-[#021024] px-6 py-16 text-white">
       <div className="mx-auto max-w-7xl">
@@ -1888,7 +1910,7 @@ function Footer({
             </div>
           </div>
           <div>
-            <p className="eyebrow text-[#7DA0CA]">PPDB / LOGIN</p>
+            <p className="eyebrow text-[#7DA0CA]">PPDB</p>
             <a
               href="https://spmb.tunasharapan.info"
               target="_blank"
@@ -1897,22 +1919,6 @@ function Footer({
             >
               Buka SPMB <ArrowUpRight size={14} />
             </a>
-            {status === "loggedIn" ? (
-              <button
-                type="button"
-                onClick={onLogout}
-                className="mt-3 inline-flex rounded-full bg-red-600 px-5 py-3 text-[10px] font-bold uppercase tracking-[.15em] text-white transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
-              >
-                Logout <LogOut size={14} />
-              </button>
-            ) : status === "loading" ? null : (
-              <Link
-                href="/login"
-                className="mt-3 inline-flex rounded-full border border-white/15 px-5 py-3 text-[10px] font-bold uppercase tracking-[.15em] text-white/70 transition hover:border-white/30 hover:text-white"
-              >
-                Login <ArrowUpRight size={14} />
-              </Link>
-            )}
           </div>
         </div>
         <p className="pt-7 text-[10px] uppercase tracking-[.18em] text-white/25">
@@ -1985,7 +1991,7 @@ export default function Home(){
 
   return (
     <main id="top" className="relative overflow-x-hidden">
-      <Nav role={role} />
+      <Nav role={role} status={status} onLogout={handleLogout} />
 
     <AnimatePresence>
       {status === 'loggedIn' && showWelcome && (
@@ -2024,7 +2030,7 @@ export default function Home(){
         />
       </div>
     </section>
-    <Footer status={status} onLogout={handleLogout}/>
+    <Footer/>
     <Chatbot/>
 
     <AnimatePresence>
