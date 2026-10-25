@@ -1,5 +1,5 @@
 import { Metadata } from "next";
-import ForumKelasXIClient from "./ForumKelasXIClient";
+import { ForumKelasClient } from "@/app/forum/[kelas]/page";
 
 export const metadata: Metadata = {
   title: "Forum Kelas XI | SMK Telekomunikasi Tunas Harapan",
@@ -7,5 +7,14 @@ export const metadata: Metadata = {
 };
 
 export default function ForumKelasXIPage() {
-  return <ForumKelasXIClient />;
+  return (
+    <ForumKelasClient
+      kelas="XI"
+      label="Kelas XI"
+      deskripsi="Diskusi tingkat lanjut: project, magang, dan persiapan kelulusan. Saling berbagi pengalaman."
+      warna="blue"
+      warnaHex="#3b82f6"
+      warnaHover="#2563eb"
+    />
+  );
 }

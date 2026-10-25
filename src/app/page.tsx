@@ -33,7 +33,6 @@ const nav = [
   ["Berita", "#berita"],
   ["Lokasi", "#lokasi"],
   ["Fasilitas", "#fasilitas"],
-  ["Forum", "/forum"],
   ["Mitra Industri", "#industri"],
   ["Prestasi", "#prestasi"],
 ];
@@ -1975,6 +1974,9 @@ function Footer() {
               <Link className="block hover:text-white" href="/berita">
                 Berita
               </Link>
+              <a className="block hover:text-white" href="/forum">
+                Forum Siswa
+              </a>
             </div>
           </div>
           <div>
