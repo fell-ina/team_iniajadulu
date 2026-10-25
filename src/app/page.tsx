@@ -1979,14 +1979,12 @@ function Footer() {
           </div>
           <div>
             <p className="eyebrow text-[#7DA0CA]">PPDB</p>
-            <a
-              href="https://spmb.tunasharapan.info"
-              target="_blank"
-              rel="noreferrer"
+            <Link
+              href="/spmb"
               className="mt-4 inline-flex rounded-full bg-white px-5 py-3 text-[10px] font-bold uppercase tracking-[.15em] text-[#021024]"
             >
               Buka SPMB <ArrowUpRight size={14} />
-            </a>
+            </Link>
           </div>
         </div>
         <p className="pt-7 text-[10px] uppercase tracking-[.18em] text-white/25">

@@ -200,14 +200,12 @@ export default function JurusanDetails({
             {d.name}
           </span>
 
-          <a
-            href="https://spmb.tunasharapan.info"
-            target="_blank"
-            rel="noreferrer"
+          <Link
+            href="/spmb"
             className="hidden rounded-full bg-white px-4 py-2 text-[10px] font-bold uppercase tracking-[.15em] text-[#021024] transition hover:bg-[#C1E8FF] sm:block"
           >
             PPDB
-          </a>
+          </Link>
         </div>
       </header>
 

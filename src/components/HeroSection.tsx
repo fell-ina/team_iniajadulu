@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowRight,
@@ -102,14 +103,12 @@ export default function HeroSection() {
                   >
                     Jelajahi sekolah <ArrowUpRight size={15} />
                   </a>
-                  <a
-                    href="https://spmb.tunasharapan.info"
-                    target="_blank"
-                    rel="noreferrer"
+                  <Link
+                    href="/spmb"
                     className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/5 px-5 py-3 text-[10px] font-bold uppercase tracking-[.18em] text-white/85"
                   >
                     PPDB / SPMB
-                  </a>
+                  </Link>
                 </div>
               </motion.div>
             </AnimatePresence>
