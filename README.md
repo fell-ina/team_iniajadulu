@@ -56,6 +56,7 @@
 /jurusan/[id]           - Halaman Detail Program Keahlian (PPLG, TJKT, DKV, TKR) & Model 3D Interaktif
 /berita                 - Portal Berita Publik (Grid Berita, Pencarian, & Skeleton Loading)
 /berita/[id]            - Halaman Pembacaan Artikel Berita (Format Markdown)
+/spmb                   - Formulir SPMB / PPDB mandiri (terbuka untuk umum, tanpa akun)
 /register               - Pendaftaran akun (email + Google) & verifikasi kode OTP
 /register/lengkapi      - Pengisian nama, jurusan & kelas sebelum kode verifikasi dikirim
 /login                  - Portal Autentikasi Login Admin / Guru / Siswa
@@ -191,6 +192,33 @@ Pendaftar lewat Google juga diarahkan ke `/register/lengkapi` dan tidak menerima
 (email sudah diverifikasi Google). Daftar pilihan ada di `src/lib/sekolah.ts`, sedangkan
 validasi di server memakai berkas yang sama. Login siswa yang datanya belum lengkap juga
 diarahkan kembali ke halaman tersebut.
+
+### 9. Formulir SPMB / PPDB Mandiri
+
+Halaman `/spmb` menggantikan Google Form sekolah dan terbuka untuk umum (pendaftar tidak
+perlu punya akun). Isiannya: nama, alamat email aktif, jenis kelamin, tempat lahir,
+tanggal lahir (`dd/mm/yyyy`), asal SLTP / SMP / MTs, alamat tempat tinggal, no. HP /
+WhatsApp, pilihan jurusan 1 dan 2 (PPLG / TJKT / DKV / TKR), serta nama dan no. HP
+orang tua / wali.
+
+Tombol **Buka SPMB** di footer beranda, **PPDB / SPMB** di hero, dan **PPDB** di halaman
+jurusan sekarang mengarah ke `/spmb`.
+
+Jalankan migrasi berikut sekali di Supabase SQL Editor (atau `supabase db push`):
+`supabase/migrations/20261025000000_add_spmb_pendaftar.sql`. Isinya membuat tabel
+`public.spmb_pendaftar` beserta constraint pilihan jurusan, nomor HP, dan indeks unik
+`lower(email)`.
+
+Cara kerjanya:
+
+1. Formulir divalidasi di peramban dengan `src/lib/spmb.ts` (`periksaSpmb`): email harus
+   valid, tanggal lahir harus nyata dan tidak di masa depan, nomor HP dinormalkan ke
+   `08…`, serta pilihan jurusan 2 wajib berbeda dari pilihan 1.
+2. `POST /api/spmb` menjalankan validasi yang sama lalu menyimpan ke `spmb_pendaftar`
+   memakai service role. Satu email hanya boleh mendaftar sekali (ditolak dengan 409).
+3. RLS aktif tanpa policy, jadi anon/authenticated tidak bisa membaca atau menulis
+   langsung — data pendaftar hanya terlihat lewat Supabase Table Editor (atau panel
+   admin yang dibuat kemudian).
 
 ---
 
