@@ -117,12 +117,18 @@ function getVoicesWhenReady(onReady: (voices: SpeechSynthesisVoice[]) => void) {
   synth.onvoiceschanged = finish;
 }
 
-function playFallbackSpeech(text: string, onEnd: () => void) {
+function playFallbackSpeech(
+  text: string,
+  onEnd: () => void,
+): { cancel: () => void } {
   if (typeof window === "undefined" || !("speechSynthesis" in window)) {
     onEnd();
-    return;
+    return { cancel: () => {} };
   }
+
+  // Kalau ada sintesis lain yang lagi jalan, matikan dulu biar nggak tumpang tindih.
   window.speechSynthesis.cancel();
+
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "id-ID";
   utterance.rate = 0.95;
@@ -131,6 +137,7 @@ function playFallbackSpeech(text: string, onEnd: () => void) {
 
   let finished = false;
   let safetyTimer: number | null = null;
+  let cancelled = false;
   const finish = () => {
     if (finished) return;
     finished = true;
@@ -139,6 +146,7 @@ function playFallbackSpeech(text: string, onEnd: () => void) {
   };
 
   getVoicesWhenReady((voices) => {
+    if (cancelled) return;
     const voice =
       cachedFemaleVoice && voices.includes(cachedFemaleVoice)
         ? cachedFemaleVoice
@@ -153,6 +161,18 @@ function playFallbackSpeech(text: string, onEnd: () => void) {
     safetyTimer = window.setTimeout(finish, 60000);
     window.speechSynthesis.speak(utterance);
   });
+
+  const cancel = () => {
+    if (cancelled) return;
+    cancelled = true;
+    if (safetyTimer !== null) window.clearTimeout(safetyTimer);
+    try {
+      window.speechSynthesis.cancel();
+    } catch {}
+    onEnd();
+  };
+
+  return { cancel };
 }
 
 let sharedAudioCtx: AudioContext | null = null;
@@ -278,32 +298,29 @@ export function useFiskaSpeech(
   const reqAnimRef = useRef<number>(0);
 
   // Membaca volume suara secara real-time dan menerjemahkannya ke bukaan mulut
-  const monitorAudioVolume = useCallback(
-    (analyser: AnalyserNode) => {
-      // Pastikan hanya ada satu loop animasi mulut yang berjalan.
-      cancelAnimationFrame(reqAnimRef.current);
+  const monitorAudioVolume = useCallback((analyser: AnalyserNode) => {
+    // Pastikan hanya ada satu loop animasi mulut yang berjalan.
+    cancelAnimationFrame(reqAnimRef.current);
 
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
-      const length = Math.floor(dataArray.length / 2);
-      const meter = mouthMeterRef.current;
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    const length = Math.floor(dataArray.length / 2);
+    const meter = mouthMeterRef.current;
 
-      const tick = () => {
-        analyser.getByteFrequencyData(dataArray);
-        let sum = 0;
-        // Hanya menghitung rata-rata frekuensi suara manusia
-        for (let i = 0; i < length; i++) sum += dataArray[i];
-        mouthLevelRef.current = updateMouthLevel(
-          meter,
-          sum / length,
-          performance.now(),
-        );
+    const tick = () => {
+      analyser.getByteFrequencyData(dataArray);
+      let sum = 0;
+      // Hanya menghitung rata-rata frekuensi suara manusia
+      for (let i = 0; i < length; i++) sum += dataArray[i];
+      mouthLevelRef.current = updateMouthLevel(
+        meter,
+        sum / length,
+        performance.now(),
+      );
 
-        reqAnimRef.current = requestAnimationFrame(tick);
-      };
-      tick();
-    },
-    [],
-  );
+      reqAnimRef.current = requestAnimationFrame(tick);
+    };
+    tick();
+  }, []);
 
   // Animasi mulut palsu untuk fallback kalau Web Audio API gagal dipakai.
   // Nilainya tetap kontinu (sine yang dihaluskan), bukan kedip tutup-buka.
@@ -329,6 +346,9 @@ export function useFiskaSpeech(
     mouthLevelRef.current = 0;
   }, []);
 
+  // Biat fallback speech synthesis bisa dimati dari stopAudio.
+  const fallbackRef = useRef<{ cancel: () => void } | null>(null);
+
   const stopAudio = useCallback(() => {
     speakSeqRef.current += 1;
     if (speakAbortRef.current) {
@@ -337,8 +357,15 @@ export function useFiskaSpeech(
       } catch {}
       speakAbortRef.current = null;
     }
+    // Matikan sintesis yang lagi jalan (mis. fallback yang lagi bicara).
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       window.speechSynthesis.cancel();
+    }
+    if (fallbackRef.current) {
+      try {
+        fallbackRef.current.cancel();
+      } catch {}
+      fallbackRef.current = null;
     }
     if (audioRef.current) {
       audioRef.current.onended = null;
@@ -516,13 +543,14 @@ export function useFiskaSpeech(
           if (!blob) {
             if (i === 0) {
               setIsVoiceLoading(false);
-              playFallbackSpeech(cleanText, () => {
+              fallbackRef.current = playFallbackSpeech(cleanText, () => {
                 if (!isActive()) return;
                 spokenTextRef.current = null;
                 speakAbortRef.current = null;
                 setIsSpeaking(false);
                 setIsVoiceLoading(false);
                 stopMouthAnimation();
+                fallbackRef.current = null;
               });
               startFakeTalking();
               return;
@@ -566,13 +594,14 @@ export function useFiskaSpeech(
       } catch {
         if (!isActive()) return;
         setIsVoiceLoading(false);
-        playFallbackSpeech(cleanText, () => {
+        fallbackRef.current = playFallbackSpeech(cleanText, () => {
           if (!isActive()) return;
           spokenTextRef.current = null;
           speakAbortRef.current = null;
           setIsSpeaking(false);
           setIsVoiceLoading(false);
           stopMouthAnimation();
+          fallbackRef.current = null;
         });
         startFakeTalking();
       }
