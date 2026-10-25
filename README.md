@@ -291,22 +291,29 @@ Endpoint yang dipakai: `src/app/api/admin/pengguna/route.ts`
 
 ### Pendaftar SPMB (`/dashboard/spmb`)
 
-- Kartu ringkasan menampilkan total pendaftar serta jumlah **Menunggu**, **Diterima**, dan
-  **Ditolak** (seluruh data, bukan hanya halaman yang tampil).
-- Pencarian mencakup nama, email, asal sekolah, dan nomor HP pendaftar maupun wali.
-- Tombol **Filter** membuka popup berisi status, pilihan jurusan 1, pilihan jurusan 2,
-  jenis kelamin, serta urutan **Terbaru (tanggal daftar)** atau **Alfabetis (nama)**
-  dengan arah naik/turun — sama seperti halaman Data Pengguna.
+- Halaman dibagi menjadi **tabel per jurusan**: tab **Semua**, **PPLG**, **TJKT**,
+  **DKV**, dan **TKR**, masing-masing dengan jumlah pendaftarnya. Tab jurusan memakai
+  **pilihan jurusan 1** pendaftar (pilihan utama); pilihan jurusan 2 tetap tampil di kolom
+  tabel dan modal detail.
+- Di dalam tab, chip status **Semua / Menunggu / Diterima / Ditolak** menyaring tabel
+  beserta jumlahnya. Pencarian mencakup nama, email, asal sekolah, dan nomor HP pendaftar
+  maupun wali, dan juga mempersempit angka pada tab serta chip.
+- Tombol **Ekspor Excel** mengunduh tabel tab yang sedang dibuka (mengikuti kata pencarian)
+  sebagai file `.xlsx`, dengan pilihan isi **Hanya diterima**, **Hanya ditolak**, atau
+  **Semua status**. File berisi 16 kolom (data siswa, asal sekolah, kontak, kedua pilihan
+  jurusan, wali, status, tanggal daftar/keputusan), header beku + autofilter, tanggal
+  `dd/mm/yyyy`, dan jam WIB.
 - Tiap baris punya tombol **Terima**, **Tolak**, **Batalkan keputusan** (kembali ke
   menunggu), dan **Detail** (modal berisi seluruh isian formulir). Checkbox dipakai untuk
-  **Terima** / **Tolak** massal; pilihan dikosongkan saat pindah halaman atau filter.
+  **Terima** / **Tolak** massal; pilihan dikosongkan saat pindah halaman, tab, atau status.
 - Pendaftar baru otomatis berstatus `menunggu`. Keputusan hanya mengubah status — tidak
   mengirim email/WhatsApp otomatis.
 
-Endpoint: `src/app/api/admin/spmb/route.ts` (`GET` daftar + filter + paginasi,
-`POST { aksi: "terima" | "tolak" | "menunggu", ids }` untuk satu atau banyak pendaftar).
-Hanya role admin yang lolos; data dibaca dengan service role karena RLS tabelnya tanpa
-policy.
+Endpoint: `src/app/api/admin/spmb/route.ts` (`GET` daftar per tab + status + pencarian +
+rekap per jurusan, `POST { aksi: "terima" | "tolak" | "menunggu", ids }` untuk satu atau
+banyak pendaftar) dan `src/app/api/admin/spmb/ekspor/route.ts` (`GET` file `.xlsx`).
+Keduanya hanya meloloskan role admin; data dibaca dengan service role karena RLS tabelnya
+tanpa policy. File Excel dibuat dengan `exceljs` di server (runtime Node.js).
 
 ---
 

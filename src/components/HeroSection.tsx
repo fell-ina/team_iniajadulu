@@ -233,12 +233,7 @@ export default function HeroSection() {
             );
 
             return (
-              <div
-                key={title}
-                type="button"
-                disabled
-                className={className}
-              >
+              <div key={title} className={className}>
                 {content}
               </div>
             );
