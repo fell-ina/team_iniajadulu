@@ -64,6 +64,7 @@
 /reset-password         - Isi kata sandi baru (dibuka dari tautan email)
 /dashboard              - Ringkasan panel admin & guru (sidebar biru di kiri)
 /dashboard/pengguna     - Kelola data pengguna (khusus admin)
+/dashboard/spmb         - Terima / tolak pendaftar SPMB (khusus admin)
 /dashboard/verifikasi   - Terima / tolak pengajuan NISN
 /dashboard/berita       - Tambah, edit, & hapus berita (popup yang sama)
 /admin/berita           - Rute lama, dialihkan ke /dashboard/berita
@@ -205,9 +206,10 @@ Tombol **Buka SPMB** di footer beranda, **PPDB / SPMB** di hero, dan **PPDB** di
 jurusan sekarang mengarah ke `/spmb`.
 
 Jalankan migrasi berikut sekali di Supabase SQL Editor (atau `supabase db push`):
-`supabase/migrations/20261025000000_add_spmb_pendaftar.sql`. Isinya membuat tabel
+`supabase/migrations/20261025000000_add_spmb_pendaftar.sql` (tabel
 `public.spmb_pendaftar` beserta constraint pilihan jurusan, nomor HP, dan indeks unik
-`lower(email)`.
+`lower(email)`) lalu `supabase/migrations/20261025000001_add_spmb_status.sql` (kolom
+`status` + `status_diubah_at` untuk keputusan panitia).
 
 Cara kerjanya:
 
@@ -217,8 +219,8 @@ Cara kerjanya:
 2. `POST /api/spmb` menjalankan validasi yang sama lalu menyimpan ke `spmb_pendaftar`
    memakai service role. Satu email hanya boleh mendaftar sekali (ditolak dengan 409).
 3. RLS aktif tanpa policy, jadi anon/authenticated tidak bisa membaca atau menulis
-   langsung — data pendaftar hanya terlihat lewat Supabase Table Editor (atau panel
-   admin yang dibuat kemudian).
+   langsung — data pendaftar hanya terlihat lewat panel admin `/dashboard/spmb`
+   (khusus admin).
 
 ---
 
@@ -262,6 +264,7 @@ menjaga akses di server: belum login → `/login`, role siswa → beranda.
 |---|---|---|
 | `/dashboard` | admin, guru | Ringkasan jumlah pengguna, pengajuan NISN, dan berita |
 | `/dashboard/pengguna` | **admin** | Daftar pengguna, pencarian, dialog filter, urutan, paginasi |
+| `/dashboard/spmb` | **admin** | Daftar pendaftar SPMB, filter, terima / tolak |
 | `/dashboard/verifikasi` | admin, guru | Verifikasi / tolak NISN siswa |
 | `/dashboard/berita` | admin, guru | CRUD berita lewat popup yang sudah ada |
 
@@ -285,6 +288,25 @@ menjaga akses di server: belum login → `/login`, role siswa → beranda.
 Endpoint yang dipakai: `src/app/api/admin/pengguna/route.ts`
 (`GET` daftar + paginasi, `PATCH` edit satu pengguna, `POST` aksi massal
 `naikkan-kelas` / `hapus`). Hanya role admin yang lolos (401/403 untuk lainnya).
+
+### Pendaftar SPMB (`/dashboard/spmb`)
+
+- Kartu ringkasan menampilkan total pendaftar serta jumlah **Menunggu**, **Diterima**, dan
+  **Ditolak** (seluruh data, bukan hanya halaman yang tampil).
+- Pencarian mencakup nama, email, asal sekolah, dan nomor HP pendaftar maupun wali.
+- Tombol **Filter** membuka popup berisi status, pilihan jurusan 1, pilihan jurusan 2,
+  jenis kelamin, serta urutan **Terbaru (tanggal daftar)** atau **Alfabetis (nama)**
+  dengan arah naik/turun — sama seperti halaman Data Pengguna.
+- Tiap baris punya tombol **Terima**, **Tolak**, **Batalkan keputusan** (kembali ke
+  menunggu), dan **Detail** (modal berisi seluruh isian formulir). Checkbox dipakai untuk
+  **Terima** / **Tolak** massal; pilihan dikosongkan saat pindah halaman atau filter.
+- Pendaftar baru otomatis berstatus `menunggu`. Keputusan hanya mengubah status — tidak
+  mengirim email/WhatsApp otomatis.
+
+Endpoint: `src/app/api/admin/spmb/route.ts` (`GET` daftar + filter + paginasi,
+`POST { aksi: "terima" | "tolak" | "menunggu", ids }` untuk satu atau banyak pendaftar).
+Hanya role admin yang lolos; data dibaca dengan service role karena RLS tabelnya tanpa
+policy.
 
 ---
 
