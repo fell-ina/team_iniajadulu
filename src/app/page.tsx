@@ -33,7 +33,6 @@ const nav = [
   ["Berita", "#berita"],
   ["Lokasi", "#lokasi"],
   ["Fasilitas", "#fasilitas"],
-  ["Forum", "/forum"],
   ["Mitra Industri", "#industri"],
   ["Prestasi", "#prestasi"],
 ];
