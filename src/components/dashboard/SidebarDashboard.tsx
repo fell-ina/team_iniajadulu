@@ -17,6 +17,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import {
+  ClipboardList,
   ExternalLink,
   LayoutDashboard,
   LogOut,
@@ -44,6 +45,7 @@ interface ItemMenu {
 const MENU: ItemMenu[] = [
   { href: "/dashboard", label: "Ringkasan", ikon: LayoutDashboard },
   { href: "/dashboard/pengguna", label: "Data Pengguna", ikon: Users, khususAdmin: true },
+  { href: "/dashboard/spmb", label: "Pendaftar SPMB", ikon: ClipboardList, khususAdmin: true },
   { href: "/dashboard/verifikasi", label: "Verifikasi NISN", ikon: ShieldCheck },
   { href: "/dashboard/berita", label: "Berita", ikon: Newspaper },
 ];

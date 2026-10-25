@@ -4,14 +4,14 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
-  ArrowRight,
   ArrowDown,
   ArrowUpRight,
-  BookOpen,
+  Bot,
+  Building2,
   ChevronLeft,
   ChevronRight,
-  Cog,
-  Video,
+  GraduationCap,
+  MessagesSquare,
 } from "lucide-react";
 
 const slides = [
@@ -69,6 +69,10 @@ export default function HeroSection() {
         <div className="absolute inset-0 bg-gradient-to-t from-[#021024]/90 via-[#021024]/10 to-[#021024]/20" />
 
         <div className="relative z-10 mx-auto flex min-h-[720px] max-w-[1500px] flex-col px-5 pb-24 pt-28 sm:min-h-[760px] sm:px-8 sm:pt-32 lg:min-h-screen lg:px-12">
+          <div className="flex items-center justify-between text-[9px] font-bold uppercase tracking-[.25em] text-white/60">
+            <span>SMK TELEKOMUNIKASI TUNAS HARAPAN</span>
+            <span className="hidden sm:block">Semarang · Jawa Tengah</span>
+          </div>
 
           <div className="flex flex-1 items-center py-14 sm:py-20">
             <AnimatePresence mode="wait">
@@ -141,11 +145,10 @@ export default function HeroSection() {
                       )}
                     </span>
                     <span
-                      className={`font-mono text-[10px] transition-colors ${
-                        isActive
-                          ? "text-white"
-                          : "text-white/40 group-hover:text-white/70"
-                      }`}
+                      className={`font-mono text-[10px] transition-colors ${isActive
+                        ? "text-white"
+                        : "text-white/40 group-hover:text-white/70"
+                        }`}
                     >
                       0{index + 1}
                     </span>
@@ -181,6 +184,62 @@ export default function HeroSection() {
           </div>
         </div>
       </section>
+      <div className="relative z-20 -mt-12 px-4 sm:px-6">
+        <div className="mx-auto grid max-w-7xl grid-cols-2 overflow-hidden rounded-md bg-[#343A70] shadow-xl lg:grid-cols-4">
+          {[
+            {
+              title: "Chatbot",
+              description: "Ngobrol Dengan Fiska",
+              icon: Bot,
+            },
+            {
+              title: "3D Model",
+              description: "Lihat Gedung Secara menyeluruh",
+              icon: Building2,
+            },
+            {
+              title: "SNBP",
+              description: "Pantau Peserta Baru",
+              icon: GraduationCap,
+            },
+            {
+              title: "Forum",
+              description: "Ruang Berdiskusi",
+              icon: MessagesSquare,
+            },
+          ].map(({ title, description, icon: Icon }) => {
+            const className = "group flex min-h-24 cursor-default items-center gap-4 px-4 py-4 text-white/60 sm:px-6 lg:border-r lg:border-white/10";
+            const content = (
+              <>
+                <Icon
+                  aria-hidden="true"
+                  size={34}
+                  strokeWidth={1.5}
+                  className="shrink-0 text-[#C1E8FF]/45"
+                />
+                <span className="min-w-0 flex-1 text-left">
+                  <span
+                    className="block text-[10px] font-bold uppercase tracking-[.16em] text-[#C1E8FF]/55"
+                  >
+                    {title}
+                  </span>
+                  <span
+                    className="mt-1 block text-sm leading-5 text-white/45"
+                  >
+                    {description}
+                  </span>
+                </span>
+              </>
+            );
+
+            return (
+              <div key={title} className={className}>
+                {content}
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </>
   );
 }

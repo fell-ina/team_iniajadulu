@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, type Variants } from "framer-motion";
 import {
   ArrowLeft,
   ArrowRight,
@@ -205,8 +205,20 @@ function Profile() {
   return (
     <section
       id="profil"
-      className="profile-grid-bg relative isolate overflow-hidden px-6 py-28 text-[#021024] sm:py-36"
+      className="relative isolate overflow-hidden px-6 py-28 text-[#021024] sm:py-36"
     >
+      {/* Grid kertas dibuat memudar di bawah supaya tidak berhenti sebagai
+          garis lurus tepat di seh menuju section sambutan. */}
+      <div
+        aria-hidden="true"
+        className="profile-grid-bg pointer-events-none absolute inset-0 z-0"
+        style={{
+          maskImage:
+            "linear-gradient(180deg, #000 calc(100% - 170px), transparent 100%)",
+          WebkitMaskImage:
+            "linear-gradient(180deg, #000 calc(100% - 170px), transparent 100%)",
+        }}
+      />
       <div
         aria-hidden="true"
         className="profile-shards pointer-events-none absolute inset-0 z-0"
@@ -295,6 +307,609 @@ function Profile() {
   );
 }
 
+/**
+ * Foto potret kepala sekolah sudah dipotong ke rasio 4:5 (386 × 483) dengan
+ * latar transparan. Ganti berkas ini bila ada foto resmi yang lebih besar.
+ */
+const FOTO_KEPALA_SEKOLAH = "/images/school/kepala-sekolah.png";
+
+/**
+ * Siluet tameng (dipakai untuk latar tameng, bayangan cetak, dan garis bantu):
+ * sisi atas mendatar dengan sudut membulat, sisi tegak lurus, dan bagian bawah
+ * melengkung setengah lingkaran. Digambar pada kanvas 400 × 500 supaya
+ * rasionya pas dengan bingkai foto 4:5.
+ */
+const TAMENG_PATH =
+  "M0 20C0 9 9 0 20 0H380C391 0 400 9 400 20V300A200 200 0 0 1 0 300Z";
+
+const TAMENG_MASK = {
+  maskImage: `url("data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 500' preserveAspectRatio='none'><path d='${TAMENG_PATH}' fill='#000'/></svg>`,
+  )}")`,
+  WebkitMaskImage: `url("data:image/svg+xml,${encodeURIComponent(
+    `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 500' preserveAspectRatio='none'><path d='${TAMENG_PATH}' fill='#000'/></svg>`,
+  )}")`,
+  maskSize: "100% 100%",
+  WebkitMaskSize: "100% 100%",
+  maskRepeat: "no-repeat",
+  WebkitMaskRepeat: "no-repeat",
+} as React.CSSProperties;
+
+/**
+ * Topeng potret yang "keluar dari tameng": sisi atas dibuka penuh supaya
+ * kepala dan bahu melewati tepi atas siluet, sementara lengkung bawah tetap
+ * mengikuti tameng agar badan pemotretan tidak tumpah ke luar bingkai.
+ * Kanvasnya 400 × 590 dan digeser 90 satuan ke atas, jadi koordinat 0–500
+ * masih segaris dengan tameng di atas (pembungkus memakai `-top-[18%]`).
+ */
+const POTRET_MASK = {
+  maskImage: `url("data:image/svg+xml,${encodeURIComponent(
+    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 -90 400 590' preserveAspectRatio='none'><path d='M0 -90H400V300A200 200 0 0 1 0 300Z' fill='#000'/></svg>",
+  )}")`,
+  WebkitMaskImage: `url("data:image/svg+xml,${encodeURIComponent(
+    "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 -90 400 590' preserveAspectRatio='none'><path d='M0 -90H400V300A200 200 0 0 1 0 300Z' fill='#000'/></svg>",
+  )}")`,
+  maskSize: "100% 100%",
+  WebkitMaskSize: "100% 100%",
+  maskRepeat: "no-repeat",
+  WebkitMaskRepeat: "no-repeat",
+} as React.CSSProperties;
+
+/*
+ * Koreografi masuk tameng foto kepala sekolah. Labelnya dipasang di induk
+ * (saat section terlihat), lalu tiap lapisan mengikuti dengan jeda berurutan:
+ * bayangan cetak → garis bantu → tameng foto → label → papan nama → stempel.
+ */
+const TAMENG_BAYANGAN: Variants = {
+  hidden: { opacity: 0, scale: 0.97 },
+  show: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 1.1, ease: [0.22, 1, 0.36, 1] },
+  },
+};
+
+const TAMENG_GARIS: Variants = {
+  hidden: { opacity: 0, scale: 1.04 },
+  show: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 1.2, ease: [0.22, 1, 0.36, 1] },
+  },
+};
+
+const TAMENG_FOTO: Variants = {
+  hidden: { opacity: 0, y: 22, scale: 0.94 },
+  show: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 1, ease: [0.22, 1, 0.36, 1] },
+  },
+};
+
+const TAMENG_POTRET: Variants = {
+  hidden: { opacity: 0, y: 34 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 1.3, ease: [0.22, 1, 0.36, 1] },
+  },
+};
+
+const TAMENG_LABEL: Variants = {
+  hidden: { opacity: 0, x: -14, y: -6 },
+  show: {
+    opacity: 1,
+    x: 0,
+    y: 0,
+    transition: { duration: 0.7, ease: [0.22, 1, 0.36, 1] },
+  },
+};
+
+const TAMENG_NAMA: Variants = {
+  hidden: { opacity: 0, y: 20 },
+  show: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.8, ease: [0.22, 1, 0.36, 1] },
+  },
+};
+
+const TAMENG_STEMPEL: Variants = {
+  hidden: { opacity: 0, scale: 0.6 },
+  show: {
+    opacity: 1,
+    scale: 1,
+    transition: { duration: 0.75, ease: [0.34, 1.3, 0.5, 1] },
+  },
+};
+
+const FOTO_LAUT = "/images/school/laut.jpg";
+
+/**
+ * Tepi kertas sobek: deretan titik dengan jarak dan kedalaman acak dari benih
+ * tetap, jadi markup server dan klien selalu identik tanpa `Math.random`.
+ * Dipakai untuk menyusun jalur SVG kertas yang disobek.
+ */
+function tepiSobek(
+  lebar: number,
+  dasar: number,
+  amplitudo: number,
+  benih: number,
+): [number, number][] {
+  let benihAktif = benih >>> 0;
+  const acak = () => {
+    benihAktif = (Math.imul(benihAktif, 1664525) + 1013904223) >>> 0;
+    return benihAktif / 4294967296;
+  };
+  const bulat = (v: number) => Math.round(v * 10) / 10;
+
+  const titik: [number, number][] = [
+    [0, bulat(dasar + (acak() - 0.5) * amplitudo)],
+  ];
+  let x = 0;
+  while (x < lebar - 2) {
+    // Jarak antar titik tidak rata: ada gerigi rapat, ada serat yang lebar,
+    // dan sesekali sobekan dalam — seperti tepi kertas yang benar-benar robek.
+    const rapat = acak() < 0.24;
+    x = Math.min(lebar, x + (rapat ? 0.6 + acak() * 2.2 : 3 + acak() * 11));
+    const dalam = acak() < 0.09 ? (acak() - 0.5) * amplitudo * 3.6 : 0;
+    const serat = (acak() - 0.5) * amplitudo * 0.9;
+    titik.push([bulat(x), bulat(dasar + dalam + serat)]);
+  }
+  return titik;
+}
+
+const keJalur = (titik: [number, number][]) =>
+  titik.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x} ${y}`).join("");
+
+/** Kertas yang menutup dari sisi atas: dari tepi atas, turun lewat sobekan. */
+const jalurKertasAtas = (titik: [number, number][], lebar: number) =>
+  `M0 0L${lebar} 0${keJalur([...titik].reverse())}Z`;
+
+/** Pita kertas: menyusuri tepi atas, lalu kembali menelusuri tepi bawahnya. */
+const jalurPita = (atas: [number, number][], bawah: [number, number][]) =>
+  `${keJalur(atas)}${[...bawah]
+    .reverse()
+    .map(([x, y]) => `L${x} ${y}`)
+    .join("")}Z`;
+
+const LEBAR_SEH = 1000;
+const TINGGI_SEH = 240;
+
+const JALUR_SEH_ATAS = jalurKertasAtas(
+  tepiSobek(LEBAR_SEH, 118, 13, 424242),
+  LEBAR_SEH,
+);
+const JALUR_PITA_SEH = jalurPita(
+  tepiSobek(LEBAR_SEH, 26, 11, 717171),
+  tepiSobek(LEBAR_SEH, 78, 7, 535353),
+);
+
+function SambutanKepalaSekolah() {
+  const [fotoTampil, setFotoTampil] = useState(true);
+
+  return (
+    <section
+      id="sambutan"
+      aria-labelledby="sambutan-judul"
+      className="relative isolate overflow-hidden bg-[#021024] text-[#EAF4FF]"
+    >
+      {/* Latar: lautan di balik kertas yang disobek. Bagian dalam sobekan
+          (kertasnya) tetap putih; air laut hanya terlihat di luarnya. */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0">
+        <img
+          src={FOTO_LAUT}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full object-cover object-center"
+          style={{ filter: "brightness(1.12) saturate(1.02) contrast(1.03)" }}
+        />
+        <div className="absolute inset-0 bg-[#021024]/32" />
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_95%_80%_at_68%_18%,rgba(7,54,100,.35)_0%,rgba(2,16,36,.62)_82%)]" />
+        <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-transparent to-[#021024]" />
+      </div>
+
+      {/* Kertas halaman atas yang disobek: menyambung kertas section profil. */}
+      <svg
+        aria-hidden="true"
+        viewBox={`0 0 ${LEBAR_SEH} ${TINGGI_SEH}`}
+        preserveAspectRatio="none"
+        className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[110px] w-full sm:h-[140px]"
+        style={{ filter: "drop-shadow(0 8px 8px rgba(2,16,36,.34))" }}
+      >
+        <path d={JALUR_SEH_ATAS} fill="#F4F9FF" />
+      </svg>
+
+      {/* Pita kertas putih melintang di bawah: laut terlihat di atas & bawahnya. */}
+      <div className="pointer-events-none absolute inset-x-[-5%] bottom-[96px] z-10 h-16 -rotate-[1.4deg] sm:bottom-[120px] sm:h-[72px]">
+        <svg
+          aria-hidden="true"
+          viewBox="0 0 1000 100"
+          preserveAspectRatio="none"
+          className="h-full w-full"
+          style={{ filter: "drop-shadow(0 10px 14px rgba(2,16,36,.35))" }}
+        >
+          <path d={JALUR_PITA_SEH} fill="#FFFFFF" />
+        </svg>
+      </div>
+
+      <div className="relative z-10 mx-auto grid max-w-7xl gap-16 px-5 pb-[170px] pt-20 sm:px-8 sm:pb-[210px] sm:pt-24 lg:grid-cols-12 lg:items-center lg:gap-10 xl:gap-14">
+        <motion.div
+          initial="hidden"
+          whileInView="show"
+          viewport={{ once: true, amount: 0.2 }}
+          variants={{
+            hidden: {},
+            show: { transition: { staggerChildren: 0.1, delayChildren: 0.05 } },
+          }}
+          className="relative mx-auto w-full max-w-[430px] lg:col-span-6 lg:mx-0 xl:col-span-5"
+        >
+          <div className="relative aspect-[4/5] w-full">
+            {/* Hiasan: cincin orbit tipis di belakang tameng. */}
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0">
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 400 500"
+                className="fiska-orbit-rev h-full w-full"
+              >
+                <circle
+                  cx="200"
+                  cy="250"
+                  r="196"
+                  fill="none"
+                  stroke="#C1E8FF"
+                  strokeOpacity=".3"
+                  strokeWidth="1.2"
+                  strokeDasharray="2 10"
+                  vectorEffect="non-scaling-stroke"
+                />
+                <circle
+                  cx="200"
+                  cy="38"
+                  r="2.6"
+                  fill="#C1E8FF"
+                  fillOpacity=".5"
+                />
+              </svg>
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 400 500"
+                className="absolute inset-0 h-full w-full"
+              >
+                <circle
+                  cx="200"
+                  cy="250"
+                  r="182"
+                  fill="none"
+                  stroke="#C1E8FF"
+                  strokeOpacity=".14"
+                  strokeWidth="1"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
+            </div>
+
+            {/* Bayangan tameng yang bergeser: kesan cetak sablon yang meleset sedikit. */}
+            <motion.div
+              aria-hidden="true"
+              variants={TAMENG_BAYANGAN}
+              className="pointer-events-none absolute inset-0 translate-x-2 translate-y-3 rotate-[2.4deg] bg-[#C1E8FF]/14"
+              style={TAMENG_MASK}
+            />
+            <motion.div
+              aria-hidden="true"
+              variants={TAMENG_BAYANGAN}
+              className="pointer-events-none absolute inset-0 translate-x-1 translate-y-1.5 -rotate-[1.2deg] bg-[#C1E8FF]/7"
+              style={TAMENG_MASK}
+            />
+
+            {/* Garis bantu tameng, sengaja dibiarkan miring dan tidak sejajar. */}
+            <motion.div
+              aria-hidden="true"
+              variants={TAMENG_GARIS}
+              className="pointer-events-none absolute inset-0"
+            >
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 400 500"
+                preserveAspectRatio="none"
+                className="h-full w-full -rotate-[2.6deg] scale-[1.025]"
+              >
+                <path
+                  d={TAMENG_PATH}
+                  fill="none"
+                  stroke="#C1E8FF"
+                  strokeOpacity=".38"
+                  strokeWidth="1.5"
+                  strokeDasharray="9 9"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </svg>
+            </motion.div>
+
+            {/* Latar tameng: gradasi biru + titik halus, terpotong siluet tameng. */}
+            <motion.div
+              variants={TAMENG_FOTO}
+              className="absolute inset-0 z-[1]"
+              style={TAMENG_MASK}
+            >
+              <div className="absolute inset-0 bg-[radial-gradient(125%_78%_at_50%_2%,#FFFFFF_0%,#EDF6FE_48%,#C4DFF2_100%)]" />
+              <div
+                aria-hidden="true"
+                className="absolute inset-0 opacity-40"
+                style={{
+                  backgroundImage:
+                    "radial-gradient(rgba(11,49,104,.38) 1px, transparent 1px)",
+                  backgroundSize: "8px 8px",
+                  maskImage:
+                    "linear-gradient(180deg, transparent 0%, transparent 38%, #000 100%)",
+                  WebkitMaskImage:
+                    "linear-gradient(180deg, transparent 0%, transparent 38%, #000 100%)",
+                }}
+              />
+
+              {!fotoTampil && (
+                <div
+                  role="img"
+                  aria-label="Wisnu Handoko, Kepala Sekolah SMK Telekomunikasi Tunas Harapan"
+                  className="absolute inset-0 grid place-items-center pb-24"
+                >
+                  <div className="text-center">
+                    <span className="display block text-6xl text-[#021024]/80">WH</span>
+                    <span className="mt-3 block font-mono text-[9px] uppercase tracking-[.28em] text-[#021024]/50">
+                      Kepala Sekolah
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 ring-1 ring-inset ring-[#C1E8FF]/25"
+              />
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#0B3168]/25 to-transparent"
+              />
+            </motion.div>
+
+            {/* Tepi atas tameng digariskan supaya terlihat jelas kepala yang
+                melewatinya (potret di bawah ini menutupi garis tersebut). */}
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 400 500"
+              preserveAspectRatio="none"
+              className="pointer-events-none absolute inset-0 z-[1] h-full w-full"
+            >
+              <path
+                d="M0 20C0 9 9 0 20 0H380C391 0 400 9 400 20"
+                fill="none"
+                stroke="#C1E8FF"
+                strokeOpacity=".35"
+                strokeWidth="1.3"
+                vectorEffect="non-scaling-stroke"
+              />
+            </svg>
+
+            {/* Foto (PNG berlatar transparan) sengaja dibuat lebih besar dari
+                tameng: bagian atas topengnya dibuka sehingga kepala dan bahu
+                "keluar" melewati tepi tameng, sementara lengkung bawahnya tetap
+                memotong badan agar tidak tumpah keluar bingkai. */}
+            <div
+              className="pointer-events-none absolute inset-x-0 -top-[18%] bottom-0 z-[2]"
+              style={POTRET_MASK}
+            >
+              <motion.img
+                variants={TAMENG_POTRET}
+                src={FOTO_KEPALA_SEKOLAH}
+                alt="Wisnu Handoko, Kepala Sekolah SMK Telekomunikasi Tunas Harapan"
+                loading="lazy"
+                decoding="async"
+                onError={() => setFotoTampil(false)}
+                className="absolute inset-x-0 bottom-0 h-[99%] w-full object-contain object-bottom"
+                style={{
+                  filter: "drop-shadow(0 14px 18px rgba(2,16,36,.22))",
+                }}
+              />
+            </div>
+          </div>
+
+          <motion.span
+            variants={TAMENG_LABEL}
+            className="absolute left-0 top-0 z-30 -rotate-[7deg] border border-[#C1E8FF]/25 bg-[#021024]/85 px-3 py-1.5 font-mono text-[9px] uppercase tracking-[.26em] text-[#EAF4FF] shadow-[5px_6px_0_rgba(2,16,36,.35)] backdrop-blur-md sm:-left-5 sm:-top-2"
+          >
+            Sambutan · Kepala Sekolah
+          </motion.span>
+
+          <motion.div
+            variants={TAMENG_NAMA}
+            className="relative z-20 -mt-14 mr-6 rotate-[-1.1deg] border border-[#0B3168]/12 bg-white px-5 py-4 shadow-[7px_9px_0_rgba(11,49,104,.09)] sm:-ml-3 sm:mr-14"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="font-mono text-[8px] uppercase tracking-[.3em] text-[#0B3168]/45">
+                  Kepala Sekolah
+                </p>
+                <p className="display mt-2 text-[17px] leading-[1.15] text-[#0B3168] sm:text-[21px]">
+                  Wisnu Handoko, S.T., M.T.
+                </p>
+              </div>
+              <span
+                aria-hidden="true"
+                className="mt-0.5 hidden size-7 shrink-0 place-items-center border border-[#0B3168]/25 font-mono text-[8px] tracking-wide text-[#0B3168]/50 sm:grid"
+              >
+                TH
+              </span>
+            </div>
+          </motion.div>
+
+          <motion.div
+            aria-hidden="true"
+            variants={TAMENG_STEMPEL}
+            className="absolute right-0 top-[36%] z-30 size-20 rotate-[11deg] sm:-right-5 sm:size-24"
+          >
+            <svg viewBox="0 0 120 120" className="h-full w-full">
+              <defs>
+                <path
+                  id="stempel-kepala-sekolah"
+                  d="M60 60 m-42 0 a42 42 0 1 1 84 0 a42 42 0 1 1 -84 0"
+                />
+              </defs>
+              <circle
+                cx="60"
+                cy="60"
+                r="55"
+                fill="#021024"
+                stroke="#C1E8FF"
+                strokeOpacity=".32"
+                strokeDasharray="2 5"
+              />
+              <circle
+                cx="60"
+                cy="60"
+                r="34"
+                fill="none"
+                stroke="#C1E8FF"
+                strokeOpacity=".24"
+              />
+              <text
+                fill="#EAF4FF"
+                fillOpacity=".7"
+                fontSize="7.5"
+                letterSpacing="2.6"
+                fontFamily="monospace"
+              >
+                <textPath href="#stempel-kepala-sekolah">
+                  SMK TELEKOMUNIKASI · TUNAS HARAPAN ·
+                </textPath>
+              </text>
+              <text
+                x="60"
+                y="57"
+                textAnchor="middle"
+                fontFamily="monospace"
+                fontSize="10"
+                letterSpacing="1.5"
+                fill="#EAF4FF"
+                fillOpacity=".8"
+              >
+                TH
+              </text>
+              <text
+                x="60"
+                y="70"
+                textAnchor="middle"
+                fontFamily="monospace"
+                fontSize="6.5"
+                letterSpacing="2"
+                fill="#EAF4FF"
+                fillOpacity=".6"
+              >
+                2026
+              </text>
+            </svg>
+          </motion.div>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 24 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.8, delay: 0.1, ease: "easeOut" }}
+          className="relative lg:col-span-6 lg:pt-6 xl:col-start-7 xl:pt-10"
+        >
+          <span
+            aria-hidden="true"
+            className="display pointer-events-none absolute -left-2 -top-16 hidden text-[11rem] leading-none text-[#C1E8FF]/10 sm:block"
+          >
+            &ldquo;
+          </span>
+
+          <div className="relative flex items-center gap-3">
+            <span className="-rotate-[3deg] border border-[#0B3168]/15 bg-white px-2.5 py-1 font-mono text-[9px] uppercase tracking-[.24em] text-[#0B3168]/70 shadow-[3px_3px_0_rgba(11,49,104,.06)]">
+              Sambutan
+            </span>
+            <span aria-hidden="true" className="h-px flex-1 bg-[#C1E8FF]/25" />
+            <span
+              aria-hidden="true"
+              className="size-1.5 rotate-45 bg-[#C1E8FF]/50"
+            />
+          </div>
+
+          <h2
+            id="sambutan-judul"
+            className="display mt-8 text-[2.45rem] leading-[1.03] sm:text-[3.15rem] lg:text-[3.5rem]"
+          >
+            Tumbuh dengan{" "}
+            <span className="relative inline-block">
+              <span className="relative z-10 text-[#021024]">kompetensi,</span>
+              <span
+                aria-hidden="true"
+                className="absolute inset-x-[-.12em] bottom-[.08em] z-0 h-[.84em] -rotate-[.7deg] bg-[#C1E8FF]"
+              />
+            </span>{" "}
+            berkarya dengan{" "}
+            <span className="relative inline-block">
+              <span className="relative z-10">karakter.</span>
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 200 14"
+                preserveAspectRatio="none"
+                className="absolute -bottom-[.1em] left-0 h-[.3em] w-[104%] text-[#C1E8FF]/80"
+              >
+                <path
+                  d="M3 10C38 4 82 3 122 6c26 2 48 3 74 -1"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.6"
+                  strokeLinecap="round"
+                />
+              </svg>
+            </span>
+          </h2>
+
+          <div className="mt-8 max-w-[52ch]">
+            <p className="text-[15.5px] leading-8 text-[#E4F0FB]/80 first-letter:float-left first-letter:mr-2.5 first-letter:mt-1 first-letter:text-[2.9rem] first-letter:font-semibold first-letter:leading-[.8] first-letter:text-[#C1E8FF]">
+              Selamat datang di SMK Telekomunikasi Tunas Harapan. Kami percaya
+              pendidikan vokasi terbaik lahir dari ruang yang aman untuk
+              mencoba: tempat siswa belajar dari praktik, berani berkarya, dan
+              menemukan arahnya sendiri.
+            </p>
+            <div className="mt-6 border-l border-dashed border-[#C1E8FF]/30 pl-5">
+              <p className="text-[14px] leading-7 text-[#D6E8F7]/65 sm:text-[14.5px]">
+                Bersama guru, mitra industri, dan keluarga, kami menyiapkan
+                lulusan yang bukan hanya siap kerja, tetapi juga siap tumbuh
+                menjadi pribadi yang bermanfaat.
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4">
+            <Link
+              href="#jurusan"
+              className="group inline-flex -rotate-[.8deg] items-center gap-2.5 border border-[#101B2B]/20 bg-white px-4 py-2.5 text-[12px] font-semibold tracking-tight text-[#101B2B] shadow-[4px_4px_0_rgba(11,49,104,.08)] transition duration-300 hover:-translate-y-0.5 hover:rotate-0 hover:shadow-[6px_7px_0_rgba(11,49,104,.12)]"
+            >
+              Lihat program keahlian
+              <ArrowUpRight
+                size={14}
+                className="transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
+              />
+            </Link>
+            <div className="flex items-center gap-2">
+              <span aria-hidden="true" className="size-1.5 rotate-45 bg-[#C1E8FF]/50" />
+              <p className="font-mono text-[9px] uppercase tracking-[.24em] text-[#C1E8FF]/60">
+                Tengaran · Jawa Tengah
+              </p>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
 const majors=[['01','PPLG','Pengembangan Perangkat Lunak dan Gim','/images/school/hero-lab.jpg','pplg','#BA0000'],['02','TJKT','Teknik Jaringan Komputer dan Telekomunikasi','/images/school/tkj1.jpg','tjkt','#00c53b'],['03','DKV','Desain Komunikasi Visual','/images/school/dkv.jpg','dkv','#152DA9'],['04','TKR','Teknik Kendaraan Ringan','/images/school/tkr.jpg','tkr','#C67219']];
 const mottos=["arah.","hati.","tujuan.","harapan."];
 function Majors(){const[mottoIdx,setMottoIdx]=useState(0);useEffect(()=>{const t=setInterval(()=>setMottoIdx(v=>(v+1)%mottos.length),2800);return()=>clearInterval(t);},[]);return <section id="jurusan" className="relative overflow-hidden bg-[#021024] px-6 py-28 text-white sm:py-36"><motion.img src="/images/footer/aurora2.png" alt="" aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full select-none opacity-80 mix-blend-screen" style={{filter:'brightness(1.35) saturate(1.2)'}} animate={{opacity:[0.7,0.9,0.7],scale:[1,1.04,1]}} transition={{duration:17,repeat:Infinity,ease:'easeInOut'}}/><div className="relative mx-auto max-w-7xl"><div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow text-[#7DA0CA]">02 / PROGRAM KEAHLIAN</p><h2 className="display mt-5 text-4xl sm:text-6xl">Empat bidang.<br/><span className="inline-block text-white/55">Satu <AnimatePresence mode="wait"><motion.span key={mottoIdx} className="inline-block" exit={{}}>{mottos[mottoIdx].split("").map((ch,i)=><motion.span key={i} className="inline-block whitespace-pre" initial={{opacity:0,y:"0.4em",filter:"blur(8px)"}} animate={{opacity:1,y:0,filter:"blur(0px)",transition:{duration:0.5,delay:i*0.055,ease:"easeOut"}}} exit={{opacity:0,y:"-0.3em",filter:"blur(8px)",transition:{duration:0.3,delay:(mottos[mottoIdx].length-1-i)*0.02,ease:"easeIn"}}}>{ch}</motion.span>)}</motion.span></AnimatePresence></span></h2></div><p className="max-w-sm text-sm leading-7 text-white/75">Eksplorasi software, jaringan, desain, dan otomotif melalui pengalaman vokasi yang relevan.</p></div><div className="mt-16 divide-y divide-white/10 border-y border-white/10">{majors.map(([n,title,desc,img,slug,accent])=><Link href={`/jurusan/${slug}`} key={title} style={{'--major-accent':accent} as React.CSSProperties} className="major-link group relative grid grid-cols-[52px_1fr_auto] items-center gap-x-4 gap-y-2 overflow-hidden rounded-lg py-5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C1E8FF] sm:rounded-none sm:grid-cols-[72px_1fr_1.2fr_auto] sm:gap-5 sm:py-8"><div className="relative col-start-1 row-start-2 h-12 w-[52px] overflow-hidden rounded-md sm:absolute sm:inset-y-3 sm:right-16 sm:col-auto sm:row-auto sm:h-20 sm:w-36 sm:rounded-xl sm:opacity-0 sm:transition sm:duration-500 sm:group-hover:opacity-20 lg:h-24 lg:w-44"><img src={img} alt="" className="h-full w-full object-cover"/></div><span className="col-start-1 row-start-1 font-mono text-xs text-white/70 sm:col-auto sm:row-auto sm:text-white/55">{n}</span><h3 className="relative z-10 col-start-2 row-start-1 text-2xl font-medium tracking-tight sm:col-auto sm:row-auto sm:text-3xl lg:text-5xl">{title}</h3><p className="relative z-10 col-start-2 row-start-2 max-w-md text-xs leading-5 text-white/75 sm:col-auto sm:row-auto sm:text-sm sm:leading-6 sm:text-white/70">{desc}</p><ArrowUpRight className="relative z-10 col-start-3 row-span-2 row-start-1 self-center text-white/80 transition group-active:translate-x-1 group-active:-translate-y-1 group-hover:-translate-y-1 group-hover:translate-x-1 sm:col-auto sm:row-auto sm:self-auto"/></Link>)}</div></div></section>}
@@ -2085,7 +2700,7 @@ export default function Home(){
     </AnimatePresence>
 
     <HeroSection/>
-    <Profile/><Majors/><News/><LocationSection/><Facilities/><Partners/><Achievements/><Future/>
+    <Profile/><SambutanKepalaSekolah/><Majors/><News/><LocationSection/><Facilities/><Partners/><Achievements/><Future/>
     <section
       aria-label="Gedung SMK Telekomunikasi Tunas Harapan"
       className="relative w-screen overflow-hidden bg-[#F4F9FF] px-0 pb-0"
