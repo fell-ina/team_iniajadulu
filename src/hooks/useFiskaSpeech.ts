@@ -298,32 +298,29 @@ export function useFiskaSpeech(
   const reqAnimRef = useRef<number>(0);
 
   // Membaca volume suara secara real-time dan menerjemahkannya ke bukaan mulut
-  const monitorAudioVolume = useCallback(
-    (analyser: AnalyserNode) => {
-      // Pastikan hanya ada satu loop animasi mulut yang berjalan.
-      cancelAnimationFrame(reqAnimRef.current);
+  const monitorAudioVolume = useCallback((analyser: AnalyserNode) => {
+    // Pastikan hanya ada satu loop animasi mulut yang berjalan.
+    cancelAnimationFrame(reqAnimRef.current);
 
-      const dataArray = new Uint8Array(analyser.frequencyBinCount);
-      const length = Math.floor(dataArray.length / 2);
-      const meter = mouthMeterRef.current;
+    const dataArray = new Uint8Array(analyser.frequencyBinCount);
+    const length = Math.floor(dataArray.length / 2);
+    const meter = mouthMeterRef.current;
 
-      const tick = () => {
-        analyser.getByteFrequencyData(dataArray);
-        let sum = 0;
-        // Hanya menghitung rata-rata frekuensi suara manusia
-        for (let i = 0; i < length; i++) sum += dataArray[i];
-        mouthLevelRef.current = updateMouthLevel(
-          meter,
-          sum / length,
-          performance.now(),
-        );
+    const tick = () => {
+      analyser.getByteFrequencyData(dataArray);
+      let sum = 0;
+      // Hanya menghitung rata-rata frekuensi suara manusia
+      for (let i = 0; i < length; i++) sum += dataArray[i];
+      mouthLevelRef.current = updateMouthLevel(
+        meter,
+        sum / length,
+        performance.now(),
+      );
 
-        reqAnimRef.current = requestAnimationFrame(tick);
-      };
-      tick();
-    },
-    [],
-  );
+      reqAnimRef.current = requestAnimationFrame(tick);
+    };
+    tick();
+  }, []);
 
   // Animasi mulut palsu untuk fallback kalau Web Audio API gagal dipakai.
   // Nilainya tetap kontinu (sine yang dihaluskan), bukan kedip tutup-buka.
@@ -543,20 +540,18 @@ export function useFiskaSpeech(
 
           ensure(i + 1);
 
-          if (!blob) {              if (i === 0) {
+          if (!blob) {
+            if (i === 0) {
               setIsVoiceLoading(false);
-              fallbackRef.current = playFallbackSpeech(
-                cleanText,
-                () => {
-                  if (!isActive()) return;
-                  spokenTextRef.current = null;
-                  speakAbortRef.current = null;
-                  setIsSpeaking(false);
-                  setIsVoiceLoading(false);
-                  stopMouthAnimation();
-                  fallbackRef.current = null;
-                },
-              );
+              fallbackRef.current = playFallbackSpeech(cleanText, () => {
+                if (!isActive()) return;
+                spokenTextRef.current = null;
+                speakAbortRef.current = null;
+                setIsSpeaking(false);
+                setIsVoiceLoading(false);
+                stopMouthAnimation();
+                fallbackRef.current = null;
+              });
               startFakeTalking();
               return;
             }
@@ -599,18 +594,15 @@ export function useFiskaSpeech(
       } catch {
         if (!isActive()) return;
         setIsVoiceLoading(false);
-        fallbackRef.current = playFallbackSpeech(
-          cleanText,
-          () => {
-            if (!isActive()) return;
-            spokenTextRef.current = null;
-            speakAbortRef.current = null;
-            setIsSpeaking(false);
-            setIsVoiceLoading(false);
-            stopMouthAnimation();
-            fallbackRef.current = null;
-          },
-        );
+        fallbackRef.current = playFallbackSpeech(cleanText, () => {
+          if (!isActive()) return;
+          spokenTextRef.current = null;
+          speakAbortRef.current = null;
+          setIsSpeaking(false);
+          setIsVoiceLoading(false);
+          stopMouthAnimation();
+          fallbackRef.current = null;
+        });
         startFakeTalking();
       }
     },
