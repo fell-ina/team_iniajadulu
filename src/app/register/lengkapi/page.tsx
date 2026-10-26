@@ -199,9 +199,6 @@ export default function LengkapiPendaftaranPage() {
           />
           <span>Tunas Harapan</span>
         </Link>
-        <Link href="/" className={styles.back}>
-          Kembali ke beranda
-        </Link>
       </header>
 
       {/* ---------- Panel kiri (biru) ---------- */}

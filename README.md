@@ -317,6 +317,33 @@ tanpa policy. File Excel dibuat dengan `exceljs` di server (runtime Node.js).
 
 ---
 
+## 💬 Forum (Siswa & Guru)
+
+Forum menyimpan diskusi di Supabase, bukan lagi data contoh di browser.
+
+| Halaman | Akses | Isi |
+|---|---|---|
+| `/forum` | publik | Landing yang mengarahkan siswa terverifikasi ke forum kelasnya |
+| `/forum/X`, `/forum/XI`, `/forum/XII` | siswa terverifikasi | Daftar topik kelasnya, form **Mulai Diskusi**, dan modal utas untuk membaca/menulis balasan |
+| `/forum-guru` | guru, admin | Forum lintas kelas (`kelas` kosong) dengan kategori kurikulum/kesiswaan/teknologi/berbagi praktik |
+
+- Topik siswa otomatis memakai kelas dari profilnya; permintaan ke kelas lain ditolak 403.
+  Hanya siswa berstatus `terverifikasi` yang boleh membaca maupun menulis.
+- Setiap balasan menyegarkan `forum_topik.balasan_count`; balasan bertingkat memakai
+  `forum_balasan.parent_id`.
+
+Endpoint: `src/app/api/forum/topik/route.ts` (`GET` daftar per kelas / `?lingkup=guru`,
+`POST` topik baru), `src/app/api/forum/topik/[id]/route.ts` (`GET` satu utas + balasan),
+dan `src/app/api/forum/balasan/route.ts` (`POST` balasan). Semua memakai sesi cookie +
+service role karena RLS tabel forum tanpa policy.
+
+Tabel: `forum_topik`, `forum_balasan`, `forum_like`. Migrasi
+`supabase/migrations/20261026000000_forum_guru.sql` (sudah dijalankan) membuat
+`forum_topik.kelas` boleh NULL untuk topik guru dan menambahkan empat nilai kategori guru
+ke enum `forum_kategori`.
+
+---
+
 ## 🚀 Status Rencana Pengembangan (Roadmap)
 
 - [x] **Tahap I:** Desain UI/UX, arsitektur rute Next.js 16, dan integrasi Supabase.

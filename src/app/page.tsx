@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MessagesSquare,
   UserRound,
   UsersRound,
   X,
@@ -25,6 +26,12 @@ import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import HeroSection from "@/components/HeroSection";
+<<<<<<< HEAD
+=======
+import GlobeBackground from "@/components/GlobeBackground";
+import Chatbot from "@/components/Chatbot";
+import ModalKirimNisn from '@/components/ModalKirimNisn';
+>>>>>>> 91ab00936d0086dce14642339fff2d860dffc045
 import { ringkasKonten } from '@/lib/ringkasTeks';
 
 // Widget yang tidak terlihat saat halaman pertama dibuka dipecah ke chunk
@@ -83,6 +90,9 @@ function Nav({
   }, []);
 
   const active = hovered ?? activeSection;
+  const activeLabel =
+    nav.find(([, href]) => href === activeSection)?.[0] ??
+    "SMK TELEKOMUNIKASI TUNAS HARAPAN";
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6">
@@ -102,6 +112,21 @@ function Nav({
           </span>
         </a>
 
+        <div className="min-w-0 flex-1 px-3 text-center md:hidden">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={activeLabel}
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              transition={{ duration: 0.2 }}
+              className="block truncate text-[9px] font-bold uppercase tracking-[.12em] text-white/75"
+            >
+              {activeLabel}
+            </motion.span>
+          </AnimatePresence>
+        </div>
+
         <nav
           className="hidden gap-1 md:flex"
           onMouseLeave={() => setHovered(null)}
@@ -114,11 +139,10 @@ function Nav({
                 href={h}
                 onMouseEnter={() => setHovered(h)}
                 onClick={() => setActiveSection(h)}
-                className={`relative rounded-full px-4 py-2 text-xs transition-colors duration-200 ${
-                  isSelected
+                className={`relative rounded-full px-4 py-2 text-xs transition-colors duration-200 ${isSelected
                     ? "text-white font-medium"
                     : "text-white/65 hover:text-white"
-                }`}
+                  }`}
               >
                 {isSelected && (
                   <motion.div
@@ -219,7 +243,7 @@ function Nav({
   );
 }
 
-function Profile() {  
+function Profile() {
   return (
     <section
       id="profil"
@@ -232,9 +256,9 @@ function Profile() {
         className="profile-grid-bg pointer-events-none absolute inset-0 z-0"
         style={{
           maskImage:
-            "linear-gradient(180deg, #000 calc(100% - 170px), transparent 100%)",
+            "linear-gradient(180deg, #000 calc(100% - 200px), transparent 100%)",
           WebkitMaskImage:
-            "linear-gradient(180deg, #000 calc(100% - 170px), transparent 100%)",
+            "linear-gradient(180deg, #000 calc(100% - 200px), transparent 100%)",
         }}
       />
       <div
@@ -508,30 +532,6 @@ function SambutanKepalaSekolah() {
         <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-transparent to-[#021024]" />
       </div>
 
-      {/* Kertas halaman atas yang disobek: menyambung kertas section profil. */}
-      <svg
-        aria-hidden="true"
-        viewBox={`0 0 ${LEBAR_SEH} ${TINGGI_SEH}`}
-        preserveAspectRatio="none"
-        className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[110px] w-full sm:h-[140px]"
-        style={{ filter: "drop-shadow(0 8px 8px rgba(2,16,36,.34))" }}
-      >
-        <path d={JALUR_SEH_ATAS} fill="#F4F9FF" />
-      </svg>
-
-      {/* Pita kertas putih melintang di bawah: laut terlihat di atas & bawahnya. */}
-      <div className="pointer-events-none absolute inset-x-[-5%] bottom-[96px] z-10 h-16 -rotate-[1.4deg] sm:bottom-[120px] sm:h-[72px]">
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 1000 100"
-          preserveAspectRatio="none"
-          className="h-full w-full"
-          style={{ filter: "drop-shadow(0 10px 14px rgba(2,16,36,.35))" }}
-        >
-          <path d={JALUR_PITA_SEH} fill="#FFFFFF" />
-        </svg>
-      </div>
-
       <div className="relative z-10 mx-auto grid max-w-7xl gap-16 px-5 pb-[170px] pt-20 sm:px-8 sm:pb-[210px] sm:pt-24 lg:grid-cols-12 lg:items-center lg:gap-10 xl:gap-14">
         <motion.div
           initial="hidden"
@@ -729,90 +729,17 @@ function SambutanKepalaSekolah() {
             variants={TAMENG_NAMA}
             className="relative z-20 -mt-14 mr-6 rotate-[-1.1deg] border border-[#0B3168]/12 bg-white px-5 py-4 shadow-[7px_9px_0_rgba(11,49,104,.09)] sm:-ml-3 sm:mr-14"
           >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="font-mono text-[8px] uppercase tracking-[.3em] text-[#0B3168]/45">
-                  Kepala Sekolah
-                </p>
-                <p className="display mt-2 text-[17px] leading-[1.15] text-[#0B3168] sm:text-[21px]">
-                  Wisnu Handoko, S.T., M.T.
-                </p>
-              </div>
-              <span
-                aria-hidden="true"
-                className="mt-0.5 hidden size-7 shrink-0 place-items-center border border-[#0B3168]/25 font-mono text-[8px] tracking-wide text-[#0B3168]/50 sm:grid"
-              >
-                TH
-              </span>
+            <div>
+              <p className="font-mono text-[8px] uppercase tracking-[.3em] text-[#0B3168]/45">
+                Kepala Sekolah
+              </p>
+              <p className="display mt-2 text-[17px] leading-[1.15] text-[#0B3168] sm:text-[21px]">
+                Wisnu Handoko, S.T., M.T.
+              </p>
             </div>
           </motion.div>
 
-          <motion.div
-            aria-hidden="true"
-            variants={TAMENG_STEMPEL}
-            className="absolute right-0 top-[36%] z-30 size-20 rotate-[11deg] sm:-right-5 sm:size-24"
-          >
-            <svg viewBox="0 0 120 120" className="h-full w-full">
-              <defs>
-                <path
-                  id="stempel-kepala-sekolah"
-                  d="M60 60 m-42 0 a42 42 0 1 1 84 0 a42 42 0 1 1 -84 0"
-                />
-              </defs>
-              <circle
-                cx="60"
-                cy="60"
-                r="55"
-                fill="#021024"
-                stroke="#C1E8FF"
-                strokeOpacity=".32"
-                strokeDasharray="2 5"
-              />
-              <circle
-                cx="60"
-                cy="60"
-                r="34"
-                fill="none"
-                stroke="#C1E8FF"
-                strokeOpacity=".24"
-              />
-              <text
-                fill="#EAF4FF"
-                fillOpacity=".7"
-                fontSize="7.5"
-                letterSpacing="2.6"
-                fontFamily="monospace"
-              >
-                <textPath href="#stempel-kepala-sekolah">
-                  SMK TELEKOMUNIKASI · TUNAS HARAPAN ·
-                </textPath>
-              </text>
-              <text
-                x="60"
-                y="57"
-                textAnchor="middle"
-                fontFamily="monospace"
-                fontSize="10"
-                letterSpacing="1.5"
-                fill="#EAF4FF"
-                fillOpacity=".8"
-              >
-                TH
-              </text>
-              <text
-                x="60"
-                y="70"
-                textAnchor="middle"
-                fontFamily="monospace"
-                fontSize="6.5"
-                letterSpacing="2"
-                fill="#EAF4FF"
-                fillOpacity=".6"
-              >
-                2026
-              </text>
-            </svg>
-          </motion.div>
+
         </motion.div>
 
         <motion.div
@@ -913,7 +840,11 @@ function SambutanKepalaSekolah() {
 }
 const majors=[['01','PPLG','Pengembangan Perangkat Lunak dan Gim','/images/school/hero-lab.jpg','pplg','#BA0000'],['02','TJKT','Teknik Jaringan Komputer dan Telekomunikasi','/images/school/tkj1.jpg','tjkt','#00c53b'],['03','DKV','Desain Komunikasi Visual','/images/school/dkv.jpg','dkv','#152DA9'],['04','TKR','Teknik Kendaraan Ringan','/images/school/tkr.jpg','tkr','#C67219']];
 const mottos=["arah.","hati.","tujuan.","harapan."];
+<<<<<<< HEAD
 function Majors(){const[mottoIdx,setMottoIdx]=useState(0);useEffect(()=>{const t=setInterval(()=>setMottoIdx(v=>(v+1)%mottos.length),2800);return()=>clearInterval(t);},[]);return <section id="jurusan" className="relative overflow-hidden bg-[#021024] px-6 py-28 text-white sm:py-36"><motion.div aria-hidden="true" className="pointer-events-none absolute inset-0 select-none opacity-80 mix-blend-screen" animate={{opacity:[0.7,0.9,0.7],scale:[1,1.04,1]}} transition={{duration:17,repeat:Infinity,ease:'easeInOut'}}><Image src="/images/footer/aurora2.png" alt="" fill sizes="100vw" loading="lazy" className="object-cover" style={{filter:'brightness(1.35) saturate(1.2)'}}/></motion.div><div className="relative mx-auto max-w-7xl"><div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow text-[#7DA0CA]">02 / PROGRAM KEAHLIAN</p><h2 className="display mt-5 text-4xl sm:text-6xl">Empat bidang.<br/><span className="inline-block text-white/55">Satu <AnimatePresence mode="wait"><motion.span key={mottoIdx} className="inline-block" exit={{}}>{mottos[mottoIdx].split("").map((ch,i)=><motion.span key={i} className="inline-block whitespace-pre" initial={{opacity:0,y:"0.4em",filter:"blur(8px)"}} animate={{opacity:1,y:0,filter:"blur(0px)",transition:{duration:0.5,delay:i*0.055,ease:"easeOut"}}} exit={{opacity:0,y:"-0.3em",filter:"blur(8px)",transition:{duration:0.3,delay:(mottos[mottoIdx].length-1-i)*0.02,ease:"easeIn"}}}>{ch}</motion.span>)}</motion.span></AnimatePresence></span></h2></div><p className="max-w-sm text-sm leading-7 text-white/75">Eksplorasi software, jaringan, desain, dan otomotif melalui pengalaman vokasi yang relevan.</p></div><div className="mt-16 divide-y divide-white/10 border-y border-white/10">{majors.map(([n,title,desc,img,slug,accent])=><Link href={`/jurusan/${slug}`} key={title} style={{'--major-accent':accent} as React.CSSProperties} className="major-link group relative grid grid-cols-[52px_1fr_auto] items-center gap-x-4 gap-y-2 overflow-hidden rounded-lg py-5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C1E8FF] sm:rounded-none sm:grid-cols-[72px_1fr_1.2fr_auto] sm:gap-5 sm:py-8"><div className="relative col-start-1 row-start-2 h-12 w-[52px] overflow-hidden rounded-md sm:absolute sm:inset-y-3 sm:right-16 sm:col-auto sm:row-auto sm:h-20 sm:w-36 sm:rounded-xl sm:opacity-0 sm:transition sm:duration-500 sm:group-hover:opacity-20 lg:h-24 lg:w-44"><Image src={img} alt="" fill sizes="(min-width: 1024px) 176px, (min-width: 640px) 144px, 52px" loading="lazy" className="object-cover"/></div><span className="col-start-1 row-start-1 font-mono text-xs text-white/70 sm:col-auto sm:row-auto sm:text-white/55">{n}</span><h3 className="relative z-10 col-start-2 row-start-1 text-2xl font-medium tracking-tight sm:col-auto sm:row-auto sm:text-3xl lg:text-5xl">{title}</h3><p className="relative z-10 col-start-2 row-start-2 max-w-md text-xs leading-5 text-white/75 sm:col-auto sm:row-auto sm:text-sm sm:leading-6 sm:text-white/70">{desc}</p><ArrowUpRight className="relative z-10 col-start-3 row-span-2 row-start-1 self-center text-white/80 transition group-active:translate-x-1 group-active:-translate-y-1 group-hover:-translate-y-1 group-hover:translate-x-1 sm:col-auto sm:row-auto sm:self-auto"/></Link>)}</div></div></section>}
+=======
+function Majors(){const[mottoIdx,setMottoIdx]=useState(0);useEffect(()=>{const t=setInterval(()=>setMottoIdx(v=>(v+1)%mottos.length),2800);return()=>clearInterval(t);},[]);return <section id="jurusan" className="relative bg-[#021024] px-6 py-28 text-white sm:py-36"><motion.img src="/images/footer/aurora2.png" alt="" aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full select-none opacity-80 mix-blend-screen object-cover" style={{filter:'brightness(1.35) saturate(1.2)'}} animate={{opacity:[0.7,0.9,0.7],scale:[1,1.04,1]}} transition={{duration:17,repeat:Infinity,ease:'easeInOut'}}/><div className="relative mx-auto max-w-7xl"><div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow text-[#7DA0CA]">02 / PROGRAM KEAHLIAN</p><h2 className="display mt-5 text-4xl sm:text-6xl">Empat bidang.<br/><span className="inline-block text-white/55">Satu <AnimatePresence mode="wait"><motion.span key={mottoIdx} className="inline-block" exit={{}}>{mottos[mottoIdx].split("").map((ch,i)=><motion.span key={i} className="inline-block whitespace-pre" initial={{opacity:0,y:"0.4em",filter:"blur(8px)"}} animate={{opacity:1,y:0,filter:"blur(0px)",transition:{duration:0.5,delay:i*0.055,ease:"easeOut"}}} exit={{opacity:0,y:"-0.3em",filter:"blur(8px)",transition:{duration:0.3,delay:(mottos[mottoIdx].length-1-i)*0.02,ease:"easeIn"}}}>{ch}</motion.span>)}</motion.span></AnimatePresence></span></h2></div><p className="max-w-sm text-sm leading-7 text-white/75">Eksplorasi software, jaringan, desain, dan otomotif melalui pengalaman vokasi yang relevan.</p></div><div className="mt-16 divide-y divide-white/10 border-y border-white/10">{majors.map(([n,title,desc,img,slug,accent])=><Link href={`/jurusan/${slug}`} key={title} style={{'--major-accent':accent} as React.CSSProperties} className="major-link group relative grid grid-cols-[52px_1fr_auto] items-center gap-x-4 gap-y-2 overflow-hidden rounded-lg py-5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C1E8FF] sm:rounded-none sm:grid-cols-[72px_1fr_1.2fr_auto] sm:gap-5 sm:py-8"><div className="relative col-start-1 row-start-2 h-12 w-[52px] overflow-hidden rounded-md sm:absolute sm:inset-y-3 sm:right-16 sm:col-auto sm:row-auto sm:h-20 sm:w-36 sm:rounded-xl sm:opacity-0 sm:transition sm:duration-500 sm:group-hover:opacity-20 lg:h-24 lg:w-44"><img src={img} alt="" className="h-full w-full object-cover"/></div><span className="col-start-1 row-start-1 font-mono text-xs text-white/70 sm:col-auto sm:row-auto sm:text-white/55">{n}</span><h3 className="relative z-10 col-start-2 row-start-1 text-2xl font-medium tracking-tight sm:col-auto sm:row-auto sm:text-3xl lg:text-5xl">{title}</h3><p className="relative z-10 col-start-2 row-start-2 max-w-md text-xs leading-5 text-white/75 sm:col-auto sm:row-auto sm:text-sm sm:leading-6 sm:text-white/70">{desc}</p><ArrowUpRight className="relative z-10 col-start-3 row-span-2 row-start-1 self-center text-white/80 transition group-active:translate-x-1 group-active:-translate-y-1 group-hover:-translate-y-1 group-hover:translate-x-1 sm:col-auto sm:row-auto sm:self-auto"/></Link>)}</div></div></section>}
+>>>>>>> 91ab00936d0086dce14642339fff2d860dffc045
 
 const newsFallback = [
   [
@@ -969,7 +900,7 @@ function News() {
         if (d?.ok && Array.isArray(d.data) && d.data.length > 0)
           setDaftar(d.data);
       })
-      .catch(() => {});
+      .catch(() => { });
     return () => {
       batal = true;
     };
@@ -978,13 +909,13 @@ function News() {
     (daftar ?? []).length > 0
       ? (daftar as BeritaPublik[])
       : newsFallback.map(([title, desc, _date, img, slug]) => ({
-          id: slug,
-          judul: title,
-          subjudul: desc,
-          konten: desc,
-          gambar_url: img,
-          created_at: null,
-        }));
+        id: slug,
+        judul: title,
+        subjudul: desc,
+        konten: desc,
+        gambar_url: img,
+        created_at: null,
+      }));
   const tanggalFallback: Record<string, string> = Object.fromEntries(
     newsFallback.map(([, , date, , slug]) => [slug, date]),
   );
@@ -1593,11 +1524,11 @@ function Facilities() {
                       ? { y: -6, scale: 1.015 }
                       : isPeekable
                         ? {
-                            x: x + peekX,
-                            y: y - 6,
-                            scale: baseScale + 0.03,
-                            filter: "brightness(1)",
-                          }
+                          x: x + peekX,
+                          y: y - 6,
+                          scale: baseScale + 0.03,
+                          filter: "brightness(1)",
+                        }
                         : undefined
                   }
                   whileTap={pos <= 2 ? { scale: baseScale - 0.015 } : undefined}
@@ -1837,9 +1768,10 @@ function Facilities() {
 
 function LocationSection() {
   return (
-    <section id="lokasi" className="bg-[#021024] px-6 py-24 text-white sm:py-32">
-      <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[.8fr_1.2fr] lg:items-stretch">
-        <div className="flex flex-col justify-between rounded-[2rem] border border-white/10 bg-[#021024] p-7 sm:p-10">
+    <section id="lokasi" className="relative overflow-hidden bg-[#021024] px-6 py-24 text-white sm:py-32">
+      <GlobeBackground />
+      <div className="relative z-10 mx-auto grid max-w-7xl gap-8 lg:grid-cols-[.8fr_1.2fr] lg:items-stretch">
+        <div className="flex flex-col justify-between rounded-[2rem] border border-white/25 bg-[#021024]/75 p-7 backdrop-blur-[2px] sm:p-10">
           <div>
             <p className="eyebrow text-[#C1E8FF]/70">04 / LOKASI SEKOLAH</p>
             <h2 className="display mt-5 max-w-lg text-4xl sm:text-6xl">Temui kami di sekolah.</h2>
@@ -1975,7 +1907,7 @@ function Achievements() {
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
-        <p className="eyebrow text-[#2F5F8F]">07 / PRESTASI</p>
+            <p className="eyebrow text-[#2F5F8F]">07 / PRESTASI</p>
             <h2 className="display mt-5 max-w-3xl text-4xl sm:text-6xl">
               Karya siswa yang
               <br />
@@ -1986,6 +1918,7 @@ function Achievements() {
         </div>
         <div className="mt-12 grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
           <div className="relative overflow-hidden rounded-[1.75rem] bg-[#021024]">
+<<<<<<< HEAD
              <AnimatePresence mode="wait" initial={false}>
                <motion.div
                  key={achievementImages[activeAchievementImage]}
@@ -2042,6 +1975,57 @@ function Achievements() {
                  </button>
                </div>
              </div>
+=======
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.img
+                key={achievementImages[activeAchievementImage]}
+                src={achievementImages[activeAchievementImage]}
+                alt={`Prestasi siswa ${activeAchievementImage + 1}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.9 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.8, ease: "easeInOut" }}
+                className="h-[330px] w-full object-cover sm:h-[470px]"
+              />
+            </AnimatePresence>
+            <div className="absolute inset-x-5 bottom-5 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2 rounded-full border border-white/15 bg-[#021024]/55 px-3 py-2 backdrop-blur-md">
+                {achievementImages.map((image, index) => (
+                  <button
+                    key={image}
+                    type="button"
+                    onClick={() => setActiveAchievementImage(index)}
+                    aria-label={`Tampilkan foto prestasi ${index + 1}`}
+                    aria-pressed={activeAchievementImage === index}
+                    className="group flex items-center gap-2"
+                  >
+                    <span
+                      className={`block h-1 rounded-full transition-all duration-300 ${activeAchievementImage === index ? "w-8 bg-white" : "w-4 bg-white/40 group-hover:bg-white/75"}`}
+                    />
+                    <span className="sr-only">Foto {index + 1}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => changeAchievement(-1)}
+                  aria-label="Foto prestasi sebelumnya"
+                  className="grid size-9 place-items-center rounded-full border border-white/20 bg-[#021024]/55 text-white backdrop-blur-md transition hover:bg-[#021024]/80"
+                >
+                  <ChevronLeft size={17} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => changeAchievement(1)}
+                  aria-label="Foto prestasi berikutnya"
+                  className="grid size-9 place-items-center rounded-full border border-white/20 bg-[#021024]/55 text-white backdrop-blur-md transition hover:bg-[#021024]/80"
+                >
+                  <ChevronRight size={17} />
+                </button>
+              </div>
+            </div>
+>>>>>>> 91ab00936d0086dce14642339fff2d860dffc045
           </div>
           <div className="grid gap-3">
             {[
@@ -2354,8 +2338,16 @@ function Future() {
 }
 type AuthStatus = "loading" | "loggedIn" | "loggedOut";
 
+<<<<<<< HEAD
 function Aurora(){return <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
     <motion.div
+=======
+function Aurora() {
+  return <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+    <motion.img
+      src="/images/footer/aurora-tr.png"
+      alt=""
+>>>>>>> 91ab00936d0086dce14642339fff2d860dffc045
       className="absolute -right-4 -top-4 w-[22rem] max-w-none opacity-95 sm:w-[30rem] lg:w-[38rem]"
       animate={{ opacity: [0.8, 1, 0.8], scale: [1, 1.05, 1], x: [0, -10, 0], y: [0, 8, 0] }}
       transition={{ duration: 17, repeat: Infinity, ease: 'easeInOut' }}
@@ -2460,9 +2452,8 @@ function WelcomeCard({
 
       {perluVerifikasi && (belumKirim || menunggu || ditolak || terverifikasi) && (
         <div
-          className={`mt-4 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between ${
-            terverifikasi ? 'border-emerald-200' : 'border-[#021024]/10'
-          }`}
+          className={`mt-4 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between ${terverifikasi ? 'border-emerald-200' : 'border-[#021024]/10'
+            }`}
         >
           {belumKirim && (
             <div className="min-w-0">
@@ -2609,11 +2600,20 @@ function Footer() {
               <a className="block hover:text-white" href="#jurusan">
                 Jurusan
               </a>
+              <a className="block hover:text-white" href="/berita">
+                Berita
+              </a>
+              <a className="block hover:text-white" href="#lokasi">
+                Lokasi
+              </a>
+              <a className="block hover:text-white" href="#fasilitas">
+                Fasilitas
+              </a>
               <a className="block hover:text-white" href="#industri">
                 Mitra Industri
               </a>
-              <Link className="block hover:text-white" href="/berita">
-                Berita
+              <Link className="block hover:text-white" href="#prestasi">
+                Prestasi
               </Link>
               <a className="block hover:text-white" href="/forum">
                 Forum Siswa
@@ -2638,7 +2638,7 @@ function Footer() {
   );
 }
 
-export default function Home(){
+export default function Home() {
   const [status, setStatus] = useState<AuthStatus>('loading');
   const [nama, setNama] = useState('');
   const [role, setRole] = useState<string | null>(null);
@@ -2702,28 +2702,28 @@ export default function Home(){
     <main id="top" className="relative overflow-x-hidden">
       <Nav role={role} status={status} onLogout={handleLogout} />
 
-    <AnimatePresence>
-      {status === 'loggedIn' && showWelcome && (
-        <motion.section
-          key="welcome-card"
-          initial={{ opacity: 0, y: -16 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -16 }}
-          transition={{ duration: 0.35, ease: 'easeOut' }}
-          className="fixed inset-x-0 top-20 z-40 pointer-events-none px-4 sm:top-24 sm:px-6"
-        >
-          <div className="pointer-events-auto">
-            <WelcomeCard
-              nama={nama}
-              verificationStatus={verifikasi}
-              perluVerifikasi={role !== 'admin' && role !== 'guru'}
-              onKirimNisn={() => setModalNisn(true)}
-              onClose={() => setShowWelcome(false)}
-            />
-          </div>
-        </motion.section>
-      )}
-    </AnimatePresence>
+      <AnimatePresence>
+        {status === 'loggedIn' && showWelcome && (
+          <motion.section
+            key="welcome-card"
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            className="fixed inset-x-0 top-20 z-40 pointer-events-none px-4 sm:top-24 sm:px-6"
+          >
+            <div className="pointer-events-auto">
+              <WelcomeCard
+                nama={nama}
+                verificationStatus={verifikasi}
+                perluVerifikasi={role !== 'admin' && role !== 'guru'}
+                onKirimNisn={() => setModalNisn(true)}
+                onClose={() => setShowWelcome(false)}
+              />
+            </div>
+          </motion.section>
+        )}
+      </AnimatePresence>
 
     <HeroSection/>
     <Profile/><SambutanKepalaSekolah/><Majors/><News/><LocationSection/><Facilities/><Partners/><Achievements/><Future/>
@@ -2744,31 +2744,38 @@ export default function Home(){
       </div>
     </section>
     <Footer/>
+    <Link
+      href="/forum"
+      aria-label="Buka forum siswa"
+      className="fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[calc(max(1rem,env(safe-area-inset-bottom))+4.25rem)] z-[70] grid size-14 place-items-center rounded-full border border-[#C1E8FF]/50 bg-white text-[#052659] shadow-[0_8px_30px_rgba(125,160,202,0.35)] transition hover:scale-105 hover:border-[#052659]/40 hover:bg-[#F4F9FF] sm:bottom-[calc(max(1rem,env(safe-area-inset-bottom))+4.75rem)] sm:size-16"
+    >
+      <MessagesSquare className="size-6 sm:size-7" aria-hidden="true" />
+    </Link>
     <Chatbot/>
 
-    <AnimatePresence>
-      {pesanNisn && (
-        <motion.div
-          initial={{ opacity: 0, y: -12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -12 }}
-          role="status"
-          className="fixed right-4 top-20 z-[96] max-w-xs rounded-2xl border border-emerald-300/30 bg-[#021024]/95 px-4 py-3 text-sm text-emerald-200 shadow-2xl backdrop-blur-xl sm:right-6"
-        >
-          {pesanNisn}
-        </motion.div>
-      )}
-    </AnimatePresence>
+      <AnimatePresence>
+        {pesanNisn && (
+          <motion.div
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            role="status"
+            className="fixed right-4 top-20 z-[96] max-w-xs rounded-2xl border border-emerald-300/30 bg-[#021024]/95 px-4 py-3 text-sm text-emerald-200 shadow-2xl backdrop-blur-xl sm:right-6"
+          >
+            {pesanNisn}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-    <ModalKirimNisn
-      terbuka={modalNisn}
-      onTutup={() => setModalNisn(false)}
-      onSukses={(pesan) => {
-        setVerifikasi('menunggu');
-        setPesanNisn(pesan);
-        window.setTimeout(() => setPesanNisn(null), 4000);
-      }}
-    />
-  </main>
+      <ModalKirimNisn
+        terbuka={modalNisn}
+        onTutup={() => setModalNisn(false)}
+        onSukses={(pesan) => {
+          setVerifikasi('menunggu');
+          setPesanNisn(pesan);
+          window.setTimeout(() => setPesanNisn(null), 4000);
+        }}
+      />
+    </main>
   )
 }
