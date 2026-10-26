@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MessagesSquare,
   UserRound,
   UsersRound,
   X,
@@ -2714,6 +2715,13 @@ export default function Home(){
       </div>
     </section>
     <Footer/>
+    <Link
+      href="/forum"
+      aria-label="Buka forum siswa"
+      className="fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[calc(max(1rem,env(safe-area-inset-bottom))+4.25rem)] z-[70] grid size-14 place-items-center rounded-full border border-[#C1E8FF]/50 bg-white text-[#052659] shadow-[0_8px_30px_rgba(125,160,202,0.35)] transition hover:scale-105 hover:border-[#052659]/40 hover:bg-[#F4F9FF] sm:bottom-[calc(max(1rem,env(safe-area-inset-bottom))+4.75rem)] sm:size-16"
+    >
+      <MessagesSquare className="size-6 sm:size-7" aria-hidden="true" />
+    </Link>
     <Chatbot/>
 
     <AnimatePresence>
