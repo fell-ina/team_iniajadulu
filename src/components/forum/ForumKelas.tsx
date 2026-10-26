@@ -262,8 +262,8 @@ export default function ForumKelas({ kelas, deskripsi }: ForumKelasProps) {
       <header className="border-b border-[#021024]/10 bg-white/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <Link
-            href="/forum"
-            aria-label="Kembali ke forum"
+            href="/"
+            aria-label="Kembali ke beranda"
             className="grid size-10 place-items-center rounded-full border border-[#021024]/10 text-[#052659]/70 transition hover:bg-[#021024]/5"
           >
             <ArrowLeft className="size-5" aria-hidden="true" />
@@ -760,11 +760,11 @@ export default function ForumKelas({ kelas, deskripsi }: ForumKelasProps) {
       <footer className="bg-[#021024] py-12 text-white">
         <div className="mx-auto max-w-7xl px-4 text-center">
           <Link
-            href="/forum"
+            href="/"
             className="inline-flex items-center gap-2 text-sm font-medium text-white/70 transition hover:text-white"
           >
             <ArrowLeft className="size-4" aria-hidden="true" />
-            Semua Kelas
+            Kembali ke beranda
           </Link>
           <p className="mt-4 text-xs uppercase tracking-[.16em] text-white/25">
             © 2026 SMK Telekomunikasi Tunas Harapan
