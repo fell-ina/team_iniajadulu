@@ -214,9 +214,9 @@ function Profile() {
         className="profile-grid-bg pointer-events-none absolute inset-0 z-0"
         style={{
           maskImage:
-            "linear-gradient(180deg, #000 calc(100% - 170px), transparent 100%)",
+            "linear-gradient(180deg, #000 calc(100% - 200px), transparent 100%)",
           WebkitMaskImage:
-            "linear-gradient(180deg, #000 calc(100% - 170px), transparent 100%)",
+            "linear-gradient(180deg, #000 calc(100% - 200px), transparent 100%)",
         }}
       />
       <div
@@ -512,30 +512,6 @@ function SambutanKepalaSekolah() {
         <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-transparent to-[#021024]" />
       </div>
 
-      {/* Kertas halaman atas yang disobek: menyambung kertas section profil. */}
-      <svg
-        aria-hidden="true"
-        viewBox={`0 0 ${LEBAR_SEH} ${TINGGI_SEH}`}
-        preserveAspectRatio="none"
-        className="pointer-events-none absolute inset-x-0 top-0 z-10 h-[110px] w-full sm:h-[140px]"
-        style={{ filter: "drop-shadow(0 8px 8px rgba(2,16,36,.34))" }}
-      >
-        <path d={JALUR_SEH_ATAS} fill="#F4F9FF" />
-      </svg>
-
-      {/* Pita kertas putih melintang di bawah: laut terlihat di atas & bawahnya. */}
-      <div className="pointer-events-none absolute inset-x-[-5%] bottom-[96px] z-10 h-16 -rotate-[1.4deg] sm:bottom-[120px] sm:h-[72px]">
-        <svg
-          aria-hidden="true"
-          viewBox="0 0 1000 100"
-          preserveAspectRatio="none"
-          className="h-full w-full"
-          style={{ filter: "drop-shadow(0 10px 14px rgba(2,16,36,.35))" }}
-        >
-          <path d={JALUR_PITA_SEH} fill="#FFFFFF" />
-        </svg>
-      </div>
-
       <div className="relative z-10 mx-auto grid max-w-7xl gap-16 px-5 pb-[170px] pt-20 sm:px-8 sm:pb-[210px] sm:pt-24 lg:grid-cols-12 lg:items-center lg:gap-10 xl:gap-14">
         <motion.div
           initial="hidden"
@@ -728,90 +704,17 @@ function SambutanKepalaSekolah() {
             variants={TAMENG_NAMA}
             className="relative z-20 -mt-14 mr-6 rotate-[-1.1deg] border border-[#0B3168]/12 bg-white px-5 py-4 shadow-[7px_9px_0_rgba(11,49,104,.09)] sm:-ml-3 sm:mr-14"
           >
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="font-mono text-[8px] uppercase tracking-[.3em] text-[#0B3168]/45">
-                  Kepala Sekolah
-                </p>
-                <p className="display mt-2 text-[17px] leading-[1.15] text-[#0B3168] sm:text-[21px]">
-                  Wisnu Handoko, S.T., M.T.
-                </p>
-              </div>
-              <span
-                aria-hidden="true"
-                className="mt-0.5 hidden size-7 shrink-0 place-items-center border border-[#0B3168]/25 font-mono text-[8px] tracking-wide text-[#0B3168]/50 sm:grid"
-              >
-                TH
-              </span>
+            <div>
+              <p className="font-mono text-[8px] uppercase tracking-[.3em] text-[#0B3168]/45">
+                Kepala Sekolah
+              </p>
+              <p className="display mt-2 text-[17px] leading-[1.15] text-[#0B3168] sm:text-[21px]">
+                Wisnu Handoko, S.T., M.T.
+              </p>
             </div>
           </motion.div>
 
-          <motion.div
-            aria-hidden="true"
-            variants={TAMENG_STEMPEL}
-            className="absolute right-0 top-[36%] z-30 size-20 rotate-[11deg] sm:-right-5 sm:size-24"
-          >
-            <svg viewBox="0 0 120 120" className="h-full w-full">
-              <defs>
-                <path
-                  id="stempel-kepala-sekolah"
-                  d="M60 60 m-42 0 a42 42 0 1 1 84 0 a42 42 0 1 1 -84 0"
-                />
-              </defs>
-              <circle
-                cx="60"
-                cy="60"
-                r="55"
-                fill="#021024"
-                stroke="#C1E8FF"
-                strokeOpacity=".32"
-                strokeDasharray="2 5"
-              />
-              <circle
-                cx="60"
-                cy="60"
-                r="34"
-                fill="none"
-                stroke="#C1E8FF"
-                strokeOpacity=".24"
-              />
-              <text
-                fill="#EAF4FF"
-                fillOpacity=".7"
-                fontSize="7.5"
-                letterSpacing="2.6"
-                fontFamily="monospace"
-              >
-                <textPath href="#stempel-kepala-sekolah">
-                  SMK TELEKOMUNIKASI · TUNAS HARAPAN ·
-                </textPath>
-              </text>
-              <text
-                x="60"
-                y="57"
-                textAnchor="middle"
-                fontFamily="monospace"
-                fontSize="10"
-                letterSpacing="1.5"
-                fill="#EAF4FF"
-                fillOpacity=".8"
-              >
-                TH
-              </text>
-              <text
-                x="60"
-                y="70"
-                textAnchor="middle"
-                fontFamily="monospace"
-                fontSize="6.5"
-                letterSpacing="2"
-                fill="#EAF4FF"
-                fillOpacity=".6"
-              >
-                2026
-              </text>
-            </svg>
-          </motion.div>
+
         </motion.div>
 
         <motion.div
@@ -912,7 +815,7 @@ function SambutanKepalaSekolah() {
 }
 const majors=[['01','PPLG','Pengembangan Perangkat Lunak dan Gim','/images/school/hero-lab.jpg','pplg','#BA0000'],['02','TJKT','Teknik Jaringan Komputer dan Telekomunikasi','/images/school/tkj1.jpg','tjkt','#00c53b'],['03','DKV','Desain Komunikasi Visual','/images/school/dkv.jpg','dkv','#152DA9'],['04','TKR','Teknik Kendaraan Ringan','/images/school/tkr.jpg','tkr','#C67219']];
 const mottos=["arah.","hati.","tujuan.","harapan."];
-function Majors(){const[mottoIdx,setMottoIdx]=useState(0);useEffect(()=>{const t=setInterval(()=>setMottoIdx(v=>(v+1)%mottos.length),2800);return()=>clearInterval(t);},[]);return <section id="jurusan" className="relative overflow-hidden bg-[#021024] px-6 py-28 text-white sm:py-36"><motion.img src="/images/footer/aurora2.png" alt="" aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full select-none opacity-80 mix-blend-screen" style={{filter:'brightness(1.35) saturate(1.2)'}} animate={{opacity:[0.7,0.9,0.7],scale:[1,1.04,1]}} transition={{duration:17,repeat:Infinity,ease:'easeInOut'}}/><div className="relative mx-auto max-w-7xl"><div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow text-[#7DA0CA]">02 / PROGRAM KEAHLIAN</p><h2 className="display mt-5 text-4xl sm:text-6xl">Empat bidang.<br/><span className="inline-block text-white/55">Satu <AnimatePresence mode="wait"><motion.span key={mottoIdx} className="inline-block" exit={{}}>{mottos[mottoIdx].split("").map((ch,i)=><motion.span key={i} className="inline-block whitespace-pre" initial={{opacity:0,y:"0.4em",filter:"blur(8px)"}} animate={{opacity:1,y:0,filter:"blur(0px)",transition:{duration:0.5,delay:i*0.055,ease:"easeOut"}}} exit={{opacity:0,y:"-0.3em",filter:"blur(8px)",transition:{duration:0.3,delay:(mottos[mottoIdx].length-1-i)*0.02,ease:"easeIn"}}}>{ch}</motion.span>)}</motion.span></AnimatePresence></span></h2></div><p className="max-w-sm text-sm leading-7 text-white/75">Eksplorasi software, jaringan, desain, dan otomotif melalui pengalaman vokasi yang relevan.</p></div><div className="mt-16 divide-y divide-white/10 border-y border-white/10">{majors.map(([n,title,desc,img,slug,accent])=><Link href={`/jurusan/${slug}`} key={title} style={{'--major-accent':accent} as React.CSSProperties} className="major-link group relative grid grid-cols-[52px_1fr_auto] items-center gap-x-4 gap-y-2 overflow-hidden rounded-lg py-5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C1E8FF] sm:rounded-none sm:grid-cols-[72px_1fr_1.2fr_auto] sm:gap-5 sm:py-8"><div className="relative col-start-1 row-start-2 h-12 w-[52px] overflow-hidden rounded-md sm:absolute sm:inset-y-3 sm:right-16 sm:col-auto sm:row-auto sm:h-20 sm:w-36 sm:rounded-xl sm:opacity-0 sm:transition sm:duration-500 sm:group-hover:opacity-20 lg:h-24 lg:w-44"><img src={img} alt="" className="h-full w-full object-cover"/></div><span className="col-start-1 row-start-1 font-mono text-xs text-white/70 sm:col-auto sm:row-auto sm:text-white/55">{n}</span><h3 className="relative z-10 col-start-2 row-start-1 text-2xl font-medium tracking-tight sm:col-auto sm:row-auto sm:text-3xl lg:text-5xl">{title}</h3><p className="relative z-10 col-start-2 row-start-2 max-w-md text-xs leading-5 text-white/75 sm:col-auto sm:row-auto sm:text-sm sm:leading-6 sm:text-white/70">{desc}</p><ArrowUpRight className="relative z-10 col-start-3 row-span-2 row-start-1 self-center text-white/80 transition group-active:translate-x-1 group-active:-translate-y-1 group-hover:-translate-y-1 group-hover:translate-x-1 sm:col-auto sm:row-auto sm:self-auto"/></Link>)}</div></div></section>}
+function Majors(){const[mottoIdx,setMottoIdx]=useState(0);useEffect(()=>{const t=setInterval(()=>setMottoIdx(v=>(v+1)%mottos.length),2800);return()=>clearInterval(t);},[]);return <section id="jurusan" className="relative bg-[#021024] px-6 py-28 text-white sm:py-36"><motion.img src="/images/footer/aurora2.png" alt="" aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full select-none opacity-80 mix-blend-screen object-cover" style={{filter:'brightness(1.35) saturate(1.2)'}} animate={{opacity:[0.7,0.9,0.7],scale:[1,1.04,1]}} transition={{duration:17,repeat:Infinity,ease:'easeInOut'}}/><div className="relative mx-auto max-w-7xl"><div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow text-[#7DA0CA]">02 / PROGRAM KEAHLIAN</p><h2 className="display mt-5 text-4xl sm:text-6xl">Empat bidang.<br/><span className="inline-block text-white/55">Satu <AnimatePresence mode="wait"><motion.span key={mottoIdx} className="inline-block" exit={{}}>{mottos[mottoIdx].split("").map((ch,i)=><motion.span key={i} className="inline-block whitespace-pre" initial={{opacity:0,y:"0.4em",filter:"blur(8px)"}} animate={{opacity:1,y:0,filter:"blur(0px)",transition:{duration:0.5,delay:i*0.055,ease:"easeOut"}}} exit={{opacity:0,y:"-0.3em",filter:"blur(8px)",transition:{duration:0.3,delay:(mottos[mottoIdx].length-1-i)*0.02,ease:"easeIn"}}}>{ch}</motion.span>)}</motion.span></AnimatePresence></span></h2></div><p className="max-w-sm text-sm leading-7 text-white/75">Eksplorasi software, jaringan, desain, dan otomotif melalui pengalaman vokasi yang relevan.</p></div><div className="mt-16 divide-y divide-white/10 border-y border-white/10">{majors.map(([n,title,desc,img,slug,accent])=><Link href={`/jurusan/${slug}`} key={title} style={{'--major-accent':accent} as React.CSSProperties} className="major-link group relative grid grid-cols-[52px_1fr_auto] items-center gap-x-4 gap-y-2 overflow-hidden rounded-lg py-5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C1E8FF] sm:rounded-none sm:grid-cols-[72px_1fr_1.2fr_auto] sm:gap-5 sm:py-8"><div className="relative col-start-1 row-start-2 h-12 w-[52px] overflow-hidden rounded-md sm:absolute sm:inset-y-3 sm:right-16 sm:col-auto sm:row-auto sm:h-20 sm:w-36 sm:rounded-xl sm:opacity-0 sm:transition sm:duration-500 sm:group-hover:opacity-20 lg:h-24 lg:w-44"><img src={img} alt="" className="h-full w-full object-cover"/></div><span className="col-start-1 row-start-1 font-mono text-xs text-white/70 sm:col-auto sm:row-auto sm:text-white/55">{n}</span><h3 className="relative z-10 col-start-2 row-start-1 text-2xl font-medium tracking-tight sm:col-auto sm:row-auto sm:text-3xl lg:text-5xl">{title}</h3><p className="relative z-10 col-start-2 row-start-2 max-w-md text-xs leading-5 text-white/75 sm:col-auto sm:row-auto sm:text-sm sm:leading-6 sm:text-white/70">{desc}</p><ArrowUpRight className="relative z-10 col-start-3 row-span-2 row-start-1 self-center text-white/80 transition group-active:translate-x-1 group-active:-translate-y-1 group-hover:-translate-y-1 group-hover:translate-x-1 sm:col-auto sm:row-auto sm:self-auto"/></Link>)}</div></div></section>}
 
 const newsFallback = [
   [
