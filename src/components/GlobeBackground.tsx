@@ -4,8 +4,10 @@ import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import type { GlobeConfig } from "./ui/Globe";
 
+// World is already client-only; keep it on client but allow Next to defer code fetch.
 const World = dynamic(() => import("./ui/Globe").then((module) => module.World), {
   ssr: false,
+  loading: () => null,
 });
 
 const globeConfig: GlobeConfig = {

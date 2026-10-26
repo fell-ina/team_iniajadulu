@@ -2,9 +2,22 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Color, Fog, Group, PerspectiveCamera, Scene, Vector3 } from "three";
-import ThreeGlobe from "three-globe";
 import { Canvas, useThree } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
+
+let ThreeGlobeModule: any = undefined;
+function getThreeGlobe() {
+  if (typeof window === "undefined") return undefined;
+  if (ThreeGlobeModule) return ThreeGlobeModule;
+  try {
+    // @ts-ignore
+    const mod = require("three-globe");
+    ThreeGlobeModule = mod.default || mod.ThreeGlobe || mod;
+  } catch (e) {
+    return undefined;
+  }
+  return ThreeGlobeModule;
+}
 
 const RING_PROPAGATION_SPEED = 3;
 const CAMERA_Z = 300;
@@ -62,18 +75,18 @@ const regionalPoints = [
 ];
 
 export function Globe({ globeConfig, data }: WorldProps) {
-  const globeRef = useRef<ThreeGlobe | null>(null);
+  const globeRef = useRef<any>(null);
   const groupRef = useRef<Group>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [countryFeatures, setCountryFeatures] = useState<object[]>([]);
   const [isMobile, setIsMobile] = useState(false);
 
-  const config = {
+  const defaultConfig = {
     pointSize: 1,
     atmosphereColor: "#ffffff",
     showAtmosphere: true,
     atmosphereAltitude: 0.1,
-    polygonColor: "rgba(255,255,255,0.7)",
+    polygonColor: "rgba(255,255,193,0.7)",
     globeColor: "#1d072e",
     emissive: "#000000",
     emissiveIntensity: 0.1,
@@ -87,19 +100,14 @@ export function Globe({ globeConfig, data }: WorldProps) {
 
   useEffect(() => {
     if (!globeRef.current && groupRef.current) {
-      globeRef.current = new ThreeGlobe();
+      const TG = getThreeGlobe();
+      if (!TG) return;
+      const Ctor = TG.default || TG.ThreeGlobe || TG;
+      if (typeof Ctor !== "function") return;
+      globeRef.current = new Ctor();
       groupRef.current.add(globeRef.current);
       setIsInitialized(true);
     }
-  }, []);
-
-  useEffect(() => {
-    fetch("/data/world-countries.geojson")
-      .then((response) => response.json())
-      .then((geoJson: { features?: object[] }) => {
-        setCountryFeatures(geoJson.features ?? []);
-      })
-      .catch(() => setCountryFeatures([]));
   }, []);
 
   useEffect(() => {
@@ -112,92 +120,124 @@ export function Globe({ globeConfig, data }: WorldProps) {
 
   useEffect(() => {
     if (!globeRef.current || !isInitialized) return;
+    let cancelled = false;
 
-    const material = globeRef.current.globeMaterial() as unknown as {
-      color: Color;
-      emissive: Color;
-      emissiveIntensity: number;
-      shininess: number;
+    fetch("/data/world-countries.geojson")
+      .then((r) => r.json())
+      .then((geoJson) => {
+        if (cancelled) return;
+        const features = (geoJson && (geoJson as any).features) ?? [];
+        setCountryFeatures(features);
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCountryFeatures([]);
+      });
+
+    const material = globeRef.current.globeMaterial() as any;
+    material.color = new Color(defaultConfig.globeColor);
+    material.emissive = new Color(defaultConfig.emissive);
+    material.emissiveIntensity = defaultConfig.emissiveIntensity ?? 0.1;
+    material.shininess = defaultConfig.shininess ?? 0.9;
+
+    return () => {
+      cancelled = true;
     };
-    material.color = new Color(config.globeColor);
-    material.emissive = new Color(config.emissive);
-    material.emissiveIntensity = config.emissiveIntensity ?? 0.1;
-    material.shininess = config.shininess ?? 0.9;
-  }, [config.emissive, config.emissiveIntensity, config.globeColor, config.shininess, isInitialized]);
+  }, [
+    defaultConfig.emissive,
+    defaultConfig.emissiveIntensity,
+    defaultConfig.globeColor,
+    defaultConfig.shininess,
+    isInitialized,
+  ]);
 
   useEffect(() => {
     if (!globeRef.current || !isInitialized) return;
 
-    const activeData = isMobile ? [] : data;
-    const activeRegionalPoints = isMobile ? [] : regionalPoints;
-    const points = [
-      ...activeData.flatMap((arc) => [
-        { size: config.pointSize, order: arc.order, color: arc.color, lat: arc.startLat, lng: arc.startLng },
-        { size: config.pointSize, order: arc.order, color: arc.color, lat: arc.endLat, lng: arc.endLng },
-      ]),
-      ...activeRegionalPoints.map((point, index) => ({
-        ...point,
-        size: config.pointSize,
-        order: index + 10,
-      })),
-    ];
+    const effectiveData = isMobile ? [] : data;
+    const effectiveRegionalPoints = isMobile ? [] : regionalPoints;
+
+    const points = effectiveData
+      .flatMap((arc) => [
+        {
+          size: defaultConfig.pointSize,
+          order: arc.order,
+          color: arc.color,
+          lat: arc.startLat,
+          lng: arc.startLng,
+        },
+        {
+          size: defaultConfig.pointSize,
+          order: arc.order,
+          color: arc.color,
+          lat: arc.endLat,
+          lng: arc.endLng,
+        },
+      ])
+      .concat(
+        effectiveRegionalPoints.map((point, index) => ({
+          ...point,
+          size: defaultConfig.pointSize,
+          order: index + 10,
+        })),
+      );
+
     const filteredPoints = points.filter(
-      (point, index, all) =>
-        all.findIndex((other) => other.lat === point.lat && other.lng === point.lng) === index,
+      (p, i, all) =>
+        all.findIndex((o) => o.lat === p.lat && o.lng === p.lng) === i,
     );
 
     globeRef.current
-      .hexPolygonsData(countryFeatures)
-      .showAtmosphere(config.showAtmosphere)
-      .atmosphereColor(config.atmosphereColor)
-      .atmosphereAltitude(config.atmosphereAltitude)
-      .hexPolygonColor(() => config.polygonColor);
-
-    globeRef.current
-      .arcsData(activeData)
-      .arcStartLat((arc) => (arc as Position).startLat)
-      .arcStartLng((arc) => (arc as Position).startLng)
-      .arcEndLat((arc) => (arc as Position).endLat)
-      .arcEndLng((arc) => (arc as Position).endLng)
-      .arcColor((arc: unknown) => (arc as Position).color)
-      .arcAltitude((arc: unknown) => (arc as Position).arcAlt)
-      .arcStroke(() => 0.35)
-      .arcDashLength(config.arcLength)
-      .arcDashInitialGap((arc: unknown) => (arc as Position).order)
-      .arcDashGap(15)
-      .arcDashAnimateTime(() => config.arcTime);
+      .hexPolygonsData(isMobile ? [] : countryFeatures)
+      .showAtmosphere(defaultConfig.showAtmosphere)
+      .atmosphereColor(defaultConfig.atmosphereColor)
+      .atmosphereAltitude(defaultConfig.atmosphereAltitude)
+      .hexPolygonColor(() => defaultConfig.polygonColor);
 
     globeRef.current
       .pointsData(filteredPoints)
-      .pointColor((point) => (point as { color: string }).color)
+      .pointColor((d: any) => d.color)
       .pointsMerge(true)
       .pointAltitude(0)
       .pointRadius(2);
 
     globeRef.current
+      .arcsData(effectiveData)
+      .arcStartLat((d: Position) => d.startLat)
+      .arcStartLng((d: Position) => d.startLng)
+      .arcEndLat((d: Position) => d.endLat)
+      .arcEndLng((d: Position) => d.endLng)
+      .arcColor((d: Position) => d.color)
+      .arcAltitude((d: Position) => d.arcAlt)
+      .arcStroke(() => 0.35)
+      .arcDashLength(defaultConfig.arcLength)
+      .arcDashInitialGap((d: Position) => d.order)
+      .arcDashGap(15)
+      .arcDashAnimateTime(() => defaultConfig.arcTime);
+
+    globeRef.current
       .ringsData([])
-      .ringColor(() => config.polygonColor)
-      .ringMaxRadius(config.maxRings)
+      .ringColor(() => defaultConfig.polygonColor)
+      .ringMaxRadius(defaultConfig.maxRings)
       .ringPropagationSpeed(RING_PROPAGATION_SPEED)
-      .ringRepeatPeriod((config.arcTime * config.arcLength) / (config.rings || 1));
-  }, [config, countryFeatures, data, isInitialized, isMobile]);
+      .ringRepeatPeriod(
+        (defaultConfig.arcTime * defaultConfig.arcLength) /
+          (defaultConfig.rings ?? 1),
+      );
+  }, [defaultConfig, countryFeatures, data, isInitialized, isMobile]);
 
   useEffect(() => {
-    if (!globeRef.current || !isInitialized || !data.length || isMobile) return;
-
-    const activeData = data;
-
+    if (!globeRef.current || !isInitialized || isMobile || !data.length) return;
     const interval = window.setInterval(() => {
       if (!globeRef.current) return;
       globeRef.current.ringsData(
-        activeData.slice(0, Math.min(activeData.length, 5)).map((arc) => ({
+        data.slice(0, Math.min(data.length, 5)).map((arc) => ({
           lat: arc.startLat,
           lng: arc.startLng,
           color: arc.color,
         })),
       );
     }, 2000);
-
     return () => window.clearInterval(interval);
   }, [data, isInitialized, isMobile]);
 
@@ -206,13 +246,11 @@ export function Globe({ globeConfig, data }: WorldProps) {
 
 function RendererConfig() {
   const { gl, size } = useThree();
-
   useEffect(() => {
     gl.setPixelRatio(window.devicePixelRatio);
     gl.setSize(size.width, size.height);
     gl.setClearColor(0x000000, 0);
   }, [gl, size.height, size.width]);
-
   return null;
 }
 
@@ -226,9 +264,19 @@ export function World({ globeConfig, data }: WorldProps) {
     <Canvas scene={scene} camera={camera}>
       <RendererConfig />
       <ambientLight color={globeConfig.ambientLight} intensity={0.6} />
-      <directionalLight color={globeConfig.directionalLeftLight} position={new Vector3(-400, 100, 400)} />
-      <directionalLight color={globeConfig.directionalTopLight} position={new Vector3(-200, 500, 200)} />
-      <pointLight color={globeConfig.pointLight} position={new Vector3(-200, 500, 200)} intensity={0.8} />
+      <directionalLight
+        color={globeConfig.directionalLeftLight}
+        position={new Vector3(-400, 100, 400)}
+      />
+      <directionalLight
+        color={globeConfig.directionalTopLight}
+        position={new Vector3(-200, 500, 200)}
+      />
+      <pointLight
+        color={globeConfig.pointLight}
+        position={new Vector3(-200, 500, 200)}
+        intensity={0.8}
+      />
       <Globe globeConfig={globeConfig} data={data} />
       <OrbitControls
         enablePan={false}

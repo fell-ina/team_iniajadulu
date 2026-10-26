@@ -247,6 +247,7 @@ export default function JurusanDetails({
         <img
           src={d.hero}
           alt={d.full}
+          fetchPriority="high"
           className="absolute inset-0 h-full w-full object-cover opacity-50"
         />
 

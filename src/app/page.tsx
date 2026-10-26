@@ -26,10 +26,16 @@ import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import HeroSection from "@/components/HeroSection";
-import GlobeBackground from "@/components/GlobeBackground";
+// GlobeBackground lazy-loaded below to avoid blocking initial render
+//import GlobeBackground from "@/components/GlobeBackground";
 //import Chatbot from "@/components/Chatbot";
 //import ModalKirimNisn from "@/components/ModalKirimNisn";
 import { ringkasKonten } from "@/lib/ringkasTeks";
+
+const GlobeBackground = dynamic(() => import("@/components/GlobeBackground"), {
+  ssr: false,
+  loading: () => null,
+});
 
 // Widget yang tidak terlihat saat halaman pertama dibuka dipecah ke chunk
 // sendiri, jadi JS-nya tidak ikut menghambat render awal.
@@ -101,14 +107,13 @@ function Nav({
     <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6">
       <div className="mx-auto flex max-w-7xl items-center justify-between rounded-full border border-white/15 bg-[#021024]/78 px-4 py-3 text-white shadow-xl backdrop-blur-xl sm:px-6">
         <a href="#top" className="flex items-center gap-3">
-          <span className="relative grid size-9 overflow-hidden rounded-full bg-white p-1">
-            <Image
-              src="/images/school/logo-transparent.png"
-              fill
-              sizes="36px"
-              className="object-contain p-1"
-              alt="Logo"
-            />
+          <span className="relative grid size-9 overflow-hidden rounded-full bg-white p-1">              <Image
+                  src="/images/school/logo-transparent.png"
+                  fill
+                  sizes="36px"
+                  className="object-contain p-1"
+                  alt="Logo"
+                />
           </span>
           <span className="hidden text-xs font-semibold tracking-[.15em] sm:block">
             TUNAS HARAPAN
@@ -3025,16 +3030,16 @@ export default function Home() {
         aria-label="Gedung SMK Telekomunikasi Tunas Harapan"
         className="relative w-screen overflow-hidden bg-[#F4F9FF] px-0 pb-0"
       >
-        <div className="w-full overflow-hidden">
-          <Image
-            src="/images/school/gedung.png"
-            alt="Gedung SMK Telekomunikasi Tunas Harapan"
-            width={1921}
-            height={920}
-            sizes="100vw"
-            loading="lazy"
-            className="block h-auto w-full"
-          />
+        <div className="w-full overflow-hidden">            <Image
+              src="/images/school/gedung.png"
+              alt="Gedung SMK Telekomunikasi Tunas Harapan"
+              width={1921}
+              height={920}
+              sizes="100vw"
+              loading="lazy"
+              decoding="async"
+              className="block h-auto w-full"
+            />
         </div>
       </section>
       <Footer />

@@ -64,10 +64,17 @@ export default function Chatbot() {
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
     const mq = window.matchMedia("(pointer: coarse)");
-    const apply = () => setIsCoarsePointer(mq.matches);
-    apply();
+    setIsCoarsePointer(mq.matches);
+    let timer = 0;
+    const apply = () => {
+      clearTimeout(timer);
+      timer = window.setTimeout(() => setIsCoarsePointer(mq.matches), 0);
+    };
     mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
+    return () => {
+      mq.removeEventListener("change", apply);
+      clearTimeout(timer);
+    };
   }, []);
 
   // Preferensi lipat kartu Fiska di HP, disimpan antar sesi.
@@ -85,20 +92,34 @@ export default function Chatbot() {
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
     const mq = window.matchMedia("(max-height: 520px)");
-    const apply = () => setIsShortViewport(mq.matches);
-    apply();
+    setIsShortViewport(mq.matches);
+    let timer = 0;
+    const apply = () => {
+      clearTimeout(timer);
+      timer = window.setTimeout(() => setIsShortViewport(mq.matches), 0);
+    };
     mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
+    return () => {
+      mq.removeEventListener("change", apply);
+      clearTimeout(timer);
+    };
   }, []);
 
   // Kartu mobile hanya dirender di bawah breakpoint lg.
   useEffect(() => {
     if (typeof window === "undefined" || !window.matchMedia) return;
     const mq = window.matchMedia("(max-width: 1023px)");
-    const apply = () => setIsNarrowViewport(mq.matches);
-    apply();
+    setIsNarrowViewport(mq.matches);
+    let timer = 0;
+    const apply = () => {
+      clearTimeout(timer);
+      timer = window.setTimeout(() => setIsNarrowViewport(mq.matches), 0);
+    };
     mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
+    return () => {
+      mq.removeEventListener("change", apply);
+      clearTimeout(timer);
+    };
   }, []);
 
   // Keluar dari layar penuh berarti input tidak lagi fokus.
