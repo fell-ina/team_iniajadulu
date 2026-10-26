@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { ArrowLeft, Search, Plus, Filter, MessageSquare, Heart, ChevronDown, ChevronUp } from "lucide-react";
-import { useForumGuard } from "@/lib/forum-auth";
+import { useState, useEffect, useCallback } from "react";
+import { ArrowLeft, Search, Plus, Filter, MessageSquare, Heart, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Loader2, X } from "lucide-react";
+import { useForumGuard } from "@/lib/forum-guard";
 
 interface ForumKelasClientProps {
   kelas: "X" | "XI" | "XII";
@@ -42,108 +42,159 @@ const KATEGORI = [
   { value: "all", label: "Semua Diskusi" },
   { value: "tugas", label: "Tugas" },
   { value: "project", label: "Project" },
-  { value: "tanya-jawab", label: "Tanya Jawab" },
+  { value: "tanya_jawab", label: "Tanya Jawab" },
   { value: "pengalaman", label: "Berbagi Pengalaman" },
 ];
+
+const KATEGORI_LABEL: Record<string, string> = {
+  all: "Semua Diskusi",
+  tugas: "Tugas",
+  project: "Project",
+  tanya_jawab: "Tanya Jawab",
+  pengalaman: "Berbagi Pengalaman",
+};
+
+const KATEGORI_COLOR: Record<string, string> = {
+  tugas: "bg-emerald-100 text-emerald-700",
+  project: "bg-blue-100 text-blue-700",
+  tanya_jawab: "bg-purple-100 text-purple-700",
+  pengalaman: "bg-orange-100 text-orange-700",
+};
 
 interface Diskusi {
   id: string;
   judul: string;
   konten: string;
   kategori: string;
-  penulisNama: string;
-  penulisInisial: string;
-  createdAt: string;
-  balasanCount: number;
-  likeCount: number;
-  userLiked: boolean;
+  penulis_id: string;
+  penulis_nama: string;
+  penulis_inisial: string;
+  created_at: string;
+  updated_at: string;
+  like_count: number;
+  balasan_count: number;
+  user_liked: boolean;
 }
 
-const mockDiskusi: Diskusi[] = [
-  {
-    id: "1",
-    judul: "Tugas PPLG Minggu Ini - Database Design",
-    konten: "Siapa yang sudah selesai tugas PPLG minggu ini? Saya masih binggung di bagian database design, terutama untuk normalisasi tabel. Ada yang bisa bantu jelaskan 3NF?",
-    kategori: "tugas",
-    penulisNama: "Budi Santoso",
-    penulisInisial: "BS",
-    createdAt: "2026-01-15T08:30:00Z",
-    balasanCount: 12,
-    likeCount: 8,
-    userLiked: false,
-  },
-  {
-    id: "2",
-    judul: "Project Akhir Semester - Ide Aplikasi",
-    konten: "Kelas XI ada yang sudah punya ide project akhir semester? Saya mau bikin aplikasi manajemen tugas tapi binggung teknologinya. React Native vs Flutter?",
-    kategori: "project",
-    penulisNama: "Siti Rahma",
-    penulisInisial: "SR",
-    createdAt: "2026-01-14T14:20:00Z",
-    balasanCount: 8,
-    likeCount: 15,
-    userLiked: true,
-  },
-  {
-    id: "3",
-    judul: "Tanya Jawab: Persiapan UKK PKK",
-    konten: "Siapa yang sudah siap untuk UKK PKK minggu depan? Share tips belajarnya dong! Saya masih ragu di materi sistem operasi jaringan.",
-    kategori: "tanya-jawab",
-    penulisNama: "Ahmad Fauzi",
-    penulisInisial: "AF",
-    createdAt: "2026-01-14T09:15:00Z",
-    balasanCount: 23,
-    likeCount: 31,
-    userLiked: false,
-  },
-  {
-    id: "4",
-    judul: "Pengalaman Magang di Industri - Tips & Trik",
-    konten: "Baru selesai magang 3 bulan di software house. Mau share pengalaman: 1) Jangan takut tanya, 2) Catat semua hal baru, 3) Networking dengan senior. Semoga bermanfaat!",
-    kategori: "pengalaman",
-    penulisNama: "Dewi Sartika",
-    penulisInisial: "DS",
-    createdAt: "2026-01-13T16:45:00Z",
-    balasanCount: 18,
-    likeCount: 42,
-    userLiked: true,
-  },
+interface PaginatedResult {
+  data: Diskusi[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+const SORT_OPTIONS = [
+  { value: "terbaru", label: "Terbaru" },
+  { value: "terlama", label: "Terlama" },
+  { value: "terpopuler", label: "Terpopuler" },
+  { value: "terbanyak_balasan", label: "Terbanyak Balasan" },
 ];
 
 export function ForumKelasClient({ kelas, label, deskripsi, warna, warnaHex, warnaHover }: ForumKelasClientProps) {
   const session = useForumGuard(kelas);
-
-  if (!session) return null;
-
   const wc = warnaConfig[warna];
 
-  const buttonBg = warna === 'emerald' ? 'bg-emerald-600' : warna === 'blue' ? 'bg-blue-600' : 'bg-purple-600';
-  const buttonHover = warna === 'emerald' ? 'hover:bg-emerald-700' : warna === 'blue' ? 'hover:bg-blue-700' : 'hover:bg-purple-700';
-  const buttonShadow = warna === 'emerald' ? 'shadow-emerald-600/20' : warna === 'blue' ? 'shadow-blue-600/20' : 'shadow-purple-600/20';
-  const buttonBgClass = `inline-flex items-center justify-center gap-2 rounded-full ${buttonBg} ${buttonHover} px-5 py-3 text-xs font-bold text-white shadow-lg ${warna === 'emerald' ? 'shadow-emerald-600/20' : warna === 'blue' ? 'shadow-blue-600/20' : 'shadow-purple-600/20'} transition ${warna === 'emerald' ? 'hover:bg-emerald-700' : warna === 'blue' ? 'hover:bg-blue-700' : 'hover:bg-purple-700'}`;
-
+  const [diskusiList, setDiskusiList] = useState<Diskusi[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeKategori, setActiveKategori] = useState("all");
   const [sortBy, setSortBy] = useState("terbaru");
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  const [newJudul, setNewJudul] = useState("");
+  const [newKonten, setNewKonten] = useState("");
+  const [newKategori, setNewKategori] = useState("tugas");
+  const [submitting, setSubmitting] = useState(false);
+  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
-  // Filter diskusi
-  const filteredDiskusi = mockDiskusi.filter((d) => {
-    const matchKategori = activeKategori === "all" || d.kategori === activeKategori;
-    const matchSearch = searchQuery === "" || 
-      d.judul.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      d.konten.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      d.penulisNama.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchKategori && matchSearch;
-  });
+  const fetchDiskusi = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const params = new URLSearchParams({
+        kelas,
+        kategori: activeKategori,
+        sort: sortBy,
+        page: page.toString(),
+        limit: "20",
+      });
+      
+      if (searchQuery.trim()) {
+        params.set("search", searchQuery.trim());
+      }
 
-  // Sort
-  const sortedDiskusi = [...filteredDiskusi].sort((a, b) => {
-    if (sortBy === "terbaru") return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-    if (sortBy === "terlama") return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-    if (sortBy === "terpopuler") return b.likeCount - a.likeCount;
-    if (sortBy === "terbanyak-balasan") return b.balasanCount - a.balasanCount;
-    return 0;
-  });
+      const res = await fetch(`/api/forum/topik?${params}`, { cache: "no-store" });
+      
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Gagal memuat diskusi");
+      }
+
+      const result: PaginatedResult = await res.json();
+      setDiskusiList(result.data);
+      setTotal(result.total);
+      setTotalPages(result.totalPages);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Terjadi kesalahan");
+    } finally {
+      setLoading(false);
+    }
+  }, [kelas, activeKategori, sortBy, page, searchQuery]);
+
+  useEffect(() => {
+    fetchDiskusi();
+  }, [fetchDiskusi]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setPage(1);
+  }, [activeKategori, sortBy, searchQuery]);
+
+  const showToast = (type: "success" | "error", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const handleCreateTopik = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newJudul.trim() || !newKonten.trim()) return;
+
+    try {
+      setSubmitting(true);
+      const res = await fetch("/api/forum/topik", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          judul: newJudul.trim(),
+          konten: newKonten.trim(),
+          kategori: newKategori,
+          kelas,
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Gagal membuat diskusi");
+      }
+
+      const newTopik = await res.json();
+      setDiskusiList(prev => [newTopik, ...prev]);
+      setTotal(prev => prev + 1);
+      setNewJudul("");
+      setNewKonten("");
+      setShowCreateForm(false);
+      showToast("success", "Diskusi berhasil dibuat");
+    } catch (err) {
+      showToast("error", err instanceof Error ? err.message : "Gagal membuat diskusi");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const formatRelativeTime = (isoString: string): string => {
     const date = new Date(isoString);
@@ -162,6 +213,21 @@ export function ForumKelasClient({ kelas, label, deskripsi, warna, warnaHex, war
       month: "short",
       year: "numeric",
     });
+  };
+
+  const buttonBg = warna === 'emerald' ? 'bg-emerald-600' : warna === 'blue' ? 'bg-blue-600' : 'bg-purple-600';
+  const buttonHover = warna === 'emerald' ? 'hover:bg-emerald-700' : warna === 'blue' ? 'hover:bg-blue-700' : 'hover:bg-purple-700';
+
+  // Render loading state while session is being fetched or user is not authorized
+  if (!session) {
+    return (
+      <main className="min-h-screen bg-[#F4F9FF] text-[#021024] flex items-center justify-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[#052659] border-t-transparent" />
+          <p className="mt-4 text-[#021024]/60">Memuat forum...</p>
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -169,8 +235,8 @@ export function ForumKelasClient({ kelas, label, deskripsi, warna, warnaHex, war
       <header className="border-b border-[#021024]/10 bg-white/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <Link
-            href="/forum"
-            aria-label="Kembali ke forum"
+            href="/"
+            aria-label="Kembali ke beranda"
             className="grid size-10 place-items-center rounded-full border border-[#021024]/10 text-[#052659]/70 transition hover:bg-[#021024]/5"
           >
             <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -213,7 +279,10 @@ export function ForumKelasClient({ kelas, label, deskripsi, warna, warnaHex, war
               <p className="text-[11px] font-bold uppercase tracking-[.2em] text-[#2F5F8F]/70">Percakapan terbaru</p>
               <h2 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">Diskusi Kelas {kelas}</h2>
             </div>
-            <button className={`inline-flex items-center justify-center gap-2 rounded-full ${warna === 'emerald' ? 'bg-emerald-600 hover:bg-emerald-700' : warna === 'blue' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-purple-600 hover:bg-purple-700'} px-5 py-3 text-xs font-bold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700`}>
+            <button
+              onClick={() => setShowCreateForm(true)}
+              className={`inline-flex items-center justify-center gap-2 rounded-full ${buttonBg} ${buttonHover} px-5 py-3 text-xs font-bold text-white shadow-lg ${warna === 'emerald' ? 'shadow-emerald-600/20' : warna === 'blue' ? 'shadow-blue-600/20' : 'shadow-purple-600/20'} transition`}
+            >
               <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M12 5v14M5 12h14" />
               </svg>
@@ -233,6 +302,7 @@ export function ForumKelasClient({ kelas, label, deskripsi, warna, warnaHex, war
                 placeholder="Cari diskusi..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && fetchDiskusi()}
                 className="h-12 w-full rounded-xl border border-[#021024]/10 bg-white pl-11 pr-4 text-sm outline-none transition placeholder:text-[#2F5F8F]/50 focus:border-[#5483B3]"
               />
             </label>
@@ -256,10 +326,9 @@ export function ForumKelasClient({ kelas, label, deskripsi, warna, warnaHex, war
                 onChange={(e) => setSortBy(e.target.value)}
                 className="h-12 w-40 rounded-xl border border-[#021024]/10 bg-white py-3 pl-4 pr-10 text-sm font-semibold outline-none appearance-none bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cGF0aCBkPSJNNiA5bDYgNiA2LTZ6IiBzdHJva2U9IiMwMjEwMjQiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+PC9zdmc+')] bg-right-3 bg-no-repeat bg-center focus:border-[#5483B3]"
               >
-                <option value="terbaru">Terbaru</option>
-                <option value="terlama">Terlama</option>
-                <option value="terpopuler">Terpopuler</option>
-                <option value="terbanyak-balasan">Terbanyak Balasan</option>
+                {SORT_OPTIONS.map((s) => (
+                  <option key={s.value} value={s.value}>{s.label}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -279,42 +348,77 @@ export function ForumKelasClient({ kelas, label, deskripsi, warna, warnaHex, war
 
           {/* Thread List */}
           <div className="space-y-4">
-            {sortedDiskusi.length > 0 ? (
-              sortedDiskusi.map((diskusi) => (
+            {loading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <article key={i} className="rounded-2xl border border-[#021024]/8 bg-white p-5 sm:p-6 animate-pulse">
+                  <div className="flex gap-4">
+                    <div className="flex-shrink-0">
+                      <div className="grid size-11 place-items-center rounded-full bg-[#052659] text-xs font-bold text-[#C1E8FF]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="h-4 bg-[#021024]/10 rounded w-3/4 mb-2" />
+                      <div className="h-6 bg-[#021024]/10 rounded w-1/2 mb-2" />
+                      <div className="h-4 bg-[#021024]/10 rounded w-full mb-1" />
+                      <div className="h-4 bg-[#021024]/10 rounded w-3/4" />
+                      <div className="mt-4 h-4 bg-[#021024]/10 rounded w-1/3" />
+                    </div>
+                  </div>
+                </article>
+              ))
+            ) : error ? (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-center">
+                <svg className="size-12 mx-auto text-red-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <h3 className="mt-3 font-semibold text-red-700">Gagal memuat diskusi</h3>
+                <p className="mt-1 text-sm text-red-600">{error}</p>
+                <button onClick={fetchDiskusi} className="mt-4 inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-3 text-xs font-bold text-white hover:bg-emerald-700">
+                  <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M23 4v6h-6" />
+                    <path d="M1 20v-6h6" />
+                    <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                  </svg>
+                  Coba Lagi
+                </button>
+              </div>
+            ) : diskusiList.length > 0 ? (
+              diskusiList.map((diskusi) => (
                 <article
                   key={diskusi.id}
-                  className={`group relative rounded-2xl border border-[#021024]/8 bg-white p-5 sm:p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 ${diskusi.userLiked ? "ring-2 ring-emerald-500/30" : ""}`}
+                  className={`group relative rounded-2xl border border-[#021024]/8 bg-white p-5 sm:p-6 transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 ${diskusi.user_liked ? "ring-2 ring-emerald-500/30" : ""}`}
                 >
                   <div className="flex gap-4">
                     <div className="flex-shrink-0">
                       <div className="grid size-11 place-items-center rounded-full bg-[#052659] text-xs font-bold text-[#C1E8FF]">
-                        {diskusi.penulisInisial}
+                        {diskusi.penulis_inisial}
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2">
-                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-[.1em] ${diskusi.kategori === 'tugas' ? 'bg-emerald-100 text-emerald-700' : diskusi.kategori === 'project' ? 'bg-blue-100 text-blue-700' : diskusi.kategori === 'tanya-jawab' ? 'bg-purple-100 text-purple-700' : 'bg-orange-100 text-orange-700'}`}>
-                          {KATEGORI.find(k => k.value === diskusi.kategori)?.label || diskusi.kategori}
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-[.1em] ${KATEGORI_COLOR[diskusi.kategori] || "bg-gray-100 text-gray-700"}`}>
+                          {KATEGORI_LABEL[diskusi.kategori] || diskusi.kategori}
                         </span>
                         <span className="flex items-center gap-1 text-[11px] text-[#2F5F8F]/60">
                           <svg className="size-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
                             <circle cx="12" cy="12" r="10" />
                           </svg>
-                          {formatRelativeTime(diskusi.createdAt)}
+                          {formatRelativeTime(diskusi.created_at)}
                         </span>
                       </div>
                       <h3 className="text-lg font-bold text-[#021024] group-hover:text-[#052659] transition-colors line-clamp-2">{diskusi.judul}</h3>
                       <p className="mt-1.5 text-sm text-[#021024]/60 line-clamp-2">{diskusi.konten}</p>
                       
                       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-[#2F5F8F]/60">
-                        <span className="flex items-center gap-1 font-semibold text-[#021024]/70">{diskusi.penulisNama}</span>
+                        <span className="flex items-center gap-1 font-semibold text-[#021024]/70">{diskusi.penulis_nama}</span>
                         <span className="flex items-center gap-1">
                           <MessageSquare className="size-3.5" aria-hidden="true" />
-                          {diskusi.balasanCount}
+                          {diskusi.balasan_count}
                         </span>
                         <span className="flex items-center gap-1">
-                          <Heart className="size-3.5" aria-hidden="true" fill={diskusi.userLiked ? "currentColor" : "none"} stroke="currentColor" />
-                          {diskusi.likeCount}
+                          <Heart className="size-3.5" aria-hidden="true" fill={diskusi.user_liked ? "currentColor" : "none"} stroke="currentColor" />
+                          {diskusi.like_count}
                         </span>
                       </div>
                     </div>
@@ -339,11 +443,37 @@ export function ForumKelasClient({ kelas, label, deskripsi, warna, warnaHex, war
                 </svg>
                 <h3 className="mt-3 font-semibold">Belum ada diskusi</h3>
                 <p className="mt-1 text-sm text-[#2F5F8F]/65">{activeKategori !== "all" ? `Belum ada diskusi di kategori ini.` : `Jadilah yang pertama memulai diskusi di Kelas ${kelas}!`}</p>
-                <button className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 px-5 py-3 text-xs font-bold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700">
+                <button
+                  onClick={() => setShowCreateForm(true)}
+                  className="mt-6 inline-flex items-center justify-center gap-2 rounded-full bg-emerald-600 px-5 py-3 text-xs font-bold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700"
+                >
                   <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                     <path d="M12 5v14M5 12h14" />
                   </svg>
                   Buat Diskusi Pertama
+                </button>
+              </div>
+            )}
+
+            {/* Pagination */}
+            {totalPages > 1 && !loading && !error && (
+              <div className="mt-6 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="inline-flex items-center justify-center size-10 rounded-full border border-[#021024]/10 text-[#052659]/70 transition hover:bg-[#021024]/5 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="size-5" />
+                </button>
+                <span className="text-sm font-medium text-[#021024]/70">
+                  Halaman {page} dari {totalPages} ({total} diskusi)
+                </span>
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="inline-flex items-center justify-center size-10 rounded-full border border-[#021024]/10 text-[#052659]/70 transition hover:bg-[#021024]/5 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight className="size-5" />
                 </button>
               </div>
             )}
@@ -353,7 +483,7 @@ export function ForumKelasClient({ kelas, label, deskripsi, warna, warnaHex, war
 
       <footer className="bg-[#021024] text-white py-12">
         <div className="mx-auto max-w-7xl px-4 text-center">
-          <Link href="/forum" className="inline-flex items-center gap-2 text-sm font-medium text-white/70 hover:text-white transition">
+          <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-white/70 hover:text-white transition">
             <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
@@ -364,6 +494,110 @@ export function ForumKelasClient({ kelas, label, deskripsi, warna, warnaHex, war
           </p>
         </div>
       </footer>
+
+      {/* Create Topic Modal */}
+      {showCreateForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#021024]/65 backdrop-blur-sm" onClick={() => setShowCreateForm(false)}>
+          <div className="w-full max-w-2xl rounded-3xl bg-white p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
+            <div className="flex items-start justify-between">
+              <h3 className="text-lg font-bold">Mulai Diskusi Baru</h3>
+              <button onClick={() => setShowCreateForm(false)} className="text-[#2F5F8F]/60 hover:text-[#021024]">
+                <X className="size-6" />
+              </button>
+            </div>
+            <form onSubmit={handleCreateTopik} className="mt-5 space-y-4">
+              <div>
+                <label className="block text-sm font-semibold text-[#021024] mb-1">Kategori</label>
+                <select
+                  value={newKategori}
+                  onChange={(e) => setNewKategori(e.target.value)}
+                  className="w-full rounded-xl border border-[#021024]/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#5483B3]"
+                >
+                  <option value="tugas">Tugas</option>
+                  <option value="project">Project</option>
+                  <option value="tanya_jawab">Tanya Jawab</option>
+                  <option value="pengalaman">Berbagi Pengalaman</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-[#021024] mb-1">Judul <span className="text-red-500">*</span></label>
+                <input
+                  type="text"
+                  value={newJudul}
+                  onChange={(e) => setNewJudul(e.target.value)}
+                  placeholder="Masukkan judul diskusi (min 5 karakter, max 200)"
+                  maxLength={200}
+                  className="w-full rounded-xl border border-[#021024]/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#5483B3]"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-[#021024] mb-1">Konten <span className="text-red-500">*</span></label>
+                <textarea
+                  value={newKonten}
+                  onChange={(e) => setNewKonten(e.target.value)}
+                  placeholder="Tulis isi diskusi Anda (min 10 karakter, max 10000)"
+                  maxLength={10000}
+                  rows={6}
+                  className="w-full resize-none rounded-xl border border-[#021024]/10 bg-white px-4 py-3 text-sm outline-none focus:border-[#5483B3] placeholder:text-[#2F5F8F]/50"
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreateForm(false)}
+                  className="inline-flex items-center gap-2 rounded-xl border border-[#021024]/10 px-5 py-3 text-sm font-semibold text-[#2F5F8F] hover:bg-[#021024]/5"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting || !newJudul.trim() || !newKonten.trim()}
+                  className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-5 py-3 text-xs font-bold text-white shadow-lg shadow-emerald-600/20 transition hover:bg-emerald-700 disabled:opacity-50"
+                >
+                  {submitting && <Loader2 className="size-4 animate-spin" />}
+                  <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                  Buat Diskusi
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Toast */}
+      {toast && (
+        <div className="fixed bottom-4 right-4 z-50 animate-slide-up">
+          <div className={`flex items-center gap-2 px-4 py-3 rounded-xl shadow-lg text-sm font-medium ${
+            toast.type === "success" ? "bg-emerald-600 text-white" : "bg-red-600 text-white"
+          }`}>
+            {toast.type === "success" ? (
+              <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                <polyline points="22 4 12 14.01 9 11.01" />
+              </svg>
+            ) : (
+              <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+            )}
+            {toast.message}
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        @keyframes slide-up {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-up { animation: slide-up 0.3s ease-out; }
+      `}</style>
     </main>
   );
 }

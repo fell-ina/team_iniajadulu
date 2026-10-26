@@ -1,22 +1,33 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { createClient } from "@supabase/supabase-js";
-import { jurusanValid } from "@/lib/sekolah";
+import { JURUSAN, jurusanValid } from "@/lib/sekolah";
+import {
+  KOLOM_SPMB,
+  STATUS_SPMB,
+  TABEL_SPMB,
+  bersihkanKataCari,
+  buatAdminClient,
+  galatDatabase,
+  kondisiCari,
+  wajibAdmin,
+  type AdminClient,
+  type StatusSpmb,
+} from "@/lib/spmb-admin";
 
 /**
  * app/api/admin/spmb/route.ts
  * ---------------------------------------------------------------------------
  * Panel seleksi pendaftar SPMB / PPDB untuk admin.
  *
- *  - GET  : daftar pendaftar + paginasi + pencarian + filter
- *           ?page=1&perPage=10&q=&status=menunggu|diterima|ditolak|semua
- *           &jurusan1=PPLG|TJKT|DKV|TKR|semua
- *           &jurusan2=PPLG|TJKT|DKV|TKR|semua
- *           &jk=laki-laki|perempuan|semua
+ *  - GET  : daftar pendaftar satu tab jurusan + paginasi + pencarian + status
+ *           ?page=1&perPage=10&q=&jurusan=PPLG|TJKT|DKV|TKR|semua
+ *           &status=menunggu|diterima|ditolak|semua
  *           &urut=terbaru|nama&arah=asc|desc
+ *           Balasan menyertakan `ringkasan` jumlah pendaftar per status untuk
+ *           tiap tab jurusan (mengikuti kata pencarian aktif).
  *  - POST : terima / tolak / batalkan pendaftar yang dicentang
  *           body JSON { aksi: "terima" | "tolak" | "menunggu", ids: string[] }
+ *
+ * Tab jurusan memakai pilihan jurusan 1 pendaftar (pilihan utama).
  *
  * Hanya role `admin` yang boleh memakai endpoint ini. Tabel memakai service
  * role karena RLS `spmb_pendaftar` sengaja tanpa policy (publik tidak boleh
@@ -26,146 +37,31 @@ import { jurusanValid } from "@/lib/sekolah";
 
 export const dynamic = "force-dynamic";
 
-const TABEL = "spmb_pendaftar";
-const KOLOM =
-  "id, nama, email, jenis_kelamin, tempat_lahir, tanggal_lahir, asal_sekolah, alamat, no_hp, jurusan_1, jurusan_2, nama_wali, no_hp_wali, status, status_diubah_at, created_at";
-
-const STATUS_VALID = ["menunggu", "diterima", "ditolak"] as const;
-const JENIS_KELAMIN_VALID = ["laki-laki", "perempuan"] as const;
 const URUT_VALID = ["nama", "terbaru"] as const;
 const PER_PAGE_DIIZINKAN = [10, 25, 50];
 const MAKS_ID_AKSI = 500;
+const UKURAN_REKAP = 1000;
 
-type StatusSpmb = (typeof STATUS_VALID)[number];
-
-const PESAN_MIGRASI =
-  "Kolom status pendaftar belum ada. Jalankan supabase/migrations/20261025000001_add_spmb_status.sql di Supabase SQL Editor terlebih dahulu.";
-
-type AdminClient = ReturnType<typeof buatAdminClient>;
-
-function buatAdminClient() {
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    { auth: { persistSession: false } }
-  );
+/** Jumlah pendaftar per status pada satu kelompok (semua / satu jurusan). */
+interface AngkaStatus {
+  total: number;
+  menunggu: number;
+  diterima: number;
+  ditolak: number;
 }
 
-async function buatSessionClient() {
-  const cookieStore = await cookies();
-  return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return cookieStore.getAll();
-        },
-        setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
-          try {
-            cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
-            );
-          } catch {
-            /* abaikan */
-          }
-        },
-      },
-    }
-  );
+function angkaKosong(): AngkaStatus {
+  return { total: 0, menunggu: 0, diterima: 0, ditolak: 0 };
 }
 
-/** Hanya admin yang boleh menyeleksi pendaftar. */
-async function wajibAdmin(admin: AdminClient) {
-  const supabase = await buatSessionClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    return {
-      error: NextResponse.json(
-        { ok: false, message: "Anda harus masuk terlebih dahulu." },
-        { status: 401 }
-      ),
-    } as const;
-  }
-
-  const { data: profil, error } = await admin
-    .from("users")
-    .select("role")
-    .eq("id", user.id)
-    .maybeSingle();
-
-  if (error) {
-    return {
-      error: NextResponse.json(
-        { ok: false, message: "Gagal memeriksa peran pengguna." },
-        { status: 500 }
-      ),
-    } as const;
-  }
-
-  if (profil?.role !== "admin") {
-    return {
-      error: NextResponse.json(
-        { ok: false, message: "Hanya admin yang boleh menyeleksi pendaftar SPMB." },
-        { status: 403 }
-      ),
-    } as const;
-  }
-
-  return { user } as const;
+function tambahAngka(angka: AngkaStatus, status: string) {
+  angka.total += 1;
+  if (status === "diterima") angka.diterima += 1;
+  else if (status === "ditolak") angka.ditolak += 1;
+  else angka.menunggu += 1;
 }
 
-/**
- * Pesan yang jelas bila tabel / kolom status belum dibuat, supaya panitia
- * tidak melihat daftar kosong tanpa sebab.
- */
-function galatDatabase(error: { code?: string; message?: string }) {
-  const pesan = error.message ?? "";
-
-  if (
-    error.code === "42703" ||
-    error.code === "PGRST204" ||
-    /column .*status.* does not exist|status_diubah_at/i.test(pesan)
-  ) {
-    console.warn("[admin/spmb] kolom status belum ada:", pesan);
-    return NextResponse.json({ ok: false, message: PESAN_MIGRASI }, { status: 503 });
-  }
-
-  if (
-    error.code === "42P01" ||
-    error.code === "PGRST205" ||
-    /relation .*spmb_pendaftar.* does not exist|Could not find the table/i.test(pesan)
-  ) {
-    console.warn("[admin/spmb] tabel spmb_pendaftar belum ada:", pesan);
-    return NextResponse.json(
-      {
-        ok: false,
-        message:
-          "Tabel pendaftaran belum tersedia. Jalankan migrasi supabase/migrations/20261025000000_add_spmb_pendaftar.sql terlebih dahulu.",
-      },
-      { status: 503 }
-    );
-  }
-
-  console.error("[admin/spmb] kesalahan database:", pesan);
-  return NextResponse.json(
-    { ok: false, message: "Terjadi kesalahan pada database. Coba lagi beberapa saat lagi." },
-    { status: 500 }
-  );
-}
-
-/** Buang karakter yang bermakna khusus pada filter PostgREST. */
-function bersihkanKataCari(q: string) {
-  return q.replace(/[%,()*"\\]/g, " ").trim();
-}
-
-function pilihKode(
-  nilai: string | null,
-  valid: (v: string) => boolean
-) {
+function pilihKode(nilai: string | null, valid: (v: string) => boolean) {
   const mentah = (nilai ?? "semua").trim().toUpperCase();
   if (!mentah || mentah === "SEMUA") return "semua";
   return valid(mentah) ? mentah : "semua";
@@ -174,28 +70,53 @@ function pilihKode(
 interface FilterDaftar {
   q: string;
   status: string;
-  jurusan1: string;
-  jurusan2: string;
-  jk: string;
+  jurusan: string;
 }
 
-/** Query dasar yang sudah memakai seluruh filter daftar. */
-function saringDaftar(admin: AdminClient, f: FilterDaftar, kolom: string, hitung = false) {
-  let query = admin
-    .from(TABEL)
-    .select(kolom, hitung ? { count: "exact", head: true } : { count: "exact" });
+/** Query dasar daftar: pencarian + status + tab jurusan 1. */
+function saringDaftar(admin: AdminClient, f: FilterDaftar) {
+  let query = admin.from(TABEL_SPMB).select(KOLOM_SPMB, { count: "exact" });
 
-  if (f.q) {
-    query = query.or(
-      `nama.ilike.%${f.q}%,email.ilike.%${f.q}%,asal_sekolah.ilike.%${f.q}%,no_hp.ilike.%${f.q}%,no_hp_wali.ilike.%${f.q}%`
-    );
-  }
+  if (f.q) query = query.or(kondisiCari(f.q));
   if (f.status !== "semua") query = query.eq("status", f.status);
-  if (f.jurusan1 !== "semua") query = query.eq("jurusan_1", f.jurusan1);
-  if (f.jurusan2 !== "semua") query = query.eq("jurusan_2", f.jurusan2);
-  if (f.jk !== "semua") query = query.eq("jenis_kelamin", f.jk);
+  if (f.jurusan !== "semua") query = query.eq("jurusan_1", f.jurusan);
 
   return query;
+}
+
+/**
+ * Rekap jumlah pendaftar per jurusan (pilihan 1) dan per status, mengikuti kata
+ * pencarian aktif tetapi tidak mengikuti tab/status yang sedang dipilih — jadi
+ * angka di tab dan chip tidak pernah ikut mengecil saat filter dipakai.
+ *
+ * Data diambil bertahap 1000 baris agar tetap benar walau pendaftar banyak.
+ */
+async function hitungRingkasan(admin: AdminClient, q: string) {
+  const ringkasan: Record<string, AngkaStatus> = { semua: angkaKosong() };
+  for (const j of JURUSAN) ringkasan[j.kode] = angkaKosong();
+
+  let dari = 0;
+  for (;;) {
+    let query = admin.from(TABEL_SPMB).select("jurusan_1, status").order("id");
+    if (q) query = query.or(kondisiCari(q));
+
+    const { data, error } = await query.range(dari, dari + UKURAN_REKAP - 1);
+    if (error) return { ok: false as const, error };
+
+    const baris = data ?? [];
+    for (const item of baris) {
+      tambahAngka(ringkasan.semua, item.status);
+      const perJurusan = ringkasan[item.jurusan_1];
+      if (perJurusan) tambahAngka(perJurusan, item.status);
+    }
+
+    if (baris.length < UKURAN_REKAP) break;
+    dari += UKURAN_REKAP;
+    // Pengaman: rekap tidak boleh berputar tanpa akhir.
+    if (dari >= 50000) break;
+  }
+
+  return { ok: true as const, ringkasan };
 }
 
 /* ============================== GET : daftar ============================= */
@@ -214,66 +135,47 @@ export async function GET(request: Request) {
   const q = bersihkanKataCari(searchParams.get("q") ?? "");
 
   const statusMinta = (searchParams.get("status") ?? "semua").trim().toLowerCase();
-  const status = (STATUS_VALID as readonly string[]).includes(statusMinta)
+  const status = (STATUS_SPMB as readonly string[]).includes(statusMinta)
     ? statusMinta
     : "semua";
 
-  const jurusan1 = pilihKode(searchParams.get("jurusan1"), jurusanValid);
-  const jurusan2 = pilihKode(searchParams.get("jurusan2"), jurusanValid);
-
-  const jkMinta = (searchParams.get("jk") ?? "semua").trim().toLowerCase();
-  const jk = (JENIS_KELAMIN_VALID as readonly string[]).includes(jkMinta)
-    ? jkMinta
-    : "semua";
+  const jurusan = pilihKode(searchParams.get("jurusan"), jurusanValid);
 
   const urutMinta = (searchParams.get("urut") ?? "terbaru").trim().toLowerCase();
   const urut = (URUT_VALID as readonly string[]).includes(urutMinta)
     ? urutMinta
     : "terbaru";
   const arah =
-    (searchParams.get("arah") ?? (urut === "nama" ? "asc" : "desc")).trim().toLowerCase() ===
-    "asc"
+    (searchParams.get("arah") ??
+      (urut === "nama" ? "asc" : "desc")).trim().toLowerCase() === "asc"
       ? "asc"
       : "desc";
 
-  const filter: FilterDaftar = { q, status, jurusan1, jurusan2, jk };
+  const filter: FilterDaftar = { q, status, jurusan };
 
   // Hitung dulu supaya nomor halaman bisa dijepit ke halaman terakhir: daftar
-  // bisa menyusut setelah filter berubah atau pendaftar diputuskan.
-  const hitung = await saringDaftar(admin, filter, "id", true);
-  if (hitung.error) return galatDatabase(hitung.error);
+  // bisa menyusut setelah tab / status berubah atau pendaftar diputuskan.
+  let hitung = admin.from(TABEL_SPMB).select("id", { count: "exact", head: true });
+  if (filter.q) hitung = hitung.or(kondisiCari(filter.q));
+  if (filter.status !== "semua") hitung = hitung.eq("status", filter.status);
+  if (filter.jurusan !== "semua") hitung = hitung.eq("jurusan_1", filter.jurusan);
 
-  const total = hitung.count ?? 0;
+  const { count, error: errorHitung } = await hitung;
+  if (errorHitung) return galatDatabase(errorHitung);
+
+  const total = count ?? 0;
   const totalPages = Math.max(1, Math.ceil(total / perPage));
   const halaman = Math.min(page, totalPages);
   const dari = (halaman - 1) * perPage;
 
-  const { data, error } = await saringDaftar(admin, filter, KOLOM)
+  const { data, error } = await saringDaftar(admin, filter)
     .order(urut === "nama" ? "nama" : "created_at", { ascending: arah === "asc" })
     .range(dari, dari + perPage - 1);
 
   if (error) return galatDatabase(error);
 
-  const [hitungTotal, hitungMenunggu, hitungDiterima, hitungDitolak] = await Promise.all([
-    admin.from(TABEL).select("id", { count: "exact", head: true }),
-    admin
-      .from(TABEL)
-      .select("id", { count: "exact", head: true })
-      .eq("status", "menunggu"),
-    admin
-      .from(TABEL)
-      .select("id", { count: "exact", head: true })
-      .eq("status", "diterima"),
-    admin
-      .from(TABEL)
-      .select("id", { count: "exact", head: true })
-      .eq("status", "ditolak"),
-  ]);
-
-  const ringkasanError =
-    hitungTotal.error ?? hitungMenunggu.error ?? hitungDiterima.error ?? hitungDitolak.error;
-
-  if (ringkasanError) return galatDatabase(ringkasanError);
+  const rekap = await hitungRingkasan(admin, q);
+  if (!rekap.ok) return galatDatabase(rekap.error);
 
   return NextResponse.json({
     ok: true,
@@ -282,12 +184,7 @@ export async function GET(request: Request) {
     total,
     totalPages,
     data: data ?? [],
-    ringkasan: {
-      total: hitungTotal.count ?? 0,
-      menunggu: hitungMenunggu.count ?? 0,
-      diterima: hitungDiterima.count ?? 0,
-      ditolak: hitungDitolak.count ?? 0,
-    },
+    ringkasan: rekap.ringkasan,
   });
 }
 
@@ -357,7 +254,7 @@ export async function POST(request: Request) {
   const { status } = AKSI[aksi];
 
   const { data, error } = await admin
-    .from(TABEL)
+    .from(TABEL_SPMB)
     .update({
       status,
       status_diubah_at: status === "menunggu" ? null : new Date().toISOString(),

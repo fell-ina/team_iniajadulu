@@ -13,7 +13,7 @@ export default function ForumKelasXIClient() {
     <main className="min-h-screen bg-[#F4F9FF] text-[#021024]">
       <header className="border-b border-[#021024]/10 bg-white/85 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-4 sm:px-6 lg:px-8">
-          <Link href="/forum" aria-label="Kembali ke forum" className="grid size-10 place-items-center rounded-full border border-[#021024]/10 text-[#052659]/70 transition hover:bg-[#021024]/5">
+          <Link href="/" aria-label="Kembali ke beranda" className="grid size-10 place-items-center rounded-full border border-[#021024]/10 text-[#052659]/70 transition hover:bg-[#021024]/5">
             <svg className="size-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>
@@ -88,7 +88,7 @@ export default function ForumKelasXIClient() {
 
       <footer className="bg-[#021024] text-white py-12">
         <div className="mx-auto max-w-7xl px-4 text-center">
-          <Link href="/forum" className="inline-flex items-center gap-2 text-sm font-medium text-white/70 hover:text-white transition">
+          <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-white/70 hover:text-white transition">
             <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
               <path d="M19 12H5M12 19l-7-7 7-7" />
             </svg>

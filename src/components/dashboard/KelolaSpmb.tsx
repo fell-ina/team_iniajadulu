@@ -3,14 +3,17 @@
 /**
  * components/dashboard/KelolaSpmb.tsx
  * ---------------------------------------------------------------------------
- * Panel seleksi pendaftar SPMB / PPDB:
- *   - ringkasan jumlah pendaftar per status
- *   - cari (nama/email/asal sekolah/no. HP), paginasi
- *   - dialog filter: status, pilihan jurusan 1 & 2, jenis kelamin,
- *     urutan & arah — sama seperti halaman Data Pengguna
- *   - centang per baris + "pilih semua" di halaman ini
- *   - terima / tolak (per baris maupun massal) dan kembalikan ke menunggu
- *   - modal detail berisi seluruh isian formulir
+ * Panel seleksi pendaftar SPMB / PPDB — satu tabel per jurusan.
+ *
+ *   - Tab: Semua + PPLG / TJKT / DKV / TKR (berdasarkan pilihan jurusan 1),
+ *     masing-masing menampilkan jumlah pendaftar.
+ *   - Chip status: Semua / Menunggu / Diterima / Ditolak untuk tab aktif.
+ *   - Cari (nama/email/asal sekolah/no. HP) dan paginasi.
+ *   - Ekspor Excel: seluruh baris pada tab aktif dengan status Diterima,
+ *     Ditolak, atau Semua.
+ *   - Centang per baris + "pilih semua" di halaman ini.
+ *   - Terima / tolak (per baris maupun massal) dan kembalikan ke menunggu.
+ *   - Modal detail berisi seluruh isian formulir.
  * ---------------------------------------------------------------------------
  */
 
@@ -19,16 +22,18 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   Check,
   CheckCircle2,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
   ClipboardList,
   Clock3,
+  Download,
   Eye,
+  FileSpreadsheet,
   Mail,
   RefreshCw,
   RotateCcw,
   Search,
-  SlidersHorizontal,
   X,
   XCircle,
 } from "lucide-react";
@@ -53,12 +58,14 @@ interface PendaftarItem {
   created_at: string;
 }
 
-interface Ringkasan {
+interface AngkaStatus {
   total: number;
   menunggu: number;
   diterima: number;
   ditolak: number;
 }
+
+type Ringkasan = Record<string, AngkaStatus>;
 
 interface JawabanDaftar {
   ok: boolean;
@@ -72,37 +79,27 @@ interface JawabanDaftar {
 }
 
 type AksiSeleksi = "terima" | "tolak" | "menunggu";
+type StatusEkspor = "diterima" | "ditolak" | "semua";
+type TabJurusan = "semua" | (typeof JURUSAN)[number]["kode"];
 
 const STATUS = [
+  { nilai: "semua", label: "Semua" },
   { nilai: "menunggu", label: "Menunggu" },
   { nilai: "diterima", label: "Diterima" },
   { nilai: "ditolak", label: "Ditolak" },
 ] as const;
 
-const JENIS_KELAMIN = [
-  { nilai: "laki-laki", label: "Laki-laki" },
-  { nilai: "perempuan", label: "Perempuan" },
-] as const;
-
 const PER_PAGE = [10, 25, 50];
 
-interface FilterSpmb {
-  status: string;
-  jurusan1: string;
-  jurusan2: string;
-  jk: string;
-  urut: "terbaru" | "nama";
-  arah: "asc" | "desc";
-}
+const EKSPOR = [
+  { nilai: "semua", label: "Semua status" },
+  { nilai: "diterima", label: "Hanya diterima" },
+  { nilai: "ditolak", label: "Hanya ditolak" },
+] as const;
 
-const FILTER_AWAL: FilterSpmb = {
-  status: "semua",
-  jurusan1: "semua",
-  jurusan2: "semua",
-  jk: "semua",
-  urut: "terbaru",
-  arah: "desc",
-};
+function angkaKosong(): AngkaStatus {
+  return { total: 0, menunggu: 0, diterima: 0, ditolak: 0 };
+}
 
 function labelStatus(status: string | null) {
   switch (status) {
@@ -139,6 +136,12 @@ function namaJurusan(kode: string) {
   return JURUSAN.find((j) => j.kode === kode)?.nama ?? kode;
 }
 
+/** Nama file dari header Content-Disposition bila ada. */
+function namaBerkas(header: string | null, cadangan: string) {
+  const cocok = /filename="?([^";]+)"?/i.exec(header ?? "");
+  return cocok ? cocok[1] : cadangan;
+}
+
 /**
  * Nomor halaman yang ditampilkan: 1 … 4 5 [6] 7 8 … 20
  */
@@ -156,14 +159,12 @@ function nomorHalaman(kini: number, total: number): (number | "…")[] {
 
 export default function KelolaSpmb() {
   const [daftar, setDaftar] = useState<PendaftarItem[]>([]);
-  const [ringkasan, setRingkasan] = useState<Ringkasan>({
-    total: 0,
-    menunggu: 0,
-    diterima: 0,
-    ditolak: 0,
-  });
+  const [ringkasan, setRingkasan] = useState<Ringkasan>({ semua: angkaKosong() });
   const [memuat, setMemuat] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [tab, setTab] = useState<TabJurusan>("semua");
+  const [status, setStatus] = useState<string>("semua");
 
   const [page, setPage] = useState(1);
   const [perPage, setPerPage] = useState(10);
@@ -172,12 +173,12 @@ export default function KelolaSpmb() {
 
   const [cari, setCari] = useState("");
   const [cariDipakai, setCariDipakai] = useState("");
-  const [filter, setFilter] = useState<FilterSpmb>(FILTER_AWAL);
-  const [filterTerbuka, setFilterTerbuka] = useState(false);
 
   const [terpilih, setTerpilih] = useState<Set<string>>(new Set());
   const [sibuk, setSibuk] = useState(false);
   const [detail, setDetail] = useState<PendaftarItem | null>(null);
+  const [eksporTerbuka, setEksporTerbuka] = useState(false);
+  const [mengekspor, setMengekspor] = useState<StatusEkspor | null>(null);
   const [toast, setToast] = useState<string | null>(null);
 
   const muat = useCallback(async () => {
@@ -187,12 +188,8 @@ export default function KelolaSpmb() {
       const params = new URLSearchParams({
         page: String(page),
         perPage: String(perPage),
-        status: filter.status,
-        jurusan1: filter.jurusan1,
-        jurusan2: filter.jurusan2,
-        jk: filter.jk,
-        urut: filter.urut,
-        arah: filter.arah,
+        status,
+        jurusan: tab,
       });
       if (cariDipakai) params.set("q", cariDipakai);
 
@@ -208,16 +205,14 @@ export default function KelolaSpmb() {
         return;
       }
 
-      // Halaman terakhir bisa menyusut setelah filter / keputusan berubah.
+      // Halaman terakhir bisa menyusut setelah tab / status / keputusan berubah.
       if (data.totalPages && page > data.totalPages) {
         setPage(data.totalPages);
         return;
       }
 
       setDaftar(Array.isArray(data.data) ? data.data : []);
-      setRingkasan(
-        data.ringkasan ?? { total: 0, menunggu: 0, diterima: 0, ditolak: 0 }
-      );
+      setRingkasan(data.ringkasan ?? { semua: angkaKosong() });
       setTotal(data.total ?? 0);
       setTotalPages(data.totalPages ?? 1);
     } catch {
@@ -226,7 +221,7 @@ export default function KelolaSpmb() {
     } finally {
       setMemuat(false);
     }
-  }, [page, perPage, cariDipakai, filter]);
+  }, [page, perPage, cariDipakai, status, tab]);
 
   useEffect(() => {
     muat();
@@ -244,17 +239,28 @@ export default function KelolaSpmb() {
   // Pilihan hanya berlaku untuk halaman/filter yang sedang tampil.
   useEffect(() => {
     setTerpilih(new Set());
-  }, [page, perPage, filter, cariDipakai]);
+  }, [page, perPage, tab, status, cariDipakai]);
 
-  const jumlahFilter = [
-    filter.status !== "semua",
-    filter.jurusan1 !== "semua",
-    filter.jurusan2 !== "semua",
-    filter.jk !== "semua",
-  ].filter(Boolean).length;
-  const adaFilter = jumlahFilter > 0 || Boolean(cariDipakai);
-  // Urutan bukan filter, tapi tombol Atur ulang juga mengembalikannya.
-  const urutBerubah = filter.urut !== FILTER_AWAL.urut || filter.arah !== FILTER_AWAL.arah;
+  // Menu ekspor ditutup dengan Escape atau klik di luar.
+  useEffect(() => {
+    if (!eksporTerbuka) return;
+    function diLuar(e: MouseEvent) {
+      const target = e.target as HTMLElement | null;
+      if (!target?.closest("[data-menu-ekspor]")) setEksporTerbuka(false);
+    }
+    function tombol(e: KeyboardEvent) {
+      if (e.key === "Escape") setEksporTerbuka(false);
+    }
+    document.addEventListener("mousedown", diLuar);
+    document.addEventListener("keydown", tombol);
+    return () => {
+      document.removeEventListener("mousedown", diLuar);
+      document.removeEventListener("keydown", tombol);
+    };
+  }, [eksporTerbuka]);
+
+  const hitungTab = ringkasan[tab] ?? angkaKosong();
+  const adaFilter = status !== "semua" || Boolean(cariDipakai);
 
   const idHalaman = useMemo(() => daftar.map((d) => d.id), [daftar]);
   const semuaTerpilih = idHalaman.length > 0 && idHalaman.every((id) => terpilih.has(id));
@@ -306,6 +312,48 @@ export default function KelolaSpmb() {
     }
   }
 
+  async function unduhExcel(statusEkspor: StatusEkspor) {
+    setEksporTerbuka(false);
+    setMengekspor(statusEkspor);
+    try {
+      const params = new URLSearchParams({ status: statusEkspor });
+      if (tab !== "semua") params.set("jurusan", tab);
+      if (cariDipakai) params.set("q", cariDipakai);
+
+      const res = await fetch(`/api/admin/spmb/ekspor?${params.toString()}`, {
+        credentials: "same-origin",
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        tampilToast(data?.message ?? "Ekspor gagal. Coba lagi.");
+        return;
+      }
+
+      const blob = await res.blob();
+      const nama = namaBerkas(
+        res.headers.get("Content-Disposition"),
+        `spmb-${tab === "semua" ? "semua-jurusan" : tab.toLowerCase()}-${statusEkspor}.xlsx`
+      );
+
+      const url = URL.createObjectURL(blob);
+      const tautan = document.createElement("a");
+      tautan.href = url;
+      tautan.download = nama;
+      document.body.appendChild(tautan);
+      tautan.click();
+      tautan.remove();
+      URL.revokeObjectURL(url);
+
+      tampilToast(`Berhasil mengunduh ${nama}.`);
+    } catch {
+      tampilToast("Tidak dapat mengunduh file. Periksa koneksi Anda.");
+    } finally {
+      setMengekspor(null);
+    }
+  }
+
   const awal = total === 0 ? 0 : (page - 1) * perPage + 1;
   const akhir = Math.min(page * perPage, total);
 
@@ -326,33 +374,56 @@ export default function KelolaSpmb() {
         )}
       </AnimatePresence>
 
-      {/* Ringkasan */}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {[
-          { label: "Total pendaftar", nilai: ringkasan.total, ikon: ClipboardList },
-          { label: "Menunggu", nilai: ringkasan.menunggu, ikon: Clock3 },
-          { label: "Diterima", nilai: ringkasan.diterima, ikon: CheckCircle2 },
-          { label: "Ditolak", nilai: ringkasan.ditolak, ikon: XCircle },
-        ].map(({ label, nilai, ikon: Ikon }) => (
-          <div
-            key={label}
-            className="flex items-center gap-4 rounded-3xl border border-[#021024]/10 bg-white p-5 shadow-sm"
-          >
-            <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-[#052659] text-[#C1E8FF]">
-              <Ikon size={18} />
-            </span>
-            <span>
-              <span className="block text-2xl font-bold tabular-nums text-[#021024]">{nilai}</span>
-              <span className="block text-[11px] font-medium uppercase tracking-[.12em] text-[#021024]/45">
-                {label}
+      {/* Tab jurusan */}
+      <div
+        role="tablist"
+        aria-label="Tabel pendaftar per jurusan"
+        className="flex gap-1 overflow-x-auto rounded-2xl border border-[#021024]/10 bg-white p-1.5 shadow-sm"
+      >
+        {(
+          [
+            { nilai: "semua" as TabJurusan, label: "Semua", ket: "Seluruh pendaftar" },
+            ...JURUSAN.map((j) => ({
+              nilai: j.kode as TabJurusan,
+              label: j.kode,
+              ket: j.nama,
+            })),
+          ] as { nilai: TabJurusan; label: string; ket: string }[]
+        ).map((item) => {
+          const angka = ringkasan[item.nilai] ?? angkaKosong();
+          const aktif = tab === item.nilai;
+          return (
+            <button
+              key={item.nilai}
+              type="button"
+              role="tab"
+              aria-selected={aktif}
+              title={item.ket}
+              onClick={() => {
+                setTab(item.nilai);
+                setPage(1);
+              }}
+              className={`flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition ${
+                aktif
+                  ? "bg-[#052659] text-[#C1E8FF] shadow-sm"
+                  : "text-[#021024]/60 hover:bg-[#021024]/5 hover:text-[#021024]"
+              }`}
+            >
+              {item.label}
+              <span
+                className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
+                  aktif ? "bg-[#C1E8FF] text-[#052659]" : "bg-[#021024]/8 text-[#021024]/55"
+                }`}
+              >
+                {angka.total}
               </span>
-            </span>
-          </div>
-        ))}
+            </button>
+          );
+        })}
       </div>
 
-      {/* Pencarian + filter */}
-      <div className="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center">
+      {/* Pencarian, status, ekspor */}
+      <div className="mt-4 flex flex-col gap-3 xl:flex-row xl:items-center">
         <label className="relative flex-1">
           <Search
             size={16}
@@ -366,47 +437,101 @@ export default function KelolaSpmb() {
           />
         </label>
 
-        <button
-          type="button"
-          onClick={() => setFilterTerbuka(true)}
-          aria-haspopup="dialog"
-          className={`inline-flex items-center justify-center gap-2 rounded-full border px-4 py-2.5 text-sm font-semibold shadow-sm transition ${
-            jumlahFilter > 0
-              ? "border-[#052659] bg-[#052659] text-[#C1E8FF] hover:bg-[#021024] hover:text-white"
-              : "border-[#021024]/12 bg-white text-[#021024]/70 hover:bg-[#021024]/5"
-          }`}
+        <div
+          role="group"
+          aria-label="Saring status pendaftar"
+          className="flex shrink-0 gap-1 overflow-x-auto rounded-full border border-[#021024]/10 bg-white p-1 shadow-sm"
         >
-          <SlidersHorizontal size={15} />
-          Filter
-          {jumlahFilter > 0 && (
-            <span className="grid min-w-5 place-items-center rounded-full bg-[#C1E8FF] px-1.5 text-[10px] font-bold text-[#052659]">
-              {jumlahFilter}
-            </span>
-          )}
-        </button>
+          {STATUS.map((item) => {
+            const aktif = status === item.nilai;
+            const jumlah =
+              item.nilai === "semua" ? hitungTab.total : hitungTab[item.nilai];
+            return (
+              <button
+                key={item.nilai}
+                type="button"
+                aria-pressed={aktif}
+                onClick={() => {
+                  setStatus(item.nilai);
+                  setPage(1);
+                }}
+                className={`flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-xs font-semibold transition ${
+                  aktif
+                    ? "bg-[#052659] text-[#C1E8FF]"
+                    : "text-[#021024]/55 hover:bg-[#021024]/5 hover:text-[#021024]"
+                }`}
+              >
+                {item.label}
+                <span className="tabular-nums opacity-70">{jumlah}</span>
+              </button>
+            );
+          })}
+        </div>
 
-        {(jumlahFilter > 0 || urutBerubah) && (
+        <div className="flex shrink-0 items-center gap-2">
+          <div className="relative" data-menu-ekspor>
+            <button
+              type="button"
+              onClick={() => setEksporTerbuka((buka) => !buka)}
+              aria-haspopup="menu"
+              aria-expanded={eksporTerbuka}
+              disabled={mengekspor !== null || memuat}
+              className="inline-flex items-center justify-center gap-2 rounded-full border border-[#021024]/12 bg-white px-4 py-2.5 text-sm font-semibold text-[#021024]/70 shadow-sm transition hover:bg-[#021024]/5 disabled:opacity-50"
+            >
+              <FileSpreadsheet size={15} />
+              {mengekspor ? "Menyiapkan…" : "Ekspor Excel"}
+              <ChevronDown
+                size={14}
+                className={`transition ${eksporTerbuka ? "rotate-180" : ""}`}
+              />
+            </button>
+
+            {eksporTerbuka && (
+              <div
+                role="menu"
+                aria-label="Pilih isi file ekspor"
+                className="absolute right-0 z-50 mt-2 w-64 overflow-hidden rounded-2xl border border-[#021024]/10 bg-white p-1.5 shadow-2xl"
+              >
+                <p className="px-3 py-2 text-[10px] font-bold uppercase tracking-[.14em] text-[#2F5F8F]/70">
+                  {tab === "semua" ? "Semua jurusan" : `Jurusan ${tab}`}
+                </p>
+                {EKSPOR.map((item) => {
+                  const jumlah =
+                    item.nilai === "diterima"
+                      ? hitungTab.diterima
+                      : item.nilai === "ditolak"
+                        ? hitungTab.ditolak
+                        : hitungTab.total;
+                  return (
+                    <button
+                      key={item.nilai}
+                      type="button"
+                      role="menuitem"
+                      onClick={() => unduhExcel(item.nilai)}
+                      className="flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm font-semibold text-[#021024]/75 transition hover:bg-[#F4F9FF] hover:text-[#021024]"
+                    >
+                      <Download size={15} className="shrink-0 text-[#2F5F8F]" />
+                      {item.label}
+                      <span className="ml-auto rounded-full bg-[#021024]/8 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-[#021024]/55">
+                        {jumlah}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           <button
             type="button"
-            onClick={() => {
-              setFilter(FILTER_AWAL);
-              setPage(1);
-            }}
-            className="rounded-full px-3 py-2.5 text-xs font-semibold text-[#021024]/50 transition hover:bg-[#021024]/5 hover:text-[#021024]"
+            onClick={() => muat()}
+            disabled={memuat}
+            className="inline-flex items-center justify-center gap-2 rounded-full border border-[#021024]/12 bg-white px-4 py-2.5 text-sm font-semibold text-[#021024]/70 shadow-sm transition hover:bg-[#021024]/5 disabled:opacity-50"
           >
-            Atur ulang
+            <RefreshCw size={15} className={memuat ? "animate-spin" : ""} />
+            Muat ulang
           </button>
-        )}
-
-        <button
-          type="button"
-          onClick={() => muat()}
-          disabled={memuat}
-          className="inline-flex items-center justify-center gap-2 rounded-full border border-[#021024]/12 bg-white px-4 py-2.5 text-sm font-semibold text-[#021024]/70 shadow-sm transition hover:bg-[#021024]/5 disabled:opacity-50"
-        >
-          <RefreshCw size={15} className={memuat ? "animate-spin" : ""} />
-          Muat ulang
-        </button>
+        </div>
       </div>
 
       {/* Aksi cepat */}
@@ -520,18 +645,22 @@ export default function KelolaSpmb() {
                       <ClipboardList size={24} />
                     </span>
                     <p className="mt-4 text-lg font-bold text-[#021024]">
-                      {adaFilter ? "Tidak ada pendaftar yang cocok" : "Belum ada pendaftar"}
+                      {adaFilter
+                        ? "Tidak ada pendaftar yang cocok"
+                        : tab === "semua"
+                          ? "Belum ada pendaftar"
+                          : `Belum ada pendaftar jurusan ${tab}`}
                     </p>
                     <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-[#021024]/55">
                       {adaFilter
-                        ? "Coba kata kunci atau filter yang lain."
+                        ? "Coba kata kunci atau status yang lain."
                         : "Pendaftaran dari halaman /spmb akan muncul di sini."}
                     </p>
                   </td>
                 </tr>
               ) : (
                 daftar.map((item) => {
-                  const status = labelStatus(item.status);
+                  const statusItem = labelStatus(item.status);
                   const inisial = (item.nama || item.email || "?").trim().charAt(0).toUpperCase() || "?";
                   const dipilih = terpilih.has(item.id);
 
@@ -593,9 +722,9 @@ export default function KelolaSpmb() {
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${status.kelas}`}
+                          className={`inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold ${statusItem.kelas}`}
                         >
-                          {status.teks}
+                          {statusItem.teks}
                         </span>
                       </td>
                       <td className="px-4 py-3">
@@ -661,6 +790,7 @@ export default function KelolaSpmb() {
             Menampilkan <strong className="text-[#021024]">{awal}</strong>–
             <strong className="text-[#021024]">{akhir}</strong> dari{" "}
             <strong className="text-[#021024]">{total}</strong> pendaftar
+            {tab === "semua" ? "" : ` jurusan ${tab}`}
           </p>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -727,19 +857,6 @@ export default function KelolaSpmb() {
         </div>
       </div>
 
-      {/* Dialog filter & urutan */}
-      {filterTerbuka && (
-        <DialogFilter
-          awal={filter}
-          onTutup={() => setFilterTerbuka(false)}
-          onTerapkan={(baru) => {
-            setFilter(baru);
-            setPage(1);
-            setFilterTerbuka(false);
-          }}
-        />
-      )}
-
       {/* Modal detail */}
       {detail && (
         <ModalDetail
@@ -751,208 +868,6 @@ export default function KelolaSpmb() {
         />
       )}
     </div>
-  );
-}
-
-/* ==================== Dialog filter & urutan daftar ==================== */
-function DialogFilter({
-  awal,
-  onTutup,
-  onTerapkan,
-}: {
-  awal: FilterSpmb;
-  onTutup: () => void;
-  onTerapkan: (filter: FilterSpmb) => void;
-}) {
-  const [draf, setDraf] = useState<FilterSpmb>(awal);
-
-  useEffect(() => {
-    const asal = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = asal;
-    };
-  }, []);
-
-  function ubah<K extends keyof FilterSpmb>(kunci: K, nilai: FilterSpmb[K]) {
-    setDraf((lama) => ({ ...lama, [kunci]: nilai }));
-  }
-
-  return (
-    <div
-      className="fixed inset-0 z-[95] flex items-center justify-center bg-[#021024]/60 p-4 backdrop-blur-sm"
-      onClick={onTutup}
-    >
-      <motion.div
-        initial={{ opacity: 0, scale: 0.96, y: 12 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        role="dialog"
-        aria-modal="true"
-        aria-label="Filter dan urutan pendaftar"
-        onClick={(e) => e.stopPropagation()}
-        className="max-h-[calc(100dvh-2rem)] w-full max-w-lg overflow-y-auto rounded-3xl bg-white p-6 shadow-2xl"
-      >
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="text-[11px] font-bold uppercase tracking-[.18em] text-[#2F5F8F]/70">
-              Saring daftar
-            </p>
-            <h3 className="mt-1 text-xl font-bold text-[#021024]">Filter pendaftar</h3>
-            <p className="mt-1 text-xs leading-relaxed text-[#021024]/45">
-              Pilih kriteria, lalu tekan Terapkan. Filter berlaku bersama pencarian.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onTutup}
-            aria-label="Tutup"
-            className="grid size-8 place-items-center rounded-full text-[#021024]/40 transition hover:bg-[#021024]/5"
-          >
-            <X size={16} />
-          </button>
-        </div>
-
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            onTerapkan(draf);
-          }}
-          className="mt-5"
-        >
-          <div className="grid gap-4 sm:grid-cols-2">
-            <PilihanFilter label="Status" nilai={draf.status} onUbah={(v) => ubah("status", v)}>
-              <option value="semua">Semua status</option>
-              {STATUS.map((s) => (
-                <option key={s.nilai} value={s.nilai}>
-                  {s.label}
-                </option>
-              ))}
-            </PilihanFilter>
-
-            <PilihanFilter label="Jenis kelamin" nilai={draf.jk} onUbah={(v) => ubah("jk", v)}>
-              <option value="semua">Semua</option>
-              {JENIS_KELAMIN.map((j) => (
-                <option key={j.nilai} value={j.nilai}>
-                  {j.label}
-                </option>
-              ))}
-            </PilihanFilter>
-
-            <PilihanFilter
-              label="Pilihan jurusan 1"
-              nilai={draf.jurusan1}
-              onUbah={(v) => ubah("jurusan1", v)}
-            >
-              <option value="semua">Semua jurusan</option>
-              {JURUSAN.map((j) => (
-                <option key={j.kode} value={j.kode}>
-                  {j.kode} — {j.nama}
-                </option>
-              ))}
-            </PilihanFilter>
-
-            <PilihanFilter
-              label="Pilihan jurusan 2"
-              nilai={draf.jurusan2}
-              onUbah={(v) => ubah("jurusan2", v)}
-            >
-              <option value="semua">Semua jurusan</option>
-              {JURUSAN.map((j) => (
-                <option key={j.kode} value={j.kode}>
-                  {j.kode} — {j.nama}
-                </option>
-              ))}
-            </PilihanFilter>
-          </div>
-
-          <div className="mt-5 rounded-2xl border border-[#021024]/10 bg-[#F4F9FF] p-4">
-            <p className="text-[11px] font-bold uppercase tracking-[.16em] text-[#2F5F8F]/70">
-              Urutan
-            </p>
-            <div className="mt-3 grid gap-4 sm:grid-cols-2">
-              <PilihanFilter
-                label="Urutkan berdasarkan"
-                nilai={draf.urut}
-                onUbah={(v) => ubah("urut", v === "nama" ? "nama" : "terbaru")}
-              >
-                <option value="terbaru">Terbaru (tanggal daftar)</option>
-                <option value="nama">Alfabetis (nama)</option>
-              </PilihanFilter>
-
-              <PilihanFilter
-                label="Arah"
-                nilai={draf.arah}
-                onUbah={(v) => ubah("arah", v === "asc" ? "asc" : "desc")}
-              >
-                {draf.urut === "nama" ? (
-                  <>
-                    <option value="asc">Naik (A → Z)</option>
-                    <option value="desc">Turun (Z → A)</option>
-                  </>
-                ) : (
-                  <>
-                    <option value="desc">Turun (terbaru dulu)</option>
-                    <option value="asc">Naik (terlama dulu)</option>
-                  </>
-                )}
-              </PilihanFilter>
-            </div>
-          </div>
-
-          <div className="mt-5 flex flex-wrap items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setDraf(FILTER_AWAL)}
-              className="rounded-full border border-[#021024]/15 px-4 py-2.5 text-sm font-semibold text-[#021024]/70 transition hover:bg-[#021024]/5"
-            >
-              Atur ulang
-            </button>
-            <div className="ml-auto flex items-center gap-2">
-              <button
-                type="button"
-                onClick={onTutup}
-                className="rounded-full px-4 py-2.5 text-sm font-semibold text-[#021024]/60 transition hover:bg-[#021024]/5"
-              >
-                Batal
-              </button>
-              <button
-                type="submit"
-                className="rounded-full bg-[#052659] px-5 py-2.5 text-sm font-semibold text-[#C1E8FF] transition hover:bg-[#021024] hover:text-white"
-              >
-                Terapkan
-              </button>
-            </div>
-          </div>
-        </form>
-      </motion.div>
-    </div>
-  );
-}
-
-function PilihanFilter({
-  label,
-  nilai,
-  onUbah,
-  children,
-}: {
-  label: string;
-  nilai: string;
-  onUbah: (nilai: string) => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="block text-xs font-bold uppercase tracking-[.14em] text-[#2F5F8F]">
-        {label}
-      </span>
-      <select
-        value={nilai}
-        onChange={(e) => onUbah(e.target.value)}
-        className="mt-2 w-full rounded-xl border border-[#021024]/15 bg-white px-3 py-2.5 text-sm text-[#021024] outline-none transition focus:border-[#5483B3] focus:ring-2 focus:ring-[#5483B3]/25"
-      >
-        {children}
-      </select>
-    </label>
   );
 }
 

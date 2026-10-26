@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -46,6 +46,14 @@ interface Props {
 const TIPE_DIIZINKAN = ["image/jpeg", "image/png", "image/webp"];
 const MAKS = 4 * 1024 * 1024;
 
+/** File hasil tempel/seret kadang tidak punya nama -> beri nama sementara. */
+function namaiGambar(f: File): File {
+  if (f.name) return f;
+  return new File([f], `tempel-${Date.now()}.${f.type.split("/")[1] || "png"}`, {
+    type: f.type,
+  });
+}
+
 export default function FormBeritaModal({ terbuka, onTutup, awal, onSukses }: Props) {
   const modeEdit = Boolean(awal?.id);
 
@@ -58,6 +66,8 @@ export default function FormBeritaModal({ terbuka, onTutup, awal, onSukses }: Pr
   const [menyimpan, setMenyimpan] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [tabPratinjau, setTabPratinjau] = useState(false);
+  const [dragAktif, setDragAktif] = useState(false);
+  const [dragIsiAktif, setDragIsiAktif] = useState(false);
   const [mengunggahInline, setMengunggahInline] = useState(false);
   const [ukuranInline, setUkuranInline] = useState<UkuranGambarInline>("besar");
   const areaKontenRef = useRef<HTMLTextAreaElement | null>(null);
@@ -74,6 +84,8 @@ export default function FormBeritaModal({ terbuka, onTutup, awal, onSukses }: Pr
     setHapusGambarLama(false);
     setError(null);
     setTabPratinjau(false);
+    setDragAktif(false);
+    setDragIsiAktif(false);
     setMengunggahInline(false);
     setUkuranInline("besar");
   }, [terbuka, awal]);
@@ -134,10 +146,8 @@ export default function FormBeritaModal({ terbuka, onTutup, awal, onSukses }: Pr
     });
   }
 
-  async function pilihGambarInline(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
-    e.target.value = "";
-    if (!f) return;
+  /** Unggah gambar isi lalu sisipkan markdown-nya di posisi kursor. */
+  async function unggahGambarIsi(f: File, posisi?: { mulai: number; akhir: number }) {
     if (!TIPE_DIIZINKAN.includes(f.type)) {
       setError("Gambar isi harus JPG, PNG, atau WebP.");
       return;
@@ -146,6 +156,9 @@ export default function FormBeritaModal({ terbuka, onTutup, awal, onSukses }: Pr
       setError("Gambar isi terlalu besar (maksimal 4 MB).");
       return;
     }
+    const el = areaKontenRef.current;
+    const mulai = posisi?.mulai ?? el?.selectionStart ?? konten.length;
+    const akhir = posisi?.akhir ?? el?.selectionEnd ?? konten.length;
     setError(null);
     setMengunggahInline(true);
     try {
@@ -163,19 +176,13 @@ export default function FormBeritaModal({ terbuka, onTutup, awal, onSukses }: Pr
       }
       const nama = f.name.replace(/\.[^.]+$/, "").slice(0, 40) || "gambar";
       const markdown = buatMarkdownGambar(nama, data.url, ukuranInline);
-      const el = areaKontenRef.current;
-      if (!el) {
-        setKonten((lama) => `${lama}${markdown}`);
-        return;
-      }
-      const mulai = el.selectionStart ?? konten.length;
-      const akhir = el.selectionEnd ?? konten.length;
-      const baru = konten.slice(0, mulai) + markdown + konten.slice(akhir);
-      setKonten(baru);
+      setKonten((lama) => lama.slice(0, mulai) + markdown + lama.slice(akhir));
       requestAnimationFrame(() => {
-        el.focus();
+        const area = areaKontenRef.current;
+        if (!area) return;
+        area.focus();
         const pos = mulai + markdown.length;
-        el.setSelectionRange(pos, pos);
+        area.setSelectionRange(pos, pos);
       });
     } catch {
       setError("Tidak dapat mengunggah gambar isi.");
@@ -184,10 +191,60 @@ export default function FormBeritaModal({ terbuka, onTutup, awal, onSukses }: Pr
     }
   }
 
-  function pilihGambar(e: React.ChangeEvent<HTMLInputElement>) {
+  async function pilihGambarInline(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0];
     e.target.value = "";
     if (!f) return;
+    await unggahGambarIsi(f);
+  }
+
+  /** Tempel gambar (Ctrl+V) langsung ke isi berita. Teks tetap ditempel seperti biasa. */
+  function tempelDiKonten(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    if (menyimpan || mengunggahInline) return;
+    const item = Array.from(e.clipboardData?.items ?? []).find(
+      (i) => i.kind === "file" && i.type.startsWith("image/")
+    );
+    const f = item?.getAsFile();
+    if (!f) return;
+    e.preventDefault();
+    const el = e.currentTarget;
+    void unggahGambarIsi(namaiGambar(f), {
+      mulai: el.selectionStart,
+      akhir: el.selectionEnd,
+    });
+  }
+
+  function dragIsiMasuk(e: React.DragEvent<HTMLTextAreaElement>) {
+    if (menyimpan || mengunggahInline) return;
+    if (!Array.from(e.dataTransfer.types).includes("Files")) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+    setDragIsiAktif(true);
+  }
+
+  function dragIsiKeluar() {
+    setDragIsiAktif(false);
+  }
+
+  /** Lepas gambar ke isi berita -> unggah lalu sisipkan di kursor. */
+  function jatuhkanDiKonten(e: React.DragEvent<HTMLTextAreaElement>) {
+    e.preventDefault();
+    setDragIsiAktif(false);
+    if (menyimpan || mengunggahInline) return;
+    const f = Array.from(e.dataTransfer.files).find((x) => x.type.startsWith("image/"));
+    if (!f) {
+      setError("Hanya berkas gambar yang bisa diletakkan di isi berita.");
+      return;
+    }
+    const el = e.currentTarget;
+    void unggahGambarIsi(namaiGambar(f), {
+      mulai: el.selectionStart,
+      akhir: el.selectionEnd,
+    });
+  }
+
+  /** Validasi + pasang file gambar sampul (dipakai untuk pilih, tempel, dan drop). */
+  const terimaGambar = useCallback((f: File) => {
     if (!TIPE_DIIZINKAN.includes(f.type)) {
       setError("Format gambar harus JPG, PNG, atau WebP.");
       return;
@@ -196,9 +253,56 @@ export default function FormBeritaModal({ terbuka, onTutup, awal, onSukses }: Pr
       setError("Ukuran gambar terlalu besar (maksimal 4 MB).");
       return;
     }
+    const berkas = namaiGambar(f);
     setError(null);
-    setGambar(f);
+    setGambar(berkas);
     setHapusGambarLama(false);
+  }, []);
+
+  // Tempel gambar dari clipboard (Ctrl+V) selama modal terbuka.
+  useEffect(() => {
+    if (!terbuka || menyimpan) return;
+    function padaTempel(e: ClipboardEvent) {
+      // Tempel di area isi ditangani oleh textarea (gambar masuk ke badan berita).
+      if (e.target === areaKontenRef.current) return;
+      const item = Array.from(e.clipboardData?.items ?? []).find(
+        (i) => i.kind === "file" && i.type.startsWith("image/")
+      );
+      const f = item?.getAsFile();
+      if (!f) return;
+      e.preventDefault();
+      terimaGambar(f);
+    }
+    document.addEventListener("paste", padaTempel);
+    return () => document.removeEventListener("paste", padaTempel);
+  }, [terbuka, menyimpan, terimaGambar]);
+
+  function pilihGambar(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    e.target.value = "";
+    if (!f) return;
+    terimaGambar(f);
+  }
+
+  function dragMasuk(e: React.DragEvent<HTMLDivElement>) {
+    if (menyimpan || !Array.from(e.dataTransfer.types).includes("Files")) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "copy";
+    setDragAktif(true);
+  }
+
+  function dragKeluar(e: React.DragEvent<HTMLDivElement>) {
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return;
+    setDragAktif(false);
+  }
+
+  function jatuhkan(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setDragAktif(false);
+    if (menyimpan) return;
+    const daftar = Array.from(e.dataTransfer.files);
+    const f = daftar.find((x) => x.type.startsWith("image/")) ?? daftar[0];
+    if (f) terimaGambar(f);
   }
 
   async function submit(e: React.FormEvent) {
@@ -291,9 +395,19 @@ export default function FormBeritaModal({ terbuka, onTutup, awal, onSukses }: Pr
                 className="sr-only"
               />
 
-              <div className="relative mt-4 flex-1">
+              <div
+                className="relative mt-4 flex-1"
+                onDragEnter={dragMasuk}
+                onDragOver={dragMasuk}
+                onDragLeave={dragKeluar}
+                onDrop={jatuhkan}
+              >
                 {gambarTampil ? (
-                  <div className="overflow-hidden rounded-2xl border border-white/15 bg-white/5">
+                  <div
+                    className={`overflow-hidden rounded-2xl border bg-white/5 ${
+                      dragAktif ? "border-[#C1E8FF] ring-2 ring-[#C1E8FF]/60" : "border-white/15"
+                    }`}
+                  >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={gambarTampil}
@@ -329,14 +443,20 @@ export default function FormBeritaModal({ terbuka, onTutup, awal, onSukses }: Pr
                 ) : (
                   <label
                     htmlFor="gambar-berita-modal"
-                    className="flex h-36 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-[#7DA0CA]/50 bg-white/5 px-4 text-center transition hover:border-[#C1E8FF] hover:bg-white/10 md:h-56"
+                    className={`flex h-36 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed px-4 text-center transition md:h-56 ${
+                      dragAktif
+                        ? "border-[#C1E8FF] bg-white/15"
+                        : "border-[#7DA0CA]/50 bg-white/5 hover:border-[#C1E8FF] hover:bg-white/10"
+                    }`}
                   >
                     <span className="grid size-11 place-items-center rounded-full bg-white/10">
                       <ImagePlus size={20} className="text-[#C1E8FF]" />
                     </span>
-                    <span className="text-sm font-semibold">Upload gambar sampul</span>
+                    <span className="text-sm font-semibold">
+                      {dragAktif ? "Lepaskan gambar di sini" : "Upload gambar sampul"}
+                    </span>
                     <span className="text-[11px] text-[#C1E8FF]/55">
-                      Klik / ketuk untuk memilih
+                      Tarik & lepas atau tempel (Ctrl+V)
                       <br />
                       JPG, PNG, WebP · maks 4 MB
                     </span>
@@ -545,17 +665,27 @@ export default function FormBeritaModal({ terbuka, onTutup, awal, onSukses }: Pr
                     ref={areaKontenRef}
                     value={konten}
                     onChange={(e) => setKonten(e.target.value)}
+                    onPaste={tempelDiKonten}
+                    onDragEnter={dragIsiMasuk}
+                    onDragOver={dragIsiMasuk}
+                    onDragLeave={dragIsiKeluar}
+                    onDrop={jatuhkanDiKonten}
                     rows={6}
                     maxLength={20000}
                     disabled={menyimpan}
-                    placeholder={"Tulis isi lengkap berita di sini...\n\nPilih ukuran lalu klik Sisip:\nBesar = full • Sedang/Kecil = tengah\nKiri/Kanan = teks mengalir di samping (spt Word)\n\n![Foto kegiatan|kiri](otomatis terisi)"}
-                    className="mb-1 mt-2 min-h-[140px] w-full flex-1 resize-y rounded-xl border border-[#021024]/15 bg-white px-4 py-3 text-sm leading-relaxed text-[#021024] outline-none transition placeholder:text-[#021024]/35 focus:border-[#5483B3] focus:ring-2 focus:ring-[#5483B3]/25 disabled:opacity-50"
+                    placeholder={"Tulis isi lengkap berita di sini...\n\nPilih ukuran lalu klik Sisip:\nBesar = full • Sedang/Kecil = tengah\nKiri/Kanan = teks mengalir di samping (spt Word)\n\nBisa juga tempel (Ctrl+V) atau tarik gambar ke sini.\n\n![Foto kegiatan|kiri](otomatis terisi)"}
+                    className={`mb-1 mt-2 min-h-[140px] w-full flex-1 resize-y rounded-xl border bg-white px-4 py-3 text-sm leading-relaxed text-[#021024] outline-none transition placeholder:text-[#021024]/35 focus:ring-2 focus:ring-[#5483B3]/25 disabled:opacity-50 ${
+                      dragIsiAktif
+                        ? "border-[#5483B3] bg-[#5483B3]/5 ring-2 ring-[#5483B3]/40"
+                        : "border-[#021024]/15 focus:border-[#5483B3]"
+                    }`}
                     required
                   />
                 )}
                 {!tabPratinjau && (
                   <p className="mb-5 text-[11px] leading-relaxed text-[#021024]/45">
                     Mendukung <strong>tebal</strong>, <em>miring</em>, daftar, dan gambar opsional.
+                    Tempel (Ctrl+V) atau tarik gambar ke kotak isi untuk menyisipkannya.
                     Pilih <strong>Kecil / Sedang / Besar / Kiri / Kanan</strong> sebelum sisip — bisa
                     juga edit manual <code className="rounded bg-[#021024]/5 px-1">|kecil</code> /{" "}
                     <code className="rounded bg-[#021024]/5 px-1">|sedang</code> /{" "}

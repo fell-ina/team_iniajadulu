@@ -84,6 +84,7 @@ type JurusanData = {
   full: string;
   hero: string;
   activity: string;
+  activityImages: string[];
   model: string;
   desc: string;
   about: string;
@@ -95,7 +96,15 @@ const jurusan: Record<Slug, JurusanData> = {
     name: "PPLG",
     full: "Pengembangan Perangkat Lunak dan Gim",
     hero: "/images/school/hero-lab.jpg",
-    activity: "/images/school/hero-lab.jpg",
+    activity: "/images/kompetensi/pplg-01-pemrograman.jpg",
+    activityImages: [
+      "/images/kompetensi/pplg-01-pemrograman.jpg",        // 01 Pemrograman
+      "/images/kompetensi/pplg-02-pengembangan-website.jpg",    // 02 Pengembangan Website
+      "/images/kompetensi/pplg-03-pengembangan-aplikasi.jpg",         // 03 Pengembangan Aplikasi
+      "/images/kompetensi/pplg-04-basis-data.jpg",           // 04 Basis Data
+      "/images/kompetensi/pplg-05-pengembangan-gim.jpg",         // 05 Pengembangan Gim
+      "/images/kompetensi/pplg-06-pemodelan-perangkat-lunak.jpg",    // 06 Pemodelan Perangkat Lunak
+    ],
     model: "/models/pplg.glb",
     desc: "Belajar membangun software, website, aplikasi, gim, basis data, dan solusi digital yang relevan dengan industri.",
     about:
@@ -114,7 +123,15 @@ const jurusan: Record<Slug, JurusanData> = {
     name: "TJKT",
     full: "Teknik Jaringan Komputer dan Telekomunikasi",
     hero: "/images/school/building-main.png",
-    activity: "/images/school/tkj1.jpg",
+    activity: "/images/kompetensi/tjkt-01-jaringan-komputer.jpg",
+    activityImages: [
+      "/images/kompetensi/tjkt-01-jaringan-komputer.jpg",             // 01 Jaringan Komputer
+      "/images/kompetensi/tjkt-02-administrasi-jaringan.jpg",    // 02 Administrasi Jaringan
+      "/images/kompetensi/tjkt-03-teknologi-telekomunikasi.jpg",           // 03 Teknologi Telekomunikasi
+      "/images/kompetensi/tjkt-04-server.jpg",           // 04 Server
+      "/images/kompetensi/tjkt-05-keamanan-jaringan.jpg",             // 05 Keamanan Jaringan
+      "/images/kompetensi/tjkt-06-infrastruktur-jaringan.jpg",    // 06 Infrastruktur Jaringan
+    ],
     model: "/models/pakjoko2.glb",
     desc: "Mempelajari jaringan komputer, telekomunikasi, infrastruktur, dan teknologi konektivitas.",
     about:
@@ -133,7 +150,15 @@ const jurusan: Record<Slug, JurusanData> = {
     name: "DKV",
     full: "Desain Komunikasi Visual",
     hero: "/images/school/hero-courtyard.jpg",
-    activity: "/images/school/dkv.jpg",
+    activity: "/images/kompetensi/dkv-01-desain-grafis.jpg",
+    activityImages: [
+      "/images/kompetensi/dkv-01-desain-grafis.jpg",              // 01 Desain Grafis
+      "/images/kompetensi/dkv-02-ilustrasi.jpg",              // 02 Ilustrasi
+      "/images/kompetensi/dkv-03-fotografi.jpg",   // 03 Fotografi
+      "/images/kompetensi/dkv-04-tipografi.jpg",              // 04 Tipografi
+      "/images/kompetensi/dkv-05-branding.jpg",   // 05 Branding
+      "/images/kompetensi/dkv-06-media-visual.jpg",              // 06 Media Visual
+    ],
     model: "/models/miawww-miaw.glb",
     desc: "Mengembangkan kemampuan visual, desain, komunikasi, dan karya kreatif untuk kebutuhan media.",
     about:
@@ -152,7 +177,15 @@ const jurusan: Record<Slug, JurusanData> = {
     name: "TKR",
     full: "Teknik Kendaraan Ringan",
     hero: "/images/school/building-secondary.png",
-    activity: "/images/school/tkr.jpg",
+    activity: "/images/kompetensi/tkr-01-perawatan-kendaraan.jpg",
+    activityImages: [
+      "/images/kompetensi/tkr-01-perawatan-kendaraan.jpg",              // 01 Perawatan Kendaraan
+      "/images/kompetensi/tkr-02-perbaikan-mesin.jpg",              // 02 Perbaikan Mesin
+      "/images/kompetensi/tkr-03-sistem-kelistrikan.jpg",              // 03 Sistem Kelistrikan
+      "/images/kompetensi/tkr-04-diagnosis-kendaraan.jpg",              // 04 Diagnosis Kendaraan
+      "/images/kompetensi/tkr-05-sistem-pemindah-tenaga.jpg",              // 05 Sistem Pemindah Tenaga
+      "/images/kompetensi/tkr-06-teknologi-otomotif.jpg",              // 06 Teknologi Otomotif
+    ],
     model: "/models/Tkr_berwarna2.glb",
     desc: "Mempelajari perawatan, perbaikan, diagnosis, dan teknologi kendaraan ringan.",
     about:
@@ -325,6 +358,7 @@ export default function JurusanDetails({
         about={d.about}
         skills={d.skills}
         activity={d.activity}
+        activityImages={d.activityImages}
       />
 
       {/* ================= NEXT ================= */}
