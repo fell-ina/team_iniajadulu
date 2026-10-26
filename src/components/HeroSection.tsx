@@ -185,11 +185,12 @@ export default function HeroSection() {
         </div>
       </section>
       <div className="relative z-20 -mt-12 px-4 sm:px-6">
-        <div className="mx-auto grid max-w-7xl grid-cols-2 overflow-hidden rounded-md bg-[#343A70] shadow-xl lg:grid-cols-4">
+        <div className="mx-auto grid max-w-7xl grid-cols-2 overflow-visible rounded-md bg-[#343A70] shadow-xl lg:grid-cols-4">
           {[
             {
               title: "Chatbot",
               description: "Ngobrol Dengan Fiska",
+              image: "/images/school/def_fiska.png",
               icon: Bot,
             },
             {
@@ -207,17 +208,35 @@ export default function HeroSection() {
               description: "Ruang Berdiskusi",
               icon: MessagesSquare,
             },
-          ].map(({ title, description, icon: Icon }) => {
-            const className = "group flex min-h-24 cursor-default items-center gap-4 px-4 py-4 text-white/60 sm:px-6 lg:border-r lg:border-white/10";
+          ].map(({ title, description, image, icon: Icon }, index) => {
+            const mobileDivider =
+              index === 0
+                ? "border-r border-b"
+                : index === 1
+                  ? "border-b"
+                  : index === 2
+                    ? "border-r"
+                    : "";
+            const desktopDivider = index < 3 ? "lg:border-r" : "";
+            const className = `group relative flex min-h-24 cursor-default items-center gap-4 border-white/10 py-4 text-white/60 lg:border-b-0 ${mobileDivider} ${desktopDivider} ${image ? "pl-28 pr-4 sm:pl-28 sm:pr-6" : "px-4 sm:px-6"}`;
             const content = (
               <>
-                <Icon
-                  aria-hidden="true"
-                  size={34}
-                  strokeWidth={1.5}
-                  className="shrink-0 text-[#C1E8FF]/45"
-                />
-                <span className="min-w-0 flex-1 text-left">
+                {image ? (
+                  <img
+                    src={image}
+                    alt=""
+                    aria-hidden="true"
+                    className="pointer-events-none absolute bottom-0 left-0 z-0 h-36 w-24 object-contain object-bottom"
+                  />
+                ) : (
+                  <Icon
+                    aria-hidden="true"
+                    size={34}
+                    strokeWidth={1.5}
+                    className="shrink-0 text-[#C1E8FF]/45"
+                  />
+                )}
+                <span className="relative z-10 min-w-0 flex-1 text-left">
                   <span
                     className="block text-[10px] font-bold uppercase tracking-[.16em] text-[#C1E8FF]/55"
                   >

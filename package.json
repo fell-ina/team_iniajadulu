@@ -26,7 +26,8 @@
     "react-dom": "19.2.8",
     "react-markdown": "^10.1.0",
     "tailwind-merge": "^3.7.0",
-    "three": "^0.180.0"
+    "three": "^0.180.0",
+    "three-globe": "^2.45.6"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
