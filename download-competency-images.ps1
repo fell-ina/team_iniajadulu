@@ -1,10 +1,6 @@
-# Download script for competency images from Pexels
-# Run this in PowerShell from the project root directory
-
 $baseDir = "D:\team_iniajadulu\public\images\kompetensi"
 $pexelsBase = "https://images.pexels.com/photos"
 
-# Function to download image
 function Download-PexelsImage {
     param(
         [string]$photoId,
