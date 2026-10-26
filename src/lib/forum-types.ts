@@ -67,6 +67,33 @@ export const KELAS_WARNA: Record<KelasForum, string> = {
   XII: "bg-purple-500/10 border-purple-500/20 text-purple-600 hover:bg-purple-500/20",
 };
 
+/* ==== Laporan forum (dipakai halaman moderasi admin) ==== */
+
+export type StatusLaporanForum = "pending" | "diproses" | "selesai" | "ditolak";
+
+/** Laporan siswa yang sudah dilengkapi nama pelapor & data targetnya. */
+export interface LaporanForum {
+  id: string;
+  alasan: string;
+  status: StatusLaporanForum;
+  createdAt: string;
+  pelaporNama: string;
+  target: "topik" | "balasan";
+  targetId: string;
+  /** Potongan isi topik/balasan yang dilaporkan. */
+  targetKonten: string;
+  topikId: string | null;
+  topikJudul: string | null;
+  topikKelas: KelasForum | null;
+}
+
+export const LABEL_STATUS_LAPORAN: Record<StatusLaporanForum, string> = {
+  pending: "Menunggu",
+  diproses: "Diproses",
+  selesai: "Selesai",
+  ditolak: "Ditolak",
+};
+
 export interface PilihanKategori {
   nilai: string;
   label: string;
