@@ -44,6 +44,23 @@ type WorldProps = {
   data: Position[];
 };
 
+const regionalPoints = [
+  { lat: 31.2, lng: 29.9, color: "#22d3ee" },
+  { lat: 30.0, lng: 31.2, color: "#60a5fa" },
+  { lat: 14.7, lng: -17.5, color: "#818cf8" },
+  { lat: 9.1, lng: 7.4, color: "#22d3ee" },
+  { lat: 6.5, lng: 3.4, color: "#60a5fa" },
+  { lat: 0.3, lng: 32.6, color: "#818cf8" },
+  { lat: -1.3, lng: 36.8, color: "#22d3ee" },
+  { lat: -6.8, lng: 39.3, color: "#60a5fa" },
+  { lat: -15.4, lng: 28.3, color: "#818cf8" },
+  { lat: -26.2, lng: 28.0, color: "#22d3ee" },
+  { lat: -33.9, lng: 18.4, color: "#60a5fa" },
+  { lat: 33.6, lng: -7.6, color: "#818cf8" },
+  { lat: 5.6, lng: -0.2, color: "#22d3ee" },
+  { lat: -4.3, lng: 15.3, color: "#60a5fa" },
+];
+
 export function Globe({ globeConfig, data }: WorldProps) {
   const globeRef = useRef<ThreeGlobe | null>(null);
   const groupRef = useRef<Group>(null);
@@ -102,10 +119,17 @@ export function Globe({ globeConfig, data }: WorldProps) {
   useEffect(() => {
     if (!globeRef.current || !isInitialized) return;
 
-    const points = data.flatMap((arc) => [
-      { size: config.pointSize, order: arc.order, color: arc.color, lat: arc.startLat, lng: arc.startLng },
-      { size: config.pointSize, order: arc.order, color: arc.color, lat: arc.endLat, lng: arc.endLng },
-    ]);
+    const points = [
+      ...data.flatMap((arc) => [
+        { size: config.pointSize, order: arc.order, color: arc.color, lat: arc.startLat, lng: arc.startLng },
+        { size: config.pointSize, order: arc.order, color: arc.color, lat: arc.endLat, lng: arc.endLng },
+      ]),
+      ...regionalPoints.map((point, index) => ({
+        ...point,
+        size: config.pointSize,
+        order: index + 10,
+      })),
+    ];
     const filteredPoints = points.filter(
       (point, index, all) =>
         all.findIndex((other) => other.lat === point.lat && other.lng === point.lng) === index,
@@ -182,9 +206,11 @@ function RendererConfig() {
 export function World({ globeConfig, data }: WorldProps) {
   const scene = new Scene();
   scene.fog = new Fog(0x021024, 400, 2000);
+  const camera = new PerspectiveCamera(50, 1.2, 180, 1800);
+  camera.position.set(0, 34, CAMERA_Z);
 
   return (
-    <Canvas scene={scene} camera={new PerspectiveCamera(50, 1.2, 180, 1800)}>
+    <Canvas scene={scene} camera={camera}>
       <RendererConfig />
       <ambientLight color={globeConfig.ambientLight} intensity={0.6} />
       <directionalLight color={globeConfig.directionalLeftLight} position={new Vector3(-400, 100, 400)} />
@@ -194,6 +220,7 @@ export function World({ globeConfig, data }: WorldProps) {
       <OrbitControls
         enablePan={false}
         enableZoom={false}
+        enableRotate={false}
         minDistance={CAMERA_Z}
         maxDistance={CAMERA_Z}
         autoRotate
