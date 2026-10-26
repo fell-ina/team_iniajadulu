@@ -2590,6 +2590,9 @@ function Footer() {
               <Link className="block hover:text-white" href="/berita">
                 Berita
               </Link>
+              <a className="block hover:text-white" href="/forum">
+                Forum Siswa
+              </a>
             </div>
           </div>
           <div>
