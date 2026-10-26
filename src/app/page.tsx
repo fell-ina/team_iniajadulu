@@ -27,8 +27,8 @@ import Image from "next/image";
 import dynamic from "next/dynamic";
 import HeroSection from "@/components/HeroSection";
 import GlobeBackground from "@/components/GlobeBackground";
-import Chatbot from "@/components/Chatbot";
-import ModalKirimNisn from "@/components/ModalKirimNisn";
+//import Chatbot from "@/components/Chatbot";
+//import ModalKirimNisn from "@/components/ModalKirimNisn";
 import { ringkasKonten } from "@/lib/ringkasTeks";
 
 // Widget yang tidak terlihat saat halaman pertama dibuka dipecah ke chunk
