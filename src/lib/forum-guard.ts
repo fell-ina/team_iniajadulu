@@ -68,6 +68,10 @@ export function useForumGuard(kelasDiperlukan?: "X" | "XI" | "XII") {
       return;
     }
 
+    if (session.role === "admin") return;
+
+    if (session.role === "guru") return;
+
     // Hanya siswa yang boleh akses forum siswa
     if (session.role !== "siswa") {
       router.push("/dashboard");

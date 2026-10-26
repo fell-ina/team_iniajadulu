@@ -119,6 +119,8 @@ export function useForumGuard(kelasDiperlukan?: "X" | "XI" | "XII") {
       return;
     }
 
+    if (auth.role === "admin") return;
+
     // Hanya siswa yang boleh akses forum siswa
     if (auth.role !== "siswa") {
       router.push("/dashboard");
@@ -159,7 +161,9 @@ export function getForumAuthRedirect(auth: ForumAuthState, kelasDiperlukan?: "X"
   // Belum login
   if (auth.loading) return null;
   if (!auth.userId) return "/login?redirect=" + encodeURIComponent(window.location.pathname);
-  
+
+  if (auth.role === "admin") return null;
+
   // Bukan siswa
   if (auth.role !== "siswa") return "/dashboard";
   

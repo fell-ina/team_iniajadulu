@@ -150,7 +150,7 @@ export default function ForumKelas({ kelas, deskripsi }: ForumKelasProps) {
       const res = await fetch("/api/forum/topik", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ judul, konten: isi, kategori: kategoriBaru }),
+        body: JSON.stringify({ judul, konten: isi, kategori: kategoriBaru, kelas }),
       });
       const data = await res.json();
 

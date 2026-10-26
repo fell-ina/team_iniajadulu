@@ -151,15 +151,8 @@ export async function POST(request: Request) {
     );
   }
 
-  const daftarKategori = sesi.role === "siswa" ? KATEGORI_SISWA : KATEGORI_GURU;
-  if (!kategoriValid(kategori, daftarKategori)) {
-    return NextResponse.json(
-      { ok: false, message: "Kategori diskusi tidak dikenal." },
-      { status: 400 }
-    );
-  }
-
   let kelas: KelasForum | null = null;
+  let daftarKategori = KATEGORI_GURU;
 
   if (sesi.role === "siswa") {
     if (!sesi.kelas) {
@@ -176,10 +169,29 @@ export async function POST(request: Request) {
       );
     }
     kelas = sesi.kelas;
+    daftarKategori = KATEGORI_SISWA;
   } else if (body?.kelas) {
-    // Guru/admin tetap menulis ke forum guru (kelas NULL).
+    if (sesi.role !== "admin") {
+      // Guru tetap menulis ke forum guru (kelas NULL).
+      return NextResponse.json(
+        { ok: false, message: "Forum guru tidak terikat kelas." },
+        { status: 400 }
+      );
+    }
+    const diminta = teks(body?.kelas);
+    if (!KELAS.includes(diminta)) {
+      return NextResponse.json(
+        { ok: false, message: "Kelas tidak dikenal." },
+        { status: 400 }
+      );
+    }
+    kelas = diminta as KelasForum;
+    daftarKategori = KATEGORI_SISWA;
+  }
+
+  if (!kategoriValid(kategori, daftarKategori)) {
     return NextResponse.json(
-      { ok: false, message: "Forum guru tidak terikat kelas." },
+      { ok: false, message: "Kategori diskusi tidak dikenal." },
       { status: 400 }
     );
   }
