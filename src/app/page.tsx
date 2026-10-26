@@ -26,12 +26,9 @@ import Link from "next/link";
 import Image from "next/image";
 import dynamic from "next/dynamic";
 import HeroSection from "@/components/HeroSection";
-<<<<<<< HEAD
-=======
 import GlobeBackground from "@/components/GlobeBackground";
 import Chatbot from "@/components/Chatbot";
 import ModalKirimNisn from '@/components/ModalKirimNisn';
->>>>>>> 91ab00936d0086dce14642339fff2d860dffc045
 import { ringkasKonten } from '@/lib/ringkasTeks';
 
 // Widget yang tidak terlihat saat halaman pertama dibuka dipecah ke chunk
@@ -840,11 +837,7 @@ function SambutanKepalaSekolah() {
 }
 const majors=[['01','PPLG','Pengembangan Perangkat Lunak dan Gim','/images/school/hero-lab.jpg','pplg','#BA0000'],['02','TJKT','Teknik Jaringan Komputer dan Telekomunikasi','/images/school/tkj1.jpg','tjkt','#00c53b'],['03','DKV','Desain Komunikasi Visual','/images/school/dkv.jpg','dkv','#152DA9'],['04','TKR','Teknik Kendaraan Ringan','/images/school/tkr.jpg','tkr','#C67219']];
 const mottos=["arah.","hati.","tujuan.","harapan."];
-<<<<<<< HEAD
 function Majors(){const[mottoIdx,setMottoIdx]=useState(0);useEffect(()=>{const t=setInterval(()=>setMottoIdx(v=>(v+1)%mottos.length),2800);return()=>clearInterval(t);},[]);return <section id="jurusan" className="relative overflow-hidden bg-[#021024] px-6 py-28 text-white sm:py-36"><motion.div aria-hidden="true" className="pointer-events-none absolute inset-0 select-none opacity-80 mix-blend-screen" animate={{opacity:[0.7,0.9,0.7],scale:[1,1.04,1]}} transition={{duration:17,repeat:Infinity,ease:'easeInOut'}}><Image src="/images/footer/aurora2.png" alt="" fill sizes="100vw" loading="lazy" className="object-cover" style={{filter:'brightness(1.35) saturate(1.2)'}}/></motion.div><div className="relative mx-auto max-w-7xl"><div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow text-[#7DA0CA]">02 / PROGRAM KEAHLIAN</p><h2 className="display mt-5 text-4xl sm:text-6xl">Empat bidang.<br/><span className="inline-block text-white/55">Satu <AnimatePresence mode="wait"><motion.span key={mottoIdx} className="inline-block" exit={{}}>{mottos[mottoIdx].split("").map((ch,i)=><motion.span key={i} className="inline-block whitespace-pre" initial={{opacity:0,y:"0.4em",filter:"blur(8px)"}} animate={{opacity:1,y:0,filter:"blur(0px)",transition:{duration:0.5,delay:i*0.055,ease:"easeOut"}}} exit={{opacity:0,y:"-0.3em",filter:"blur(8px)",transition:{duration:0.3,delay:(mottos[mottoIdx].length-1-i)*0.02,ease:"easeIn"}}}>{ch}</motion.span>)}</motion.span></AnimatePresence></span></h2></div><p className="max-w-sm text-sm leading-7 text-white/75">Eksplorasi software, jaringan, desain, dan otomotif melalui pengalaman vokasi yang relevan.</p></div><div className="mt-16 divide-y divide-white/10 border-y border-white/10">{majors.map(([n,title,desc,img,slug,accent])=><Link href={`/jurusan/${slug}`} key={title} style={{'--major-accent':accent} as React.CSSProperties} className="major-link group relative grid grid-cols-[52px_1fr_auto] items-center gap-x-4 gap-y-2 overflow-hidden rounded-lg py-5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C1E8FF] sm:rounded-none sm:grid-cols-[72px_1fr_1.2fr_auto] sm:gap-5 sm:py-8"><div className="relative col-start-1 row-start-2 h-12 w-[52px] overflow-hidden rounded-md sm:absolute sm:inset-y-3 sm:right-16 sm:col-auto sm:row-auto sm:h-20 sm:w-36 sm:rounded-xl sm:opacity-0 sm:transition sm:duration-500 sm:group-hover:opacity-20 lg:h-24 lg:w-44"><Image src={img} alt="" fill sizes="(min-width: 1024px) 176px, (min-width: 640px) 144px, 52px" loading="lazy" className="object-cover"/></div><span className="col-start-1 row-start-1 font-mono text-xs text-white/70 sm:col-auto sm:row-auto sm:text-white/55">{n}</span><h3 className="relative z-10 col-start-2 row-start-1 text-2xl font-medium tracking-tight sm:col-auto sm:row-auto sm:text-3xl lg:text-5xl">{title}</h3><p className="relative z-10 col-start-2 row-start-2 max-w-md text-xs leading-5 text-white/75 sm:col-auto sm:row-auto sm:text-sm sm:leading-6 sm:text-white/70">{desc}</p><ArrowUpRight className="relative z-10 col-start-3 row-span-2 row-start-1 self-center text-white/80 transition group-active:translate-x-1 group-active:-translate-y-1 group-hover:-translate-y-1 group-hover:translate-x-1 sm:col-auto sm:row-auto sm:self-auto"/></Link>)}</div></div></section>}
-=======
-function Majors(){const[mottoIdx,setMottoIdx]=useState(0);useEffect(()=>{const t=setInterval(()=>setMottoIdx(v=>(v+1)%mottos.length),2800);return()=>clearInterval(t);},[]);return <section id="jurusan" className="relative bg-[#021024] px-6 py-28 text-white sm:py-36"><motion.img src="/images/footer/aurora2.png" alt="" aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full select-none opacity-80 mix-blend-screen object-cover" style={{filter:'brightness(1.35) saturate(1.2)'}} animate={{opacity:[0.7,0.9,0.7],scale:[1,1.04,1]}} transition={{duration:17,repeat:Infinity,ease:'easeInOut'}}/><div className="relative mx-auto max-w-7xl"><div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow text-[#7DA0CA]">02 / PROGRAM KEAHLIAN</p><h2 className="display mt-5 text-4xl sm:text-6xl">Empat bidang.<br/><span className="inline-block text-white/55">Satu <AnimatePresence mode="wait"><motion.span key={mottoIdx} className="inline-block" exit={{}}>{mottos[mottoIdx].split("").map((ch,i)=><motion.span key={i} className="inline-block whitespace-pre" initial={{opacity:0,y:"0.4em",filter:"blur(8px)"}} animate={{opacity:1,y:0,filter:"blur(0px)",transition:{duration:0.5,delay:i*0.055,ease:"easeOut"}}} exit={{opacity:0,y:"-0.3em",filter:"blur(8px)",transition:{duration:0.3,delay:(mottos[mottoIdx].length-1-i)*0.02,ease:"easeIn"}}}>{ch}</motion.span>)}</motion.span></AnimatePresence></span></h2></div><p className="max-w-sm text-sm leading-7 text-white/75">Eksplorasi software, jaringan, desain, dan otomotif melalui pengalaman vokasi yang relevan.</p></div><div className="mt-16 divide-y divide-white/10 border-y border-white/10">{majors.map(([n,title,desc,img,slug,accent])=><Link href={`/jurusan/${slug}`} key={title} style={{'--major-accent':accent} as React.CSSProperties} className="major-link group relative grid grid-cols-[52px_1fr_auto] items-center gap-x-4 gap-y-2 overflow-hidden rounded-lg py-5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C1E8FF] sm:rounded-none sm:grid-cols-[72px_1fr_1.2fr_auto] sm:gap-5 sm:py-8"><div className="relative col-start-1 row-start-2 h-12 w-[52px] overflow-hidden rounded-md sm:absolute sm:inset-y-3 sm:right-16 sm:col-auto sm:row-auto sm:h-20 sm:w-36 sm:rounded-xl sm:opacity-0 sm:transition sm:duration-500 sm:group-hover:opacity-20 lg:h-24 lg:w-44"><img src={img} alt="" className="h-full w-full object-cover"/></div><span className="col-start-1 row-start-1 font-mono text-xs text-white/70 sm:col-auto sm:row-auto sm:text-white/55">{n}</span><h3 className="relative z-10 col-start-2 row-start-1 text-2xl font-medium tracking-tight sm:col-auto sm:row-auto sm:text-3xl lg:text-5xl">{title}</h3><p className="relative z-10 col-start-2 row-start-2 max-w-md text-xs leading-5 text-white/75 sm:col-auto sm:row-auto sm:text-sm sm:leading-6 sm:text-white/70">{desc}</p><ArrowUpRight className="relative z-10 col-start-3 row-span-2 row-start-1 self-center text-white/80 transition group-active:translate-x-1 group-active:-translate-y-1 group-hover:-translate-y-1 group-hover:translate-x-1 sm:col-auto sm:row-auto sm:self-auto"/></Link>)}</div></div></section>}
->>>>>>> 91ab00936d0086dce14642339fff2d860dffc045
 
 const newsFallback = [
   [
@@ -1918,7 +1911,6 @@ function Achievements() {
         </div>
         <div className="mt-12 grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
           <div className="relative overflow-hidden rounded-[1.75rem] bg-[#021024]">
-<<<<<<< HEAD
              <AnimatePresence mode="wait" initial={false}>
                <motion.div
                  key={achievementImages[activeAchievementImage]}
@@ -1975,57 +1967,6 @@ function Achievements() {
                  </button>
                </div>
              </div>
-=======
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.img
-                key={achievementImages[activeAchievementImage]}
-                src={achievementImages[activeAchievementImage]}
-                alt={`Prestasi siswa ${activeAchievementImage + 1}`}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 0.9 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.8, ease: "easeInOut" }}
-                className="h-[330px] w-full object-cover sm:h-[470px]"
-              />
-            </AnimatePresence>
-            <div className="absolute inset-x-5 bottom-5 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2 rounded-full border border-white/15 bg-[#021024]/55 px-3 py-2 backdrop-blur-md">
-                {achievementImages.map((image, index) => (
-                  <button
-                    key={image}
-                    type="button"
-                    onClick={() => setActiveAchievementImage(index)}
-                    aria-label={`Tampilkan foto prestasi ${index + 1}`}
-                    aria-pressed={activeAchievementImage === index}
-                    className="group flex items-center gap-2"
-                  >
-                    <span
-                      className={`block h-1 rounded-full transition-all duration-300 ${activeAchievementImage === index ? "w-8 bg-white" : "w-4 bg-white/40 group-hover:bg-white/75"}`}
-                    />
-                    <span className="sr-only">Foto {index + 1}</span>
-                  </button>
-                ))}
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => changeAchievement(-1)}
-                  aria-label="Foto prestasi sebelumnya"
-                  className="grid size-9 place-items-center rounded-full border border-white/20 bg-[#021024]/55 text-white backdrop-blur-md transition hover:bg-[#021024]/80"
-                >
-                  <ChevronLeft size={17} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => changeAchievement(1)}
-                  aria-label="Foto prestasi berikutnya"
-                  className="grid size-9 place-items-center rounded-full border border-white/20 bg-[#021024]/55 text-white backdrop-blur-md transition hover:bg-[#021024]/80"
-                >
-                  <ChevronRight size={17} />
-                </button>
-              </div>
-            </div>
->>>>>>> 91ab00936d0086dce14642339fff2d860dffc045
           </div>
           <div className="grid gap-3">
             {[
