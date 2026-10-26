@@ -28,13 +28,19 @@ import dynamic from "next/dynamic";
 import HeroSection from "@/components/HeroSection";
 import GlobeBackground from "@/components/GlobeBackground";
 import Chatbot from "@/components/Chatbot";
-import ModalKirimNisn from '@/components/ModalKirimNisn';
-import { ringkasKonten } from '@/lib/ringkasTeks';
+import ModalKirimNisn from "@/components/ModalKirimNisn";
+import { ringkasKonten } from "@/lib/ringkasTeks";
 
 // Widget yang tidak terlihat saat halaman pertama dibuka dipecah ke chunk
 // sendiri, jadi JS-nya tidak ikut menghambat render awal.
-const Chatbot = dynamic(() => import("@/components/Chatbot"), { ssr: false, loading: () => null });
-const ModalKirimNisn = dynamic(() => import('@/components/ModalKirimNisn'), { ssr: false, loading: () => null });
+const Chatbot = dynamic(() => import("@/components/Chatbot"), {
+  ssr: false,
+  loading: () => null,
+});
+const ModalKirimNisn = dynamic(() => import("@/components/ModalKirimNisn"), {
+  ssr: false,
+  loading: () => null,
+});
 
 const nav = [
   ["Profil", "#profil"],
@@ -136,10 +142,11 @@ function Nav({
                 href={h}
                 onMouseEnter={() => setHovered(h)}
                 onClick={() => setActiveSection(h)}
-                className={`relative rounded-full px-4 py-2 text-xs transition-colors duration-200 ${isSelected
+                className={`relative rounded-full px-4 py-2 text-xs transition-colors duration-200 ${
+                  isSelected
                     ? "text-white font-medium"
                     : "text-white/65 hover:text-white"
-                  }`}
+                }`}
               >
                 {isSelected && (
                   <motion.div
@@ -263,15 +270,51 @@ function Profile() {
         className="profile-shards pointer-events-none absolute inset-0 z-0"
       >
         {[
-          ["/images/polygon/Group%2019.png", "-left-5 top-[-30px] h-44 w-52 sm:left-4 sm:top-[-42px] sm:h-56 sm:w-64", "(max-width: 639px) 208px, 256px"],
-          ["/images/polygon/Group%2018.png", "left-[42%] top-[7%] h-16 w-24 sm:left-[44%] sm:top-[8%] sm:h-20 sm:w-32", "(max-width: 639px) 96px, 128px"],
-          ["/images/polygon/Group%2034.png", "left-[27%] top-[38%] h-12 w-16 sm:left-[29%] sm:top-[40%]", "64px"],
-          ["/images/polygon/Group%2033.png", "right-[8%] top-[5%] h-24 w-16 sm:right-[12%] sm:top-[7%] sm:h-32 sm:w-20", "(max-width: 639px) 64px, 80px"],
-          ["/images/polygon/Group%2016.png", "right-[2%] top-[38%] h-10 w-20 sm:right-[5%] sm:top-[36%] sm:h-12 sm:w-24", "(max-width: 639px) 80px, 96px"],
-          ["/images/polygon/Group%209.png", "bottom-[-34px] left-[7%] h-32 w-40 sm:bottom-[-42px] sm:left-[9%] sm:h-44 sm:w-52", "(max-width: 639px) 160px, 208px"],
-          ["/images/polygon/Group%2015.png", "bottom-[-14px] left-[37%] h-16 w-28 sm:bottom-[-20px] sm:left-[36%] sm:h-20 sm:w-36", "(max-width: 639px) 112px, 144px"],
-          ["/images/polygon/Group%2017.png", "bottom-[5%] right-[22%] h-12 w-16 sm:bottom-[8%] sm:right-[20%] sm:h-16 sm:w-20", "(max-width: 639px) 64px, 80px"],
-          ["/images/polygon/Group%2010.png", "bottom-[2%] -right-8 h-28 w-20 sm:bottom-[4%] sm:right-[-20px] sm:h-40 sm:w-28", "(max-width: 639px) 80px, 112px"],
+          [
+            "/images/polygon/Group%2019.png",
+            "-left-5 top-[-30px] h-44 w-52 sm:left-4 sm:top-[-42px] sm:h-56 sm:w-64",
+            "(max-width: 639px) 208px, 256px",
+          ],
+          [
+            "/images/polygon/Group%2018.png",
+            "left-[42%] top-[7%] h-16 w-24 sm:left-[44%] sm:top-[8%] sm:h-20 sm:w-32",
+            "(max-width: 639px) 96px, 128px",
+          ],
+          [
+            "/images/polygon/Group%2034.png",
+            "left-[27%] top-[38%] h-12 w-16 sm:left-[29%] sm:top-[40%]",
+            "64px",
+          ],
+          [
+            "/images/polygon/Group%2033.png",
+            "right-[8%] top-[5%] h-24 w-16 sm:right-[12%] sm:top-[7%] sm:h-32 sm:w-20",
+            "(max-width: 639px) 64px, 80px",
+          ],
+          [
+            "/images/polygon/Group%2016.png",
+            "right-[2%] top-[38%] h-10 w-20 sm:right-[5%] sm:top-[36%] sm:h-12 sm:w-24",
+            "(max-width: 639px) 80px, 96px",
+          ],
+          [
+            "/images/polygon/Group%209.png",
+            "bottom-[-34px] left-[7%] h-32 w-40 sm:bottom-[-42px] sm:left-[9%] sm:h-44 sm:w-52",
+            "(max-width: 639px) 160px, 208px",
+          ],
+          [
+            "/images/polygon/Group%2015.png",
+            "bottom-[-14px] left-[37%] h-16 w-28 sm:bottom-[-20px] sm:left-[36%] sm:h-20 sm:w-36",
+            "(max-width: 639px) 112px, 144px",
+          ],
+          [
+            "/images/polygon/Group%2017.png",
+            "bottom-[5%] right-[22%] h-12 w-16 sm:bottom-[8%] sm:right-[20%] sm:h-16 sm:w-20",
+            "(max-width: 639px) 64px, 80px",
+          ],
+          [
+            "/images/polygon/Group%2010.png",
+            "bottom-[2%] -right-8 h-28 w-20 sm:bottom-[4%] sm:right-[-20px] sm:h-40 sm:w-28",
+            "(max-width: 639px) 80px, 112px",
+          ],
         ].map(([src, posisi, sizes]) => (
           <span key={src} className={`profile-shard absolute ${posisi}`}>
             <Image
@@ -514,7 +557,10 @@ function SambutanKepalaSekolah() {
     >
       {/* Latar: lautan di balik kertas yang disobek. Bagian dalam sobekan
           (kertasnya) tetap putih; air laut hanya terlihat di luarnya. */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0">
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-0"
+      >
         <Image
           src={FOTO_LAUT}
           alt=""
@@ -542,7 +588,10 @@ function SambutanKepalaSekolah() {
         >
           <div className="relative aspect-[4/5] w-full">
             {/* Hiasan: cincin orbit tipis di belakang tameng. */}
-            <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 z-0"
+            >
               <svg
                 aria-hidden="true"
                 viewBox="0 0 400 500"
@@ -651,7 +700,9 @@ function SambutanKepalaSekolah() {
                   className="absolute inset-0 grid place-items-center pb-24"
                 >
                   <div className="text-center">
-                    <span className="display block text-6xl text-[#021024]/80">WH</span>
+                    <span className="display block text-6xl text-[#021024]/80">
+                      WH
+                    </span>
                     <span className="mt-3 block font-mono text-[9px] uppercase tracking-[.28em] text-[#021024]/50">
                       Kepala Sekolah
                     </span>
@@ -735,8 +786,6 @@ function SambutanKepalaSekolah() {
               </p>
             </div>
           </motion.div>
-
-
         </motion.div>
 
         <motion.div
@@ -824,7 +873,10 @@ function SambutanKepalaSekolah() {
               />
             </Link>
             <div className="flex items-center gap-2">
-              <span aria-hidden="true" className="size-1.5 rotate-45 bg-[#C1E8FF]/50" />
+              <span
+                aria-hidden="true"
+                className="size-1.5 rotate-45 bg-[#C1E8FF]/50"
+              />
               <p className="font-mono text-[9px] uppercase tracking-[.24em] text-[#C1E8FF]/60">
                 Tengaran · Jawa Tengah
               </p>
@@ -835,9 +887,164 @@ function SambutanKepalaSekolah() {
     </section>
   );
 }
-const majors=[['01','PPLG','Pengembangan Perangkat Lunak dan Gim','/images/school/hero-lab.jpg','pplg','#BA0000'],['02','TJKT','Teknik Jaringan Komputer dan Telekomunikasi','/images/school/tkj1.jpg','tjkt','#00c53b'],['03','DKV','Desain Komunikasi Visual','/images/school/dkv.jpg','dkv','#152DA9'],['04','TKR','Teknik Kendaraan Ringan','/images/school/tkr.jpg','tkr','#C67219']];
-const mottos=["arah.","hati.","tujuan.","harapan."];
-function Majors(){const[mottoIdx,setMottoIdx]=useState(0);useEffect(()=>{const t=setInterval(()=>setMottoIdx(v=>(v+1)%mottos.length),2800);return()=>clearInterval(t);},[]);return <section id="jurusan" className="relative overflow-hidden bg-[#021024] px-6 py-28 text-white sm:py-36"><motion.div aria-hidden="true" className="pointer-events-none absolute inset-0 select-none opacity-80 mix-blend-screen" animate={{opacity:[0.7,0.9,0.7],scale:[1,1.04,1]}} transition={{duration:17,repeat:Infinity,ease:'easeInOut'}}><Image src="/images/footer/aurora2.png" alt="" fill sizes="100vw" loading="lazy" className="object-cover" style={{filter:'brightness(1.35) saturate(1.2)'}}/></motion.div><div className="relative mx-auto max-w-7xl"><div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow text-[#7DA0CA]">02 / PROGRAM KEAHLIAN</p><h2 className="display mt-5 text-4xl sm:text-6xl">Empat bidang.<br/><span className="inline-block text-white/55">Satu <AnimatePresence mode="wait"><motion.span key={mottoIdx} className="inline-block" exit={{}}>{mottos[mottoIdx].split("").map((ch,i)=><motion.span key={i} className="inline-block whitespace-pre" initial={{opacity:0,y:"0.4em",filter:"blur(8px)"}} animate={{opacity:1,y:0,filter:"blur(0px)",transition:{duration:0.5,delay:i*0.055,ease:"easeOut"}}} exit={{opacity:0,y:"-0.3em",filter:"blur(8px)",transition:{duration:0.3,delay:(mottos[mottoIdx].length-1-i)*0.02,ease:"easeIn"}}}>{ch}</motion.span>)}</motion.span></AnimatePresence></span></h2></div><p className="max-w-sm text-sm leading-7 text-white/75">Eksplorasi software, jaringan, desain, dan otomotif melalui pengalaman vokasi yang relevan.</p></div><div className="mt-16 divide-y divide-white/10 border-y border-white/10">{majors.map(([n,title,desc,img,slug,accent])=><Link href={`/jurusan/${slug}`} key={title} style={{'--major-accent':accent} as React.CSSProperties} className="major-link group relative grid grid-cols-[52px_1fr_auto] items-center gap-x-4 gap-y-2 overflow-hidden rounded-lg py-5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C1E8FF] sm:rounded-none sm:grid-cols-[72px_1fr_1.2fr_auto] sm:gap-5 sm:py-8"><div className="relative col-start-1 row-start-2 h-12 w-[52px] overflow-hidden rounded-md sm:absolute sm:inset-y-3 sm:right-16 sm:col-auto sm:row-auto sm:h-20 sm:w-36 sm:rounded-xl sm:opacity-0 sm:transition sm:duration-500 sm:group-hover:opacity-20 lg:h-24 lg:w-44"><Image src={img} alt="" fill sizes="(min-width: 1024px) 176px, (min-width: 640px) 144px, 52px" loading="lazy" className="object-cover"/></div><span className="col-start-1 row-start-1 font-mono text-xs text-white/70 sm:col-auto sm:row-auto sm:text-white/55">{n}</span><h3 className="relative z-10 col-start-2 row-start-1 text-2xl font-medium tracking-tight sm:col-auto sm:row-auto sm:text-3xl lg:text-5xl">{title}</h3><p className="relative z-10 col-start-2 row-start-2 max-w-md text-xs leading-5 text-white/75 sm:col-auto sm:row-auto sm:text-sm sm:leading-6 sm:text-white/70">{desc}</p><ArrowUpRight className="relative z-10 col-start-3 row-span-2 row-start-1 self-center text-white/80 transition group-active:translate-x-1 group-active:-translate-y-1 group-hover:-translate-y-1 group-hover:translate-x-1 sm:col-auto sm:row-auto sm:self-auto"/></Link>)}</div></div></section>}
+const majors = [
+  [
+    "01",
+    "PPLG",
+    "Pengembangan Perangkat Lunak dan Gim",
+    "/images/school/hero-lab.jpg",
+    "pplg",
+    "#BA0000",
+  ],
+  [
+    "02",
+    "TJKT",
+    "Teknik Jaringan Komputer dan Telekomunikasi",
+    "/images/school/tkj1.jpg",
+    "tjkt",
+    "#00c53b",
+  ],
+  [
+    "03",
+    "DKV",
+    "Desain Komunikasi Visual",
+    "/images/school/dkv.jpg",
+    "dkv",
+    "#152DA9",
+  ],
+  [
+    "04",
+    "TKR",
+    "Teknik Kendaraan Ringan",
+    "/images/school/tkr.jpg",
+    "tkr",
+    "#C67219",
+  ],
+];
+const mottos = ["arah.", "hati.", "tujuan.", "harapan."];
+function Majors() {
+  const [mottoIdx, setMottoIdx] = useState(0);
+  useEffect(() => {
+    const t = setInterval(
+      () => setMottoIdx((v) => (v + 1) % mottos.length),
+      2800,
+    );
+    return () => clearInterval(t);
+  }, []);
+  return (
+    <section
+      id="jurusan"
+      className="relative overflow-hidden bg-[#021024] px-6 py-28 text-white sm:py-36"
+    >
+      <motion.div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 select-none opacity-80 mix-blend-screen"
+        animate={{ opacity: [0.7, 0.9, 0.7], scale: [1, 1.04, 1] }}
+        transition={{ duration: 17, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <Image
+          src="/images/footer/aurora2.png"
+          alt=""
+          fill
+          sizes="100vw"
+          loading="lazy"
+          className="object-cover"
+          style={{ filter: "brightness(1.35) saturate(1.2)" }}
+        />
+      </motion.div>
+      <div className="relative mx-auto max-w-7xl">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="eyebrow text-[#7DA0CA]">02 / PROGRAM KEAHLIAN</p>
+            <h2 className="display mt-5 text-4xl sm:text-6xl">
+              Empat bidang.
+              <br />
+              <span className="inline-block text-white/55">
+                Satu{" "}
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={mottoIdx}
+                    className="inline-block"
+                    exit={{}}
+                  >
+                    {mottos[mottoIdx].split("").map((ch, i) => (
+                      <motion.span
+                        key={i}
+                        className="inline-block whitespace-pre"
+                        initial={{
+                          opacity: 0,
+                          y: "0.4em",
+                          filter: "blur(8px)",
+                        }}
+                        animate={{
+                          opacity: 1,
+                          y: 0,
+                          filter: "blur(0px)",
+                          transition: {
+                            duration: 0.5,
+                            delay: i * 0.055,
+                            ease: "easeOut",
+                          },
+                        }}
+                        exit={{
+                          opacity: 0,
+                          y: "-0.3em",
+                          filter: "blur(8px)",
+                          transition: {
+                            duration: 0.3,
+                            delay: (mottos[mottoIdx].length - 1 - i) * 0.02,
+                            ease: "easeIn",
+                          },
+                        }}
+                      >
+                        {ch}
+                      </motion.span>
+                    ))}
+                  </motion.span>
+                </AnimatePresence>
+              </span>
+            </h2>
+          </div>
+          <p className="max-w-sm text-sm leading-7 text-white/75">
+            Eksplorasi software, jaringan, desain, dan otomotif melalui
+            pengalaman vokasi yang relevan.
+          </p>
+        </div>
+        <div className="mt-16 divide-y divide-white/10 border-y border-white/10">
+          {majors.map(([n, title, desc, img, slug, accent]) => (
+            <Link
+              href={`/jurusan/${slug}`}
+              key={title}
+              style={{ "--major-accent": accent } as React.CSSProperties}
+              className="major-link group relative grid grid-cols-[52px_1fr_auto] items-center gap-x-4 gap-y-2 overflow-hidden rounded-lg py-5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C1E8FF] sm:rounded-none sm:grid-cols-[72px_1fr_1.2fr_auto] sm:gap-5 sm:py-8"
+            >
+              <div className="relative col-start-1 row-start-2 h-12 w-[52px] overflow-hidden rounded-md sm:absolute sm:inset-y-3 sm:right-16 sm:col-auto sm:row-auto sm:h-20 sm:w-36 sm:rounded-xl sm:opacity-0 sm:transition sm:duration-500 sm:group-hover:opacity-20 lg:h-24 lg:w-44">
+                <Image
+                  src={img}
+                  alt=""
+                  fill
+                  sizes="(min-width: 1024px) 176px, (min-width: 640px) 144px, 52px"
+                  loading="lazy"
+                  className="object-cover"
+                />
+              </div>
+              <span className="col-start-1 row-start-1 font-mono text-xs text-white/70 sm:col-auto sm:row-auto sm:text-white/55">
+                {n}
+              </span>
+              <h3 className="relative z-10 col-start-2 row-start-1 text-2xl font-medium tracking-tight sm:col-auto sm:row-auto sm:text-3xl lg:text-5xl">
+                {title}
+              </h3>
+              <p className="relative z-10 col-start-2 row-start-2 max-w-md text-xs leading-5 text-white/75 sm:col-auto sm:row-auto sm:text-sm sm:leading-6 sm:text-white/70">
+                {desc}
+              </p>
+              <ArrowUpRight className="relative z-10 col-start-3 row-span-2 row-start-1 self-center text-white/80 transition group-active:translate-x-1 group-active:-translate-y-1 group-hover:-translate-y-1 group-hover:translate-x-1 sm:col-auto sm:row-auto sm:self-auto" />
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 const newsFallback = [
   [
@@ -893,7 +1100,7 @@ function News() {
         if (d?.ok && Array.isArray(d.data) && d.data.length > 0)
           setDaftar(d.data);
       })
-      .catch(() => { });
+      .catch(() => {});
     return () => {
       batal = true;
     };
@@ -902,13 +1109,13 @@ function News() {
     (daftar ?? []).length > 0
       ? (daftar as BeritaPublik[])
       : newsFallback.map(([title, desc, _date, img, slug]) => ({
-        id: slug,
-        judul: title,
-        subjudul: desc,
-        konten: desc,
-        gambar_url: img,
-        created_at: null,
-      }));
+          id: slug,
+          judul: title,
+          subjudul: desc,
+          konten: desc,
+          gambar_url: img,
+          created_at: null,
+        }));
   const tanggalFallback: Record<string, string> = Object.fromEntries(
     newsFallback.map(([, , date, , slug]) => [slug, date]),
   );
@@ -1517,11 +1724,11 @@ function Facilities() {
                       ? { y: -6, scale: 1.015 }
                       : isPeekable
                         ? {
-                          x: x + peekX,
-                          y: y - 6,
-                          scale: baseScale + 0.03,
-                          filter: "brightness(1)",
-                        }
+                            x: x + peekX,
+                            y: y - 6,
+                            scale: baseScale + 0.03,
+                            filter: "brightness(1)",
+                          }
                         : undefined
                   }
                   whileTap={pos <= 2 ? { scale: baseScale - 0.015 } : undefined}
@@ -1761,20 +1968,30 @@ function Facilities() {
 
 function LocationSection() {
   return (
-    <section id="lokasi" className="relative overflow-hidden bg-[#021024] px-6 py-24 text-white sm:py-32">
+    <section
+      id="lokasi"
+      className="relative overflow-hidden bg-[#021024] px-6 py-24 text-white sm:py-32"
+    >
       <GlobeBackground />
       <div className="relative z-10 mx-auto grid max-w-7xl gap-8 lg:grid-cols-[.8fr_1.2fr] lg:items-stretch">
         <div className="flex flex-col justify-between rounded-[2rem] border border-white/25 bg-[#021024]/75 p-7 backdrop-blur-[2px] sm:p-10">
           <div>
             <p className="eyebrow text-[#C1E8FF]/70">04 / LOKASI SEKOLAH</p>
-            <h2 className="display mt-5 max-w-lg text-4xl sm:text-6xl">Temui kami di sekolah.</h2>
+            <h2 className="display mt-5 max-w-lg text-4xl sm:text-6xl">
+              Temui kami di sekolah.
+            </h2>
             <p className="mt-5 max-w-md text-sm leading-7 text-white/65 sm:text-base">
-              Datang dan rasakan langsung lingkungan belajar SMK Telekomunikasi Tunas Harapan.
+              Datang dan rasakan langsung lingkungan belajar SMK Telekomunikasi
+              Tunas Harapan.
             </p>
           </div>
           <div className="mt-10 border-t border-white/15 pt-5">
             <div className="flex items-start gap-3">
-              <MapPin size={22} className="mt-0.5 shrink-0 text-[#C1E8FF]" aria-hidden="true" />
+              <MapPin
+                size={22}
+                className="mt-0.5 shrink-0 text-[#C1E8FF]"
+                aria-hidden="true"
+              />
               <address className="not-italic text-sm leading-6 text-white/70">
                 Jl. Umbul Senjoyo I, No. 3, Desa Bener,
                 <br />
@@ -1880,7 +2097,9 @@ function Achievements() {
 
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setActiveAchievementImage((current) => (current + 1) % achievementImages.length);
+      setActiveAchievementImage(
+        (current) => (current + 1) % achievementImages.length,
+      );
     }, 10000);
 
     return () => window.clearInterval(timer);
@@ -1888,7 +2107,9 @@ function Achievements() {
 
   const changeAchievement = (direction: number) => {
     setActiveAchievementImage(
-      (current) => (current + direction + achievementImages.length) % achievementImages.length,
+      (current) =>
+        (current + direction + achievementImages.length) %
+        achievementImages.length,
     );
   };
 
@@ -1911,62 +2132,62 @@ function Achievements() {
         </div>
         <div className="mt-12 grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
           <div className="relative overflow-hidden rounded-[1.75rem] bg-[#021024]">
-             <AnimatePresence mode="wait" initial={false}>
-               <motion.div
-                 key={achievementImages[activeAchievementImage]}
-                 initial={{ opacity: 0 }}
-                 animate={{ opacity: 0.9 }}
-                 exit={{ opacity: 0 }}
-                 transition={{ duration: 0.8, ease: "easeInOut" }}
-                 className="relative h-[330px] w-full sm:h-[470px]"
-               >
-                 <Image
-                   src={achievementImages[activeAchievementImage]}
-                   alt={`Prestasi siswa ${activeAchievementImage + 1}`}
-                   fill
-                   sizes="(max-width: 1024px) 100vw, 60vw"
-                   loading="lazy"
-                   className="object-cover"
-                 />
-               </motion.div>
-             </AnimatePresence>
-             <div className="absolute inset-x-5 bottom-5 flex items-center justify-between gap-4">
-               <div className="flex items-center gap-2 rounded-full border border-white/15 bg-[#021024]/55 px-3 py-2 backdrop-blur-md">
-                 {achievementImages.map((image, index) => (
-                   <button
-                     key={image}
-                     type="button"
-                     onClick={() => setActiveAchievementImage(index)}
-                     aria-label={`Tampilkan foto prestasi ${index + 1}`}
-                     aria-pressed={activeAchievementImage === index}
-                     className="group flex items-center gap-2"
-                   >
-                     <span
-                       className={`block h-1 rounded-full transition-all duration-300 ${activeAchievementImage === index ? "w-8 bg-white" : "w-4 bg-white/40 group-hover:bg-white/75"}`}
-                     />
-                     <span className="sr-only">Foto {index + 1}</span>
-                   </button>
-                 ))}
-               </div>
-               <div className="flex items-center gap-2">
-                 <button
-                   type="button"
-                   onClick={() => changeAchievement(-1)}
-                   aria-label="Foto prestasi sebelumnya"
-                   className="grid size-9 place-items-center rounded-full border border-white/20 bg-[#021024]/55 text-white backdrop-blur-md transition hover:bg-[#021024]/80"
-                 >
-                   <ChevronLeft size={17} />
-                 </button>
-                 <button
-                   type="button"
-                   onClick={() => changeAchievement(1)}
-                   aria-label="Foto prestasi berikutnya"
-                   className="grid size-9 place-items-center rounded-full border border-white/20 bg-[#021024]/55 text-white backdrop-blur-md transition hover:bg-[#021024]/80"
-                 >
-                   <ChevronRight size={17} />
-                 </button>
-               </div>
-             </div>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={achievementImages[activeAchievementImage]}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.9 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.8, ease: "easeInOut" }}
+                className="relative h-[330px] w-full sm:h-[470px]"
+              >
+                <Image
+                  src={achievementImages[activeAchievementImage]}
+                  alt={`Prestasi siswa ${activeAchievementImage + 1}`}
+                  fill
+                  sizes="(max-width: 1024px) 100vw, 60vw"
+                  loading="lazy"
+                  className="object-cover"
+                />
+              </motion.div>
+            </AnimatePresence>
+            <div className="absolute inset-x-5 bottom-5 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2 rounded-full border border-white/15 bg-[#021024]/55 px-3 py-2 backdrop-blur-md">
+                {achievementImages.map((image, index) => (
+                  <button
+                    key={image}
+                    type="button"
+                    onClick={() => setActiveAchievementImage(index)}
+                    aria-label={`Tampilkan foto prestasi ${index + 1}`}
+                    aria-pressed={activeAchievementImage === index}
+                    className="group flex items-center gap-2"
+                  >
+                    <span
+                      className={`block h-1 rounded-full transition-all duration-300 ${activeAchievementImage === index ? "w-8 bg-white" : "w-4 bg-white/40 group-hover:bg-white/75"}`}
+                    />
+                    <span className="sr-only">Foto {index + 1}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => changeAchievement(-1)}
+                  aria-label="Foto prestasi sebelumnya"
+                  className="grid size-9 place-items-center rounded-full border border-white/20 bg-[#021024]/55 text-white backdrop-blur-md transition hover:bg-[#021024]/80"
+                >
+                  <ChevronLeft size={17} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => changeAchievement(1)}
+                  aria-label="Foto prestasi berikutnya"
+                  className="grid size-9 place-items-center rounded-full border border-white/20 bg-[#021024]/55 text-white backdrop-blur-md transition hover:bg-[#021024]/80"
+                >
+                  <ChevronRight size={17} />
+                </button>
+              </div>
+            </div>
           </div>
           <div className="grid gap-3">
             {[
@@ -2279,67 +2500,176 @@ function Future() {
 }
 type AuthStatus = "loading" | "loggedIn" | "loggedOut";
 
-<<<<<<< HEAD
-function Aurora(){return <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-    <motion.div
-=======
 function Aurora() {
-  return <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-    <motion.img
-      src="/images/footer/aurora-tr.png"
-      alt=""
->>>>>>> 91ab00936d0086dce14642339fff2d860dffc045
-      className="absolute -right-4 -top-4 w-[22rem] max-w-none opacity-95 sm:w-[30rem] lg:w-[38rem]"
-      animate={{ opacity: [0.8, 1, 0.8], scale: [1, 1.05, 1], x: [0, -10, 0], y: [0, 8, 0] }}
-      transition={{ duration: 17, repeat: Infinity, ease: 'easeInOut' }}
+  return (
+    <div
+      aria-hidden="true"
+      className="pointer-events-none absolute inset-0 z-0 overflow-hidden"
     >
-      <Image src="/images/footer/aurora-tr.png" alt="" fill sizes="(max-width: 640px) 352px, (min-width: 1024px) 608px, 480px" loading="lazy" className="object-contain" style={{ filter: 'brightness(1.5) saturate(1.25)' }} />
-    </motion.div>
-    <motion.div
-      className="absolute -bottom-4 -left-4 w-[22rem] max-w-none opacity-95 sm:w-[30rem] lg:w-[38rem]"
-      animate={{ opacity: [0.8, 1, 0.8], scale: [1, 1.05, 1], x: [0, 10, 0], y: [0, -8, 0] }}
-      transition={{ duration: 19, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-    >
-      <Image src="/images/footer/aurora-bl.png" alt="" fill sizes="(max-width: 640px) 352px, (min-width: 1024px) 608px, 480px" loading="lazy" className="object-contain" style={{ filter: 'brightness(1.5) saturate(1.25)' }} />
-    </motion.div>
-    {particles.map((p, index) => <motion.span
-      key={index}
-      className="absolute rounded-full bg-[#EAF6FF]"
-      style={{ left: p.left, top: p.top, width: p.size, height: p.size }}
-      animate={{ opacity: [0.3, 1, 0.3], y: [0, -10, 0], x: [0, index % 2 === 0 ? 5 : -5, 0] }}
-      transition={{
-        opacity: { duration: 3.5, delay: p.twinkleDelay, repeat: Infinity, repeatDelay: 2 + (index % 6) * 0.5 },
-        y: { duration: p.float, delay: p.delay, repeat: Infinity, ease: 'easeInOut' },
-        x: { duration: p.float + 2, delay: p.delay, repeat: Infinity, ease: 'easeInOut' },
-      }}
-    >
-      <span className="block h-full w-full rounded-full bg-[#EAF6FF]" style={{ boxShadow: '0 0 8px 2px rgba(193,232,255,.9)' }} />
-    </motion.span>)}
-  </div>;
+      <motion.div
+        className="absolute -right-4 -top-4 w-[22rem] max-w-none opacity-95 sm:w-[30rem] lg:w-[38rem]"
+        animate={{
+          opacity: [0.8, 1, 0.8],
+          scale: [1, 1.05, 1],
+          x: [0, -10, 0],
+          y: [0, 8, 0],
+        }}
+        transition={{ duration: 17, repeat: Infinity, ease: "easeInOut" }}
+      >
+        <Image
+          src="/images/footer/aurora-tr.png"
+          alt=""
+          fill
+          sizes="(max-width: 640px) 352px, (min-width: 1024px) 608px, 480px"
+          loading="lazy"
+          className="object-contain"
+          style={{ filter: "brightness(1.5) saturate(1.25)" }}
+        />
+      </motion.div>
+      <motion.div
+        className="absolute -bottom-4 -left-4 w-[22rem] max-w-none opacity-95 sm:w-[30rem] lg:w-[38rem]"
+        animate={{
+          opacity: [0.8, 1, 0.8],
+          scale: [1, 1.05, 1],
+          x: [0, 10, 0],
+          y: [0, -8, 0],
+        }}
+        transition={{
+          duration: 19,
+          repeat: Infinity,
+          ease: "easeInOut",
+          delay: 2,
+        }}
+      >
+        <Image
+          src="/images/footer/aurora-bl.png"
+          alt=""
+          fill
+          sizes="(max-width: 640px) 352px, (min-width: 1024px) 608px, 480px"
+          loading="lazy"
+          className="object-contain"
+          style={{ filter: "brightness(1.5) saturate(1.25)" }}
+        />
+      </motion.div>
+      {particles.map((p, index) => (
+        <motion.span
+          key={index}
+          className="absolute rounded-full bg-[#EAF6FF]"
+          style={{ left: p.left, top: p.top, width: p.size, height: p.size }}
+          animate={{
+            opacity: [0.3, 1, 0.3],
+            y: [0, -10, 0],
+            x: [0, index % 2 === 0 ? 5 : -5, 0],
+          }}
+          transition={{
+            opacity: {
+              duration: 3.5,
+              delay: p.twinkleDelay,
+              repeat: Infinity,
+              repeatDelay: 2 + (index % 6) * 0.5,
+            },
+            y: {
+              duration: p.float,
+              delay: p.delay,
+              repeat: Infinity,
+              ease: "easeInOut",
+            },
+            x: {
+              duration: p.float + 2,
+              delay: p.delay,
+              repeat: Infinity,
+              ease: "easeInOut",
+            },
+          }}
+        >
+          <span
+            className="block h-full w-full rounded-full bg-[#EAF6FF]"
+            style={{ boxShadow: "0 0 8px 2px rgba(193,232,255,.9)" }}
+          />
+        </motion.span>
+      ))}
+    </div>
+  );
 }
 const particles = [
-  { left: '22%', top: '22%', size: 5, delay: 0, float: 8, twinkleDelay: 1.2 },
-  { left: '30%', top: '40%', size: 4, delay: 1.4, float: 9, twinkleDelay: 3.1 },
-  { left: '26%', top: '62%', size: 6, delay: 0.6, float: 7.5, twinkleDelay: 2.2 },
-  { left: '34%', top: '78%', size: 4, delay: 2.2, float: 8.5, twinkleDelay: 4.4 },
-  { left: '20%', top: '48%', size: 5, delay: 3.1, float: 7, twinkleDelay: 2.7 },
-  { left: '40%', top: '16%', size: 4, delay: 1.1, float: 9, twinkleDelay: 3.9 },
-  { left: '44%', top: '34%', size: 6, delay: 2.7, float: 8, twinkleDelay: 1.8 },
-  { left: '42%', top: '58%', size: 4, delay: 0.4, float: 7.5, twinkleDelay: 5.2 },
-  { left: '38%', top: '84%', size: 5, delay: 3.5, float: 8.5, twinkleDelay: 3.3 },
-  { left: '50%', top: '24%', size: 4, delay: 1.7, float: 7, twinkleDelay: 2.4 },
-  { left: '52%', top: '50%', size: 6, delay: 2.4, float: 9, twinkleDelay: 4.1 },
-  { left: '48%', top: '72%', size: 4, delay: 0.9, float: 8, twinkleDelay: 1.5 },
-  { left: '56%', top: '18%', size: 5, delay: 3.2, float: 7.5, twinkleDelay: 3.6 },
-  { left: '58%', top: '44%', size: 4, delay: 1.3, float: 8.5, twinkleDelay: 4.8 },
-  { left: '60%', top: '68%', size: 6, delay: 2.1, float: 7, twinkleDelay: 2.0 },
-  { left: '62%', top: '86%', size: 4, delay: 0.7, float: 9, twinkleDelay: 5.5 },
-  { left: '68%', top: '26%', size: 5, delay: 2.9, float: 8, twinkleDelay: 2.6 },
-  { left: '70%', top: '52%', size: 4, delay: 1.6, float: 7.5, twinkleDelay: 4.0 },
-  { left: '66%', top: '74%', size: 6, delay: 3.4, float: 8.5, twinkleDelay: 3.0 },
-  { left: '74%', top: '38%', size: 4, delay: 0.5, float: 7, twinkleDelay: 1.9 },
-  { left: '76%', top: '64%', size: 5, delay: 2.6, float: 9, twinkleDelay: 4.6 },
-  { left: '78%', top: '20%', size: 4, delay: 1.9, float: 8, twinkleDelay: 2.9 },
+  { left: "22%", top: "22%", size: 5, delay: 0, float: 8, twinkleDelay: 1.2 },
+  { left: "30%", top: "40%", size: 4, delay: 1.4, float: 9, twinkleDelay: 3.1 },
+  {
+    left: "26%",
+    top: "62%",
+    size: 6,
+    delay: 0.6,
+    float: 7.5,
+    twinkleDelay: 2.2,
+  },
+  {
+    left: "34%",
+    top: "78%",
+    size: 4,
+    delay: 2.2,
+    float: 8.5,
+    twinkleDelay: 4.4,
+  },
+  { left: "20%", top: "48%", size: 5, delay: 3.1, float: 7, twinkleDelay: 2.7 },
+  { left: "40%", top: "16%", size: 4, delay: 1.1, float: 9, twinkleDelay: 3.9 },
+  { left: "44%", top: "34%", size: 6, delay: 2.7, float: 8, twinkleDelay: 1.8 },
+  {
+    left: "42%",
+    top: "58%",
+    size: 4,
+    delay: 0.4,
+    float: 7.5,
+    twinkleDelay: 5.2,
+  },
+  {
+    left: "38%",
+    top: "84%",
+    size: 5,
+    delay: 3.5,
+    float: 8.5,
+    twinkleDelay: 3.3,
+  },
+  { left: "50%", top: "24%", size: 4, delay: 1.7, float: 7, twinkleDelay: 2.4 },
+  { left: "52%", top: "50%", size: 6, delay: 2.4, float: 9, twinkleDelay: 4.1 },
+  { left: "48%", top: "72%", size: 4, delay: 0.9, float: 8, twinkleDelay: 1.5 },
+  {
+    left: "56%",
+    top: "18%",
+    size: 5,
+    delay: 3.2,
+    float: 7.5,
+    twinkleDelay: 3.6,
+  },
+  {
+    left: "58%",
+    top: "44%",
+    size: 4,
+    delay: 1.3,
+    float: 8.5,
+    twinkleDelay: 4.8,
+  },
+  { left: "60%", top: "68%", size: 6, delay: 2.1, float: 7, twinkleDelay: 2.0 },
+  { left: "62%", top: "86%", size: 4, delay: 0.7, float: 9, twinkleDelay: 5.5 },
+  { left: "68%", top: "26%", size: 5, delay: 2.9, float: 8, twinkleDelay: 2.6 },
+  {
+    left: "70%",
+    top: "52%",
+    size: 4,
+    delay: 1.6,
+    float: 7.5,
+    twinkleDelay: 4.0,
+  },
+  {
+    left: "66%",
+    top: "74%",
+    size: 6,
+    delay: 3.4,
+    float: 8.5,
+    twinkleDelay: 3.0,
+  },
+  { left: "74%", top: "38%", size: 4, delay: 0.5, float: 7, twinkleDelay: 1.9 },
+  { left: "76%", top: "64%", size: 5, delay: 2.6, float: 9, twinkleDelay: 4.6 },
+  { left: "78%", top: "20%", size: 4, delay: 1.9, float: 8, twinkleDelay: 2.9 },
 ];
 
 function WelcomeCard({
@@ -2356,17 +2686,17 @@ function WelcomeCard({
   onKirimNisn?: () => void;
   onClose?: () => void;
 }) {
-  const belumKirim = !verificationStatus || verificationStatus === 'belum';
-  const menunggu = verificationStatus === 'menunggu';
-  const ditolak = verificationStatus === 'ditolak';
-  const terverifikasi = verificationStatus === 'terverifikasi';
+  const belumKirim = !verificationStatus || verificationStatus === "belum";
+  const menunggu = verificationStatus === "menunggu";
+  const ditolak = verificationStatus === "ditolak";
+  const terverifikasi = verificationStatus === "terverifikasi";
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -16 }}
-      transition={{ duration: 0.4, ease: 'easeOut' }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
       className="mx-auto max-w-7xl rounded-[1.6rem] border border-white/20 bg-white/95 px-6 py-5 shadow-[0_24px_50px_-28px_rgba(2,16,36,.55)] backdrop-blur-md sm:px-8 sm:py-6"
     >
       <div className="flex items-start justify-between gap-5">
@@ -2375,8 +2705,12 @@ function WelcomeCard({
             {nama.trim().charAt(0).toUpperCase()}
           </span>
           <div className="min-w-0">
-            <h2 className="display text-xl text-[#021024] sm:text-3xl">Selamat datang, {nama}.</h2>
-            <p className="mt-1 text-xs text-[#021024]/60 sm:text-sm">..ke website SMK Telkom Tunas Harapan.</p>
+            <h2 className="display text-xl text-[#021024] sm:text-3xl">
+              Selamat datang, {nama}.
+            </h2>
+            <p className="mt-1 text-xs text-[#021024]/60 sm:text-sm">
+              ..ke website SMK Telkom Tunas Harapan.
+            </p>
           </div>
         </div>
         {onClose && (
@@ -2391,59 +2725,62 @@ function WelcomeCard({
         )}
       </div>
 
-      {perluVerifikasi && (belumKirim || menunggu || ditolak || terverifikasi) && (
-        <div
-          className={`mt-4 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between ${terverifikasi ? 'border-emerald-200' : 'border-[#021024]/10'
+      {perluVerifikasi &&
+        (belumKirim || menunggu || ditolak || terverifikasi) && (
+          <div
+            className={`mt-4 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between ${
+              terverifikasi ? "border-emerald-200" : "border-[#021024]/10"
             }`}
-        >
-          {belumKirim && (
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-red-600 sm:text-base">
-                Anda belum memverifikasi akun anda sebagai pelajar
-              </p>
-              <p className="mt-0.5 text-xs text-[#021024]/50">
-                Kirim NISN agar admin dapat memverifikasi status pelajar Anda.
-              </p>
-            </div>
-          )}
+          >
+            {belumKirim && (
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-red-600 sm:text-base">
+                  Anda belum memverifikasi akun anda sebagai pelajar
+                </p>
+                <p className="mt-0.5 text-xs text-[#021024]/50">
+                  Kirim NISN agar admin dapat memverifikasi status pelajar Anda.
+                </p>
+              </div>
+            )}
 
-          {menunggu && (
-            <p className="flex items-center gap-2 text-sm font-medium text-amber-700">
-              <Clock3 size={16} className="shrink-0" />
-              NISN Anda sudah dikirim dan sedang menunggu verifikasi admin.
-            </p>
-          )}
-
-          {ditolak && (
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-red-600 sm:text-base">
-                Verifikasi akun pelajar Anda ditolak
+            {menunggu && (
+              <p className="flex items-center gap-2 text-sm font-medium text-amber-700">
+                <Clock3 size={16} className="shrink-0" />
+                NISN Anda sudah dikirim dan sedang menunggu verifikasi admin.
               </p>
-              <p className="mt-0.5 text-xs text-[#021024]/50">
-                Periksa kembali NISN Anda, lalu kirim ulang untuk ditinjau admin.
+            )}
+
+            {ditolak && (
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-red-600 sm:text-base">
+                  Verifikasi akun pelajar Anda ditolak
+                </p>
+                <p className="mt-0.5 text-xs text-[#021024]/50">
+                  Periksa kembali NISN Anda, lalu kirim ulang untuk ditinjau
+                  admin.
+                </p>
+              </div>
+            )}
+
+            {terverifikasi && (
+              <p className="flex items-center gap-2 text-sm font-semibold text-emerald-700">
+                <BadgeCheck size={16} className="shrink-0" />
+                Akun Anda sudah terverifikasi sebagai pelajar.
               </p>
-            </div>
-          )}
+            )}
 
-          {terverifikasi && (
-            <p className="flex items-center gap-2 text-sm font-semibold text-emerald-700">
-              <BadgeCheck size={16} className="shrink-0" />
-              Akun Anda sudah terverifikasi sebagai pelajar.
-            </p>
-          )}
-
-          {(belumKirim || ditolak) && onKirimNisn && (
-            <button
-              type="button"
-              onClick={onKirimNisn}
-              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-red-600 px-5 py-2.5 text-xs font-bold uppercase tracking-[.12em] text-white shadow-sm transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 sm:text-[11px]"
-            >
-              <GraduationCap size={15} />
-              {ditolak ? 'Kirim Ulang NISN' : 'Kirim NISN'}
-            </button>
-          )}
-        </div>
-      )}
+            {(belumKirim || ditolak) && onKirimNisn && (
+              <button
+                type="button"
+                onClick={onKirimNisn}
+                className="inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-red-600 px-5 py-2.5 text-xs font-bold uppercase tracking-[.12em] text-white shadow-sm transition hover:bg-red-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 sm:text-[11px]"
+              >
+                <GraduationCap size={15} />
+                {ditolak ? "Kirim Ulang NISN" : "Kirim NISN"}
+              </button>
+            )}
+          </div>
+        )}
     </motion.div>
   );
 }
@@ -2580,8 +2917,8 @@ function Footer() {
 }
 
 export default function Home() {
-  const [status, setStatus] = useState<AuthStatus>('loading');
-  const [nama, setNama] = useState('');
+  const [status, setStatus] = useState<AuthStatus>("loading");
+  const [nama, setNama] = useState("");
   const [role, setRole] = useState<string | null>(null);
   const [showWelcome, setShowWelcome] = useState(true);
   const [verifikasi, setVerifikasi] = useState<string | null>(null);
@@ -2594,36 +2931,44 @@ export default function Home() {
 
     const muatSesi = () => {
       // no-store: status verifikasi bisa berubah dari dashboard admin.
-      fetch('/api/auth/me', { credentials: 'same-origin', cache: 'no-store' })
-        .then(r => r.json())
-        .then(d => {
+      fetch("/api/auth/me", { credentials: "same-origin", cache: "no-store" })
+        .then((r) => r.json())
+        .then((d) => {
           if (batal) return;
-          if (d?.ok && typeof d.nama === 'string' && d.nama.trim()) {
+          if (d?.ok && typeof d.nama === "string" && d.nama.trim()) {
             setNama(d.nama.trim());
-            setRole(typeof d.role === 'string' ? d.role : null);
-            setVerifikasi(typeof d.verification_status === 'string' ? d.verification_status : 'belum');
-            setStatus('loggedIn');
+            setRole(typeof d.role === "string" ? d.role : null);
+            setVerifikasi(
+              typeof d.verification_status === "string"
+                ? d.verification_status
+                : "belum",
+            );
+            setStatus("loggedIn");
           } else {
-            setStatus('loggedOut');
+            setStatus("loggedOut");
           }
         })
-        .catch(() => { if (!batal && awal) setStatus('loggedOut'); })
-        .finally(() => { awal = false; });
+        .catch(() => {
+          if (!batal && awal) setStatus("loggedOut");
+        })
+        .finally(() => {
+          awal = false;
+        });
     };
 
     muatSesi();
 
     // Segarkan saat tab aktif lagi, mis. setelah admin memverifikasi akun.
     const segarkan = () => {
-      if (document.visibilityState === 'visible') muatSesi();
+      if (document.visibilityState === "visible") muatSesi();
     };
-    window.addEventListener('focus', segarkan);
-    document.addEventListener('visibilitychange', segarkan);
+    window.addEventListener("focus", segarkan);
+    document.addEventListener("visibilitychange", segarkan);
 
     return () => {
       batal = true;
-      window.removeEventListener('focus', segarkan);
-      document.removeEventListener('visibilitychange', segarkan);
+      window.removeEventListener("focus", segarkan);
+      document.removeEventListener("visibilitychange", segarkan);
     };
   }, []);
 
@@ -2644,20 +2989,20 @@ export default function Home() {
       <Nav role={role} status={status} onLogout={handleLogout} />
 
       <AnimatePresence>
-        {status === 'loggedIn' && showWelcome && (
+        {status === "loggedIn" && showWelcome && (
           <motion.section
             key="welcome-card"
             initial={{ opacity: 0, y: -16 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -16 }}
-            transition={{ duration: 0.35, ease: 'easeOut' }}
+            transition={{ duration: 0.35, ease: "easeOut" }}
             className="fixed inset-x-0 top-20 z-40 pointer-events-none px-4 sm:top-24 sm:px-6"
           >
             <div className="pointer-events-auto">
               <WelcomeCard
                 nama={nama}
                 verificationStatus={verifikasi}
-                perluVerifikasi={role !== 'admin' && role !== 'guru'}
+                perluVerifikasi={role !== "admin" && role !== "guru"}
                 onKirimNisn={() => setModalNisn(true)}
                 onClose={() => setShowWelcome(false)}
               />
@@ -2666,33 +3011,41 @@ export default function Home() {
         )}
       </AnimatePresence>
 
-    <HeroSection/>
-    <Profile/><SambutanKepalaSekolah/><Majors/><News/><LocationSection/><Facilities/><Partners/><Achievements/><Future/>
-    <section
-      aria-label="Gedung SMK Telekomunikasi Tunas Harapan"
-      className="relative w-screen overflow-hidden bg-[#F4F9FF] px-0 pb-0"
-    >
-      <div className="w-full overflow-hidden">
-        <Image
-          src="/images/school/gedung.png"
-          alt="Gedung SMK Telekomunikasi Tunas Harapan"
-          width={1921}
-          height={920}
-          sizes="100vw"
-          loading="lazy"
-          className="block h-auto w-full"
-        />
-      </div>
-    </section>
-    <Footer/>
-    <Link
-      href="/forum"
-      aria-label="Buka forum siswa"
-      className="fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[calc(max(1rem,env(safe-area-inset-bottom))+4.25rem)] z-[70] grid size-14 place-items-center rounded-full border border-[#C1E8FF]/50 bg-white text-[#052659] shadow-[0_8px_30px_rgba(125,160,202,0.35)] transition hover:scale-105 hover:border-[#052659]/40 hover:bg-[#F4F9FF] sm:bottom-[calc(max(1rem,env(safe-area-inset-bottom))+4.75rem)] sm:size-16"
-    >
-      <MessagesSquare className="size-6 sm:size-7" aria-hidden="true" />
-    </Link>
-    <Chatbot/>
+      <HeroSection />
+      <Profile />
+      <SambutanKepalaSekolah />
+      <Majors />
+      <News />
+      <LocationSection />
+      <Facilities />
+      <Partners />
+      <Achievements />
+      <Future />
+      <section
+        aria-label="Gedung SMK Telekomunikasi Tunas Harapan"
+        className="relative w-screen overflow-hidden bg-[#F4F9FF] px-0 pb-0"
+      >
+        <div className="w-full overflow-hidden">
+          <Image
+            src="/images/school/gedung.png"
+            alt="Gedung SMK Telekomunikasi Tunas Harapan"
+            width={1921}
+            height={920}
+            sizes="100vw"
+            loading="lazy"
+            className="block h-auto w-full"
+          />
+        </div>
+      </section>
+      <Footer />
+      <Link
+        href="/forum"
+        aria-label="Buka forum siswa"
+        className="fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[calc(max(1rem,env(safe-area-inset-bottom))+4.25rem)] z-[70] grid size-14 place-items-center rounded-full border border-[#C1E8FF]/50 bg-white text-[#052659] shadow-[0_8px_30px_rgba(125,160,202,0.35)] transition hover:scale-105 hover:border-[#052659]/40 hover:bg-[#F4F9FF] sm:bottom-[calc(max(1rem,env(safe-area-inset-bottom))+4.75rem)] sm:size-16"
+      >
+        <MessagesSquare className="size-6 sm:size-7" aria-hidden="true" />
+      </Link>
+      <Chatbot />
 
       <AnimatePresence>
         {pesanNisn && (
@@ -2712,11 +3065,11 @@ export default function Home() {
         terbuka={modalNisn}
         onTutup={() => setModalNisn(false)}
         onSukses={(pesan) => {
-          setVerifikasi('menunggu');
+          setVerifikasi("menunggu");
           setPesanNisn(pesan);
           window.setTimeout(() => setPesanNisn(null), 4000);
         }}
       />
     </main>
-  )
+  );
 }
