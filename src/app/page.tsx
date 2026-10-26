@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import HeroSection from "@/components/HeroSection";
+import GlobeBackground from "@/components/GlobeBackground";
 import Chatbot from "@/components/Chatbot";
 import ModalKirimNisn from '@/components/ModalKirimNisn';
 import { ringkasKonten } from '@/lib/ringkasTeks';
@@ -1820,9 +1821,10 @@ function Facilities() {
 
 function LocationSection() {
   return (
-    <section id="lokasi" className="bg-[#021024] px-6 py-24 text-white sm:py-32">
-      <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[.8fr_1.2fr] lg:items-stretch">
-        <div className="flex flex-col justify-between rounded-[2rem] border border-white/10 bg-[#021024] p-7 sm:p-10">
+    <section id="lokasi" className="relative overflow-hidden bg-[#021024] px-6 py-24 text-white sm:py-32">
+      <GlobeBackground />
+      <div className="relative z-10 mx-auto grid max-w-7xl gap-8 lg:grid-cols-[.8fr_1.2fr] lg:items-stretch">
+        <div className="flex flex-col justify-between rounded-[2rem] border border-white/25 bg-[#021024]/75 p-7 backdrop-blur-[2px] sm:p-10">
           <div>
             <p className="eyebrow text-[#C1E8FF]/70">04 / LOKASI SEKOLAH</p>
             <h2 className="display mt-5 max-w-lg text-4xl sm:text-6xl">Temui kami di sekolah.</h2>
