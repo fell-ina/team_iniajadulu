@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -37,9 +38,16 @@ const slides = [
 
 export default function HeroSection() {
   const [active, setActive] = useState(0);
+  const [sudahMount, setSudahMount] = useState(false);
   const slide = slides[active];
   const go = (direction: number) =>
     setActive((value) => (value + direction + slides.length) % slides.length);
+
+  // Slide pertama langsung tampil (tanpa fade masuk) supaya teks & gambar
+  // hero tidak menunggu hidrasi JavaScript sebelum dilukis browser.
+  useEffect(() => {
+    setSudahMount(true);
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => go(1), 7000);
@@ -53,16 +61,25 @@ export default function HeroSection() {
         className="relative min-h-[720px] overflow-hidden bg-[#021024] text-white sm:min-h-[760px] lg:min-h-screen"
       >
         <AnimatePresence mode="wait">
-          <motion.img
+          <motion.div
             key={slide.image}
-            src={slide.image}
-            alt="Aktivitas sekolah"
-            initial={{ opacity: 0, scale: 1.04 }}
+            initial={sudahMount ? { opacity: 0, scale: 1.04 } : false}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 1.1, ease: "easeOut" }}
-            className="absolute inset-0 h-full w-full object-cover"
-          />
+            className="absolute inset-0"
+          >
+            <Image
+              src={slide.image}
+              alt="Aktivitas sekolah"
+              fill
+              sizes="100vw"
+              preload={active === 0}
+              loading="eager"
+              fetchPriority={active === 0 ? "high" : "auto"}
+              className="object-cover"
+            />
+          </motion.div>
         </AnimatePresence>
 
         <div className="absolute inset-0 bg-gradient-to-r from-[#021024]/90 via-[#021024]/62 to-[#021024]/28" />
@@ -78,17 +95,19 @@ export default function HeroSection() {
             <AnimatePresence mode="wait">
               <motion.div
                 key={active}
-                initial={{ opacity: 0, y: 16 }}
+                initial={sudahMount ? { opacity: 0, y: 16 } : false}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.55 }}
                 className="max-w-xl"
               >
-                <div className="mb-6 grid size-11 place-items-center rounded-xl border border-white/30 bg-white/90 p-2 shadow-lg sm:size-12">
-                  <img
+                <div className="relative mb-6 grid size-11 place-items-center rounded-xl border border-white/30 bg-white/90 p-2 shadow-lg sm:size-12">
+                  <Image
                     src="/images/school/logo-transparent.png"
                     alt="Logo SMK Telekomunikasi Tunas Harapan"
-                    className="h-full w-full object-contain"
+                    fill
+                    sizes="56px"
+                    className="object-contain p-2"
                   />
                 </div>
                 <p className="text-[10px] font-bold uppercase tracking-[.25em] text-[#C1E8FF]/85">
@@ -132,12 +151,14 @@ export default function HeroSection() {
                     <span className="relative h-1 overflow-hidden rounded-full bg-white/20 transition-all duration-300">
                       {isActive ? (
                         <span className="relative block h-full w-12">
+                          {/* scaleX, bukan width: progres tetap sama tapi tidak
+                              memicu layout ulang tiap frame animasi. */}
                           <motion.span
                             key={active}
-                            initial={{ width: "0%" }}
-                            animate={{ width: "100%" }}
+                            initial={{ scaleX: 0 }}
+                            animate={{ scaleX: 1 }}
                             transition={{ duration: 7, ease: "linear" }}
-                            className="absolute inset-y-0 left-0 rounded-full bg-white"
+                            className="absolute inset-y-0 left-0 w-full origin-left rounded-full bg-white"
                           />
                         </span>
                       ) : (

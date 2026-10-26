@@ -22,10 +22,15 @@ import {
   MapPin,
 } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
+import dynamic from "next/dynamic";
 import HeroSection from "@/components/HeroSection";
-import Chatbot from "@/components/Chatbot";
-import ModalKirimNisn from '@/components/ModalKirimNisn';
 import { ringkasKonten } from '@/lib/ringkasTeks';
+
+// Widget yang tidak terlihat saat halaman pertama dibuka dipecah ke chunk
+// sendiri, jadi JS-nya tidak ikut menghambat render awal.
+const Chatbot = dynamic(() => import("@/components/Chatbot"), { ssr: false, loading: () => null });
+const ModalKirimNisn = dynamic(() => import('@/components/ModalKirimNisn'), { ssr: false, loading: () => null });
 
 const nav = [
   ["Profil", "#profil"],
@@ -51,8 +56,12 @@ function Nav({
   const [activeSection, setActiveSection] = useState<string>("#profil");
 
   useEffect(() => {
-    const handleScroll = () => {
-      const sections = nav.map(([, h]) => h.replace("#", ""));
+    // Pembacaan offsetTop memicu reflow, jadi dibatasi satu kali per frame
+    // dan listener-nya pasif supaya scroll tetap mulus di perangkat mobile.
+    let frame = 0;
+    const sections = nav.map(([, h]) => h.replace("#", ""));
+    const update = () => {
+      frame = 0;
       const scrollPosition = window.scrollY + 200;
       for (const section of [...sections].reverse()) {
         const el = document.getElementById(section);
@@ -62,8 +71,15 @@ function Nav({
         }
       }
     };
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    const handleScroll = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(update);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (frame) window.cancelAnimationFrame(frame);
+    };
   }, []);
 
   const active = hovered ?? activeSection;
@@ -72,10 +88,12 @@ function Nav({
     <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6">
       <div className="mx-auto flex max-w-7xl items-center justify-between rounded-full border border-white/15 bg-[#021024]/78 px-4 py-3 text-white shadow-xl backdrop-blur-xl sm:px-6">
         <a href="#top" className="flex items-center gap-3">
-          <span className="grid size-9 overflow-hidden rounded-full bg-white p-1">
-            <img
+          <span className="relative grid size-9 overflow-hidden rounded-full bg-white p-1">
+            <Image
               src="/images/school/logo-transparent.png"
-              className="h-full w-full object-contain"
+              fill
+              sizes="36px"
+              className="object-contain p-1"
               alt="Logo"
             />
           </span>
@@ -223,51 +241,28 @@ function Profile() {
         aria-hidden="true"
         className="profile-shards pointer-events-none absolute inset-0 z-0"
       >
-        <img
-          src="/images/polygon/Group%2019.png"
-          alt=""
-          className="profile-shard absolute -left-5 top-[-30px] h-44 w-52 object-contain sm:left-4 sm:top-[-42px] sm:h-56 sm:w-64"
-        />
-        <img
-          src="/images/polygon/Group%2018.png"
-          alt=""
-          className="profile-shard absolute left-[42%] top-[7%] h-16 w-24 object-contain sm:left-[44%] sm:top-[8%] sm:h-20 sm:w-32"
-        />
-        <img
-          src="/images/polygon/Group%2034.png"
-          alt=""
-          className="profile-shard absolute left-[27%] top-[38%] h-12 w-16 object-contain sm:left-[29%] sm:top-[40%]"
-        />
-        <img
-          src="/images/polygon/Group%2033.png"
-          alt=""
-          className="profile-shard absolute right-[8%] top-[5%] h-24 w-16 object-contain sm:right-[12%] sm:top-[7%] sm:h-32 sm:w-20"
-        />
-        <img
-          src="/images/polygon/Group%2016.png"
-          alt=""
-          className="profile-shard absolute right-[2%] top-[38%] h-10 w-20 object-contain sm:right-[5%] sm:top-[36%] sm:h-12 sm:w-24"
-        />
-        <img
-          src="/images/polygon/Group%209.png"
-          alt=""
-          className="profile-shard absolute bottom-[-34px] left-[7%] h-32 w-40 object-contain sm:bottom-[-42px] sm:left-[9%] sm:h-44 sm:w-52"
-        />
-        <img
-          src="/images/polygon/Group%2015.png"
-          alt=""
-          className="profile-shard absolute bottom-[-14px] left-[37%] h-16 w-28 object-contain sm:bottom-[-20px] sm:left-[36%] sm:h-20 sm:w-36"
-        />
-        <img
-          src="/images/polygon/Group%2017.png"
-          alt=""
-          className="profile-shard absolute bottom-[5%] right-[22%] h-12 w-16 object-contain sm:bottom-[8%] sm:right-[20%] sm:h-16 sm:w-20"
-        />
-        <img
-          src="/images/polygon/Group%2010.png"
-          alt=""
-          className="profile-shard absolute bottom-[2%] -right-8 h-28 w-20 object-contain sm:bottom-[4%] sm:right-[-20px] sm:h-40 sm:w-28"
-        />
+        {[
+          ["/images/polygon/Group%2019.png", "-left-5 top-[-30px] h-44 w-52 sm:left-4 sm:top-[-42px] sm:h-56 sm:w-64", "(max-width: 639px) 208px, 256px"],
+          ["/images/polygon/Group%2018.png", "left-[42%] top-[7%] h-16 w-24 sm:left-[44%] sm:top-[8%] sm:h-20 sm:w-32", "(max-width: 639px) 96px, 128px"],
+          ["/images/polygon/Group%2034.png", "left-[27%] top-[38%] h-12 w-16 sm:left-[29%] sm:top-[40%]", "64px"],
+          ["/images/polygon/Group%2033.png", "right-[8%] top-[5%] h-24 w-16 sm:right-[12%] sm:top-[7%] sm:h-32 sm:w-20", "(max-width: 639px) 64px, 80px"],
+          ["/images/polygon/Group%2016.png", "right-[2%] top-[38%] h-10 w-20 sm:right-[5%] sm:top-[36%] sm:h-12 sm:w-24", "(max-width: 639px) 80px, 96px"],
+          ["/images/polygon/Group%209.png", "bottom-[-34px] left-[7%] h-32 w-40 sm:bottom-[-42px] sm:left-[9%] sm:h-44 sm:w-52", "(max-width: 639px) 160px, 208px"],
+          ["/images/polygon/Group%2015.png", "bottom-[-14px] left-[37%] h-16 w-28 sm:bottom-[-20px] sm:left-[36%] sm:h-20 sm:w-36", "(max-width: 639px) 112px, 144px"],
+          ["/images/polygon/Group%2017.png", "bottom-[5%] right-[22%] h-12 w-16 sm:bottom-[8%] sm:right-[20%] sm:h-16 sm:w-20", "(max-width: 639px) 64px, 80px"],
+          ["/images/polygon/Group%2010.png", "bottom-[2%] -right-8 h-28 w-20 sm:bottom-[4%] sm:right-[-20px] sm:h-40 sm:w-28", "(max-width: 639px) 80px, 112px"],
+        ].map(([src, posisi, sizes]) => (
+          <span key={src} className={`profile-shard absolute ${posisi}`}>
+            <Image
+              src={src}
+              alt=""
+              fill
+              sizes={sizes}
+              loading="lazy"
+              className="object-contain"
+            />
+          </span>
+        ))}
       </div>
       <div className="relative z-10 mx-auto grid max-w-7xl gap-14 lg:grid-cols-[.8fr_1.2fr] lg:items-end">
         <motion.div
@@ -499,12 +494,13 @@ function SambutanKepalaSekolah() {
       {/* Latar: lautan di balik kertas yang disobek. Bagian dalam sobekan
           (kertasnya) tetap putih; air laut hanya terlihat di luarnya. */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0">
-        <img
+        <Image
           src={FOTO_LAUT}
           alt=""
+          fill
+          sizes="100vw"
           loading="lazy"
-          decoding="async"
-          className="h-full w-full object-cover object-center"
+          className="object-cover object-center"
           style={{ filter: "brightness(1.12) saturate(1.02) contrast(1.03)" }}
         />
         <div className="absolute inset-0 bg-[#021024]/32" />
@@ -702,18 +698,23 @@ function SambutanKepalaSekolah() {
               className="pointer-events-none absolute inset-x-0 -top-[18%] bottom-0 z-[2]"
               style={POTRET_MASK}
             >
-              <motion.img
+              <motion.div
                 variants={TAMENG_POTRET}
-                src={FOTO_KEPALA_SEKOLAH}
-                alt="Wisnu Handoko, Kepala Sekolah SMK Telekomunikasi Tunas Harapan"
-                loading="lazy"
-                decoding="async"
-                onError={() => setFotoTampil(false)}
-                className="absolute inset-x-0 bottom-0 h-[99%] w-full object-contain object-bottom"
-                style={{
-                  filter: "drop-shadow(0 14px 18px rgba(2,16,36,.22))",
-                }}
-              />
+                className="absolute inset-x-0 bottom-0 h-[99%] w-full"
+              >
+                <Image
+                  src={FOTO_KEPALA_SEKOLAH}
+                  alt="Wisnu Handoko, Kepala Sekolah SMK Telekomunikasi Tunas Harapan"
+                  fill
+                  sizes="(max-width: 1023px) 430px, 40vw"
+                  loading="lazy"
+                  onError={() => setFotoTampil(false)}
+                  className="object-contain object-bottom"
+                  style={{
+                    filter: "drop-shadow(0 14px 18px rgba(2,16,36,.22))",
+                  }}
+                />
+              </motion.div>
             </div>
           </div>
 
@@ -912,7 +913,7 @@ function SambutanKepalaSekolah() {
 }
 const majors=[['01','PPLG','Pengembangan Perangkat Lunak dan Gim','/images/school/hero-lab.jpg','pplg','#BA0000'],['02','TJKT','Teknik Jaringan Komputer dan Telekomunikasi','/images/school/tkj1.jpg','tjkt','#00c53b'],['03','DKV','Desain Komunikasi Visual','/images/school/dkv.jpg','dkv','#152DA9'],['04','TKR','Teknik Kendaraan Ringan','/images/school/tkr.jpg','tkr','#C67219']];
 const mottos=["arah.","hati.","tujuan.","harapan."];
-function Majors(){const[mottoIdx,setMottoIdx]=useState(0);useEffect(()=>{const t=setInterval(()=>setMottoIdx(v=>(v+1)%mottos.length),2800);return()=>clearInterval(t);},[]);return <section id="jurusan" className="relative overflow-hidden bg-[#021024] px-6 py-28 text-white sm:py-36"><motion.img src="/images/footer/aurora2.png" alt="" aria-hidden="true" className="pointer-events-none absolute inset-0 h-full w-full select-none opacity-80 mix-blend-screen" style={{filter:'brightness(1.35) saturate(1.2)'}} animate={{opacity:[0.7,0.9,0.7],scale:[1,1.04,1]}} transition={{duration:17,repeat:Infinity,ease:'easeInOut'}}/><div className="relative mx-auto max-w-7xl"><div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow text-[#7DA0CA]">02 / PROGRAM KEAHLIAN</p><h2 className="display mt-5 text-4xl sm:text-6xl">Empat bidang.<br/><span className="inline-block text-white/55">Satu <AnimatePresence mode="wait"><motion.span key={mottoIdx} className="inline-block" exit={{}}>{mottos[mottoIdx].split("").map((ch,i)=><motion.span key={i} className="inline-block whitespace-pre" initial={{opacity:0,y:"0.4em",filter:"blur(8px)"}} animate={{opacity:1,y:0,filter:"blur(0px)",transition:{duration:0.5,delay:i*0.055,ease:"easeOut"}}} exit={{opacity:0,y:"-0.3em",filter:"blur(8px)",transition:{duration:0.3,delay:(mottos[mottoIdx].length-1-i)*0.02,ease:"easeIn"}}}>{ch}</motion.span>)}</motion.span></AnimatePresence></span></h2></div><p className="max-w-sm text-sm leading-7 text-white/75">Eksplorasi software, jaringan, desain, dan otomotif melalui pengalaman vokasi yang relevan.</p></div><div className="mt-16 divide-y divide-white/10 border-y border-white/10">{majors.map(([n,title,desc,img,slug,accent])=><Link href={`/jurusan/${slug}`} key={title} style={{'--major-accent':accent} as React.CSSProperties} className="major-link group relative grid grid-cols-[52px_1fr_auto] items-center gap-x-4 gap-y-2 overflow-hidden rounded-lg py-5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C1E8FF] sm:rounded-none sm:grid-cols-[72px_1fr_1.2fr_auto] sm:gap-5 sm:py-8"><div className="relative col-start-1 row-start-2 h-12 w-[52px] overflow-hidden rounded-md sm:absolute sm:inset-y-3 sm:right-16 sm:col-auto sm:row-auto sm:h-20 sm:w-36 sm:rounded-xl sm:opacity-0 sm:transition sm:duration-500 sm:group-hover:opacity-20 lg:h-24 lg:w-44"><img src={img} alt="" className="h-full w-full object-cover"/></div><span className="col-start-1 row-start-1 font-mono text-xs text-white/70 sm:col-auto sm:row-auto sm:text-white/55">{n}</span><h3 className="relative z-10 col-start-2 row-start-1 text-2xl font-medium tracking-tight sm:col-auto sm:row-auto sm:text-3xl lg:text-5xl">{title}</h3><p className="relative z-10 col-start-2 row-start-2 max-w-md text-xs leading-5 text-white/75 sm:col-auto sm:row-auto sm:text-sm sm:leading-6 sm:text-white/70">{desc}</p><ArrowUpRight className="relative z-10 col-start-3 row-span-2 row-start-1 self-center text-white/80 transition group-active:translate-x-1 group-active:-translate-y-1 group-hover:-translate-y-1 group-hover:translate-x-1 sm:col-auto sm:row-auto sm:self-auto"/></Link>)}</div></div></section>}
+function Majors(){const[mottoIdx,setMottoIdx]=useState(0);useEffect(()=>{const t=setInterval(()=>setMottoIdx(v=>(v+1)%mottos.length),2800);return()=>clearInterval(t);},[]);return <section id="jurusan" className="relative overflow-hidden bg-[#021024] px-6 py-28 text-white sm:py-36"><motion.div aria-hidden="true" className="pointer-events-none absolute inset-0 select-none opacity-80 mix-blend-screen" animate={{opacity:[0.7,0.9,0.7],scale:[1,1.04,1]}} transition={{duration:17,repeat:Infinity,ease:'easeInOut'}}><Image src="/images/footer/aurora2.png" alt="" fill sizes="100vw" loading="lazy" className="object-cover" style={{filter:'brightness(1.35) saturate(1.2)'}}/></motion.div><div className="relative mx-auto max-w-7xl"><div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between"><div><p className="eyebrow text-[#7DA0CA]">02 / PROGRAM KEAHLIAN</p><h2 className="display mt-5 text-4xl sm:text-6xl">Empat bidang.<br/><span className="inline-block text-white/55">Satu <AnimatePresence mode="wait"><motion.span key={mottoIdx} className="inline-block" exit={{}}>{mottos[mottoIdx].split("").map((ch,i)=><motion.span key={i} className="inline-block whitespace-pre" initial={{opacity:0,y:"0.4em",filter:"blur(8px)"}} animate={{opacity:1,y:0,filter:"blur(0px)",transition:{duration:0.5,delay:i*0.055,ease:"easeOut"}}} exit={{opacity:0,y:"-0.3em",filter:"blur(8px)",transition:{duration:0.3,delay:(mottos[mottoIdx].length-1-i)*0.02,ease:"easeIn"}}}>{ch}</motion.span>)}</motion.span></AnimatePresence></span></h2></div><p className="max-w-sm text-sm leading-7 text-white/75">Eksplorasi software, jaringan, desain, dan otomotif melalui pengalaman vokasi yang relevan.</p></div><div className="mt-16 divide-y divide-white/10 border-y border-white/10">{majors.map(([n,title,desc,img,slug,accent])=><Link href={`/jurusan/${slug}`} key={title} style={{'--major-accent':accent} as React.CSSProperties} className="major-link group relative grid grid-cols-[52px_1fr_auto] items-center gap-x-4 gap-y-2 overflow-hidden rounded-lg py-5 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C1E8FF] sm:rounded-none sm:grid-cols-[72px_1fr_1.2fr_auto] sm:gap-5 sm:py-8"><div className="relative col-start-1 row-start-2 h-12 w-[52px] overflow-hidden rounded-md sm:absolute sm:inset-y-3 sm:right-16 sm:col-auto sm:row-auto sm:h-20 sm:w-36 sm:rounded-xl sm:opacity-0 sm:transition sm:duration-500 sm:group-hover:opacity-20 lg:h-24 lg:w-44"><Image src={img} alt="" fill sizes="(min-width: 1024px) 176px, (min-width: 640px) 144px, 52px" loading="lazy" className="object-cover"/></div><span className="col-start-1 row-start-1 font-mono text-xs text-white/70 sm:col-auto sm:row-auto sm:text-white/55">{n}</span><h3 className="relative z-10 col-start-2 row-start-1 text-2xl font-medium tracking-tight sm:col-auto sm:row-auto sm:text-3xl lg:text-5xl">{title}</h3><p className="relative z-10 col-start-2 row-start-2 max-w-md text-xs leading-5 text-white/75 sm:col-auto sm:row-auto sm:text-sm sm:leading-6 sm:text-white/70">{desc}</p><ArrowUpRight className="relative z-10 col-start-3 row-span-2 row-start-1 self-center text-white/80 transition group-active:translate-x-1 group-active:-translate-y-1 group-hover:-translate-y-1 group-hover:translate-x-1 sm:col-auto sm:row-auto sm:self-auto"/></Link>)}</div></div></section>}
 
 const newsFallback = [
   [
@@ -1031,6 +1032,8 @@ function News() {
                     <img
                       src={img}
                       alt=""
+                      loading="lazy"
+                      decoding="async"
                       className="h-full w-full object-cover transition duration-700 group-hover:scale-105"
                     />
                   </div>
@@ -1614,17 +1617,24 @@ function Facilities() {
                     >
                       <div className="relative aspect-[16/10] overflow-hidden bg-[#052659]/10">
                         <AnimatePresence mode="wait" initial={false}>
-                          <motion.img
+                          <motion.div
                             key={item.image}
-                            src={item.image}
-                            alt={item.imageAlt}
                             initial={{ opacity: 0, x: 48 * direction }}
                             animate={{ opacity: 1, x: 0 }}
                             exit={{ opacity: 0, x: -48 * direction }}
                             transition={{ duration: 0.35 }}
-                            className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
-                            draggable={false}
-                          />
+                            className="absolute inset-0"
+                          >
+                            <Image
+                              src={item.image}
+                              alt={item.imageAlt}
+                              fill
+                              sizes="(max-width: 640px) 88vw, 520px"
+                              loading="lazy"
+                              className="object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+                              draggable={false}
+                            />
+                          </motion.div>
                         </AnimatePresence>
                         <span
                           aria-hidden="true"
@@ -1663,11 +1673,14 @@ function Facilities() {
                   ) : (
                     <div>
                       <div className="relative aspect-[16/10] overflow-hidden bg-[#052659]/10">
-                        <img
+                        <Image
                           src={item.image}
                           alt=""
                           aria-hidden="true"
-                          className="absolute inset-0 h-full w-full object-cover"
+                          fill
+                          sizes="(max-width: 640px) 88vw, 520px"
+                          loading="lazy"
+                          className="object-cover"
                           draggable={false}
                         />
                         <div
@@ -1765,10 +1778,13 @@ function Facilities() {
               className="max-h-[85vh] w-full overflow-y-auto rounded-t-[1.5rem] bg-white text-left shadow-2xl sm:max-w-lg sm:rounded-[1.75rem]"
             >
               <div className="relative aspect-[16/9] overflow-hidden bg-[#052659]/10">
-                <img
+                <Image
                   src={items[selected].image}
                   alt={items[selected].imageAlt}
-                  className="h-full w-full object-cover"
+                  fill
+                  sizes="(max-width: 640px) 100vw, 512px"
+                  loading="lazy"
+                  className="object-cover"
                 />
                 <button
                   type="button"
@@ -1911,13 +1927,15 @@ function Partners() {
             <div
               key={`${partner.name}-${index}`}
               title={partner.name}
-              className="h-24 w-48 shrink-0 overflow-hidden rounded-2xl"
+              className="relative h-24 w-48 shrink-0 overflow-hidden rounded-2xl"
             >
-              <img
+              <Image
                 src={partner.file}
                 alt={`Logo ${partner.name}`}
-                className="h-full w-full object-contain"
+                fill
+                sizes="192px"
                 loading="lazy"
+                className="object-contain"
               />
             </div>
           ))}
@@ -1969,16 +1987,23 @@ function Achievements() {
         <div className="mt-12 grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
           <div className="relative overflow-hidden rounded-[1.75rem] bg-[#021024]">
              <AnimatePresence mode="wait" initial={false}>
-               <motion.img
+               <motion.div
                  key={achievementImages[activeAchievementImage]}
-                 src={achievementImages[activeAchievementImage]}
-                 alt={`Prestasi siswa ${activeAchievementImage + 1}`}
                  initial={{ opacity: 0 }}
                  animate={{ opacity: 0.9 }}
                  exit={{ opacity: 0 }}
                  transition={{ duration: 0.8, ease: "easeInOut" }}
-                 className="h-[330px] w-full object-cover sm:h-[470px]"
-               />
+                 className="relative h-[330px] w-full sm:h-[470px]"
+               >
+                 <Image
+                   src={achievementImages[activeAchievementImage]}
+                   alt={`Prestasi siswa ${activeAchievementImage + 1}`}
+                   fill
+                   sizes="(max-width: 1024px) 100vw, 60vw"
+                   loading="lazy"
+                   className="object-cover"
+                 />
+               </motion.div>
              </AnimatePresence>
              <div className="absolute inset-x-5 bottom-5 flex items-center justify-between gap-4">
                <div className="flex items-center gap-2 rounded-full border border-white/15 bg-[#021024]/55 px-3 py-2 backdrop-blur-md">
@@ -2310,10 +2335,13 @@ function Future() {
                   onClick={() => setActiveAlumni(index)}
                   className={`absolute overflow-hidden rounded-full border-4 border-[#C1E8FF] shadow-md transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#052659] focus-visible:ring-offset-2 focus-visible:ring-offset-[#C1E8FF] ${isActive ? "left-1/2 top-0 z-20 size-24 -translate-x-1/2" : "left-2 top-2 z-10 size-20 opacity-90 hover:scale-105"}`}
                 >
-                  <img
+                  <Image
                     src={profile.image}
                     alt={profile.imageAlt}
-                    className="h-full w-full object-cover"
+                    fill
+                    sizes="96px"
+                    loading="lazy"
+                    className="object-cover"
                   />
                 </button>
               );
@@ -2327,22 +2355,20 @@ function Future() {
 type AuthStatus = "loading" | "loggedIn" | "loggedOut";
 
 function Aurora(){return <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
-    <motion.img
-      src="/images/footer/aurora-tr.png"
-      alt=""
+    <motion.div
       className="absolute -right-4 -top-4 w-[22rem] max-w-none opacity-95 sm:w-[30rem] lg:w-[38rem]"
-      style={{ filter: 'brightness(1.5) saturate(1.25)' }}
       animate={{ opacity: [0.8, 1, 0.8], scale: [1, 1.05, 1], x: [0, -10, 0], y: [0, 8, 0] }}
       transition={{ duration: 17, repeat: Infinity, ease: 'easeInOut' }}
-    />
-    <motion.img
-      src="/images/footer/aurora-bl.png"
-      alt=""
+    >
+      <Image src="/images/footer/aurora-tr.png" alt="" fill sizes="(max-width: 640px) 352px, (min-width: 1024px) 608px, 480px" loading="lazy" className="object-contain" style={{ filter: 'brightness(1.5) saturate(1.25)' }} />
+    </motion.div>
+    <motion.div
       className="absolute -bottom-4 -left-4 w-[22rem] max-w-none opacity-95 sm:w-[30rem] lg:w-[38rem]"
-      style={{ filter: 'brightness(1.5) saturate(1.25)' }}
       animate={{ opacity: [0.8, 1, 0.8], scale: [1, 1.05, 1], x: [0, 10, 0], y: [0, -8, 0] }}
       transition={{ duration: 19, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-    />
+    >
+      <Image src="/images/footer/aurora-bl.png" alt="" fill sizes="(max-width: 640px) 352px, (min-width: 1024px) 608px, 480px" loading="lazy" className="object-contain" style={{ filter: 'brightness(1.5) saturate(1.25)' }} />
+    </motion.div>
     {particles.map((p, index) => <motion.span
       key={index}
       className="absolute rounded-full bg-[#EAF6FF]"
@@ -2706,9 +2732,13 @@ export default function Home(){
       className="relative w-screen overflow-hidden bg-[#F4F9FF] px-0 pb-0"
     >
       <div className="w-full overflow-hidden">
-        <img
+        <Image
           src="/images/school/gedung.png"
           alt="Gedung SMK Telekomunikasi Tunas Harapan"
+          width={1921}
+          height={920}
+          sizes="100vw"
+          loading="lazy"
           className="block h-auto w-full"
         />
       </div>
