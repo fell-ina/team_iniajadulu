@@ -69,6 +69,9 @@ function Nav({
   }, []);
 
   const active = hovered ?? activeSection;
+  const activeLabel =
+    nav.find(([, href]) => href === activeSection)?.[0] ??
+    "SMK TELEKOMUNIKASI TUNAS HARAPAN";
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6">
@@ -85,6 +88,21 @@ function Nav({
             TUNAS HARAPAN
           </span>
         </a>
+
+        <div className="min-w-0 flex-1 px-3 text-center md:hidden">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={activeLabel}
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              transition={{ duration: 0.2 }}
+              className="block truncate text-[9px] font-bold uppercase tracking-[.12em] text-white/75"
+            >
+              {activeLabel}
+            </motion.span>
+          </AnimatePresence>
+        </div>
 
         <nav
           className="hidden gap-1 md:flex"

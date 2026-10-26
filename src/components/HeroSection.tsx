@@ -208,8 +208,17 @@ export default function HeroSection() {
               description: "Ruang Berdiskusi",
               icon: MessagesSquare,
             },
-          ].map(({ title, description, image, icon: Icon }) => {
-            const className = `group relative flex min-h-24 cursor-default items-center gap-4 py-4 text-white/60 lg:border-r lg:border-white/10 ${image ? "pl-28 pr-4 sm:pl-28 sm:pr-6" : "px-4 sm:px-6"}`;
+          ].map(({ title, description, image, icon: Icon }, index) => {
+            const mobileDivider =
+              index === 0
+                ? "border-r border-b"
+                : index === 1
+                  ? "border-b"
+                  : index === 2
+                    ? "border-r"
+                    : "";
+            const desktopDivider = index < 3 ? "lg:border-r" : "";
+            const className = `group relative flex min-h-24 cursor-default items-center gap-4 border-white/10 py-4 text-white/60 lg:border-b-0 ${mobileDivider} ${desktopDivider} ${image ? "pl-28 pr-4 sm:pl-28 sm:pr-6" : "px-4 sm:px-6"}`;
             const content = (
               <>
                 {image ? (

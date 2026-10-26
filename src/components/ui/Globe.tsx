@@ -66,6 +66,7 @@ export function Globe({ globeConfig, data }: WorldProps) {
   const groupRef = useRef<Group>(null);
   const [isInitialized, setIsInitialized] = useState(false);
   const [countryFeatures, setCountryFeatures] = useState<object[]>([]);
+  const [isMobile, setIsMobile] = useState(false);
 
   const config = {
     pointSize: 1,
@@ -102,6 +103,14 @@ export function Globe({ globeConfig, data }: WorldProps) {
   }, []);
 
   useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const updateViewport = () => setIsMobile(mediaQuery.matches);
+    updateViewport();
+    mediaQuery.addEventListener("change", updateViewport);
+    return () => mediaQuery.removeEventListener("change", updateViewport);
+  }, []);
+
+  useEffect(() => {
     if (!globeRef.current || !isInitialized) return;
 
     const material = globeRef.current.globeMaterial() as unknown as {
@@ -119,12 +128,14 @@ export function Globe({ globeConfig, data }: WorldProps) {
   useEffect(() => {
     if (!globeRef.current || !isInitialized) return;
 
+    const activeData = isMobile ? [] : data;
+    const activeRegionalPoints = isMobile ? [] : regionalPoints;
     const points = [
-      ...data.flatMap((arc) => [
+      ...activeData.flatMap((arc) => [
         { size: config.pointSize, order: arc.order, color: arc.color, lat: arc.startLat, lng: arc.startLng },
         { size: config.pointSize, order: arc.order, color: arc.color, lat: arc.endLat, lng: arc.endLng },
       ]),
-      ...regionalPoints.map((point, index) => ({
+      ...activeRegionalPoints.map((point, index) => ({
         ...point,
         size: config.pointSize,
         order: index + 10,
@@ -143,7 +154,7 @@ export function Globe({ globeConfig, data }: WorldProps) {
       .hexPolygonColor(() => config.polygonColor);
 
     globeRef.current
-      .arcsData(data)
+      .arcsData(activeData)
       .arcStartLat((arc) => (arc as Position).startLat)
       .arcStartLng((arc) => (arc as Position).startLng)
       .arcEndLat((arc) => (arc as Position).endLat)
@@ -169,15 +180,17 @@ export function Globe({ globeConfig, data }: WorldProps) {
       .ringMaxRadius(config.maxRings)
       .ringPropagationSpeed(RING_PROPAGATION_SPEED)
       .ringRepeatPeriod((config.arcTime * config.arcLength) / (config.rings || 1));
-  }, [config, countryFeatures, data, isInitialized]);
+  }, [config, countryFeatures, data, isInitialized, isMobile]);
 
   useEffect(() => {
-    if (!globeRef.current || !isInitialized || !data.length) return;
+    if (!globeRef.current || !isInitialized || !data.length || isMobile) return;
+
+    const activeData = data;
 
     const interval = window.setInterval(() => {
       if (!globeRef.current) return;
       globeRef.current.ringsData(
-        data.slice(0, Math.min(data.length, 5)).map((arc) => ({
+        activeData.slice(0, Math.min(activeData.length, 5)).map((arc) => ({
           lat: arc.startLat,
           lng: arc.startLng,
           color: arc.color,
@@ -186,7 +199,7 @@ export function Globe({ globeConfig, data }: WorldProps) {
     }, 2000);
 
     return () => window.clearInterval(interval);
-  }, [data, isInitialized]);
+  }, [data, isInitialized, isMobile]);
 
   return <group ref={groupRef} />;
 }
