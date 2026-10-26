@@ -149,25 +149,6 @@ export default function HalamanSpmb() {
             <span>Beranda</span>
           </Link>
         </div>
-
-        <div className={styles.heroInner}>
-          <p className={styles.eyebrow}>SPMB · Penerimaan Murid Baru</p>
-          <h1 className={styles.title}>
-            Daftar sekarang,
-            <br />
-            mulai perjalananmu.
-          </h1>
-          <p className={styles.lead}>
-            Isi formulir di bawah untuk mendaftar sebagai calon siswa SMK
-            Telekomunikasi Tunas Harapan. Semua kolom wajib diisi dan data Anda hanya
-            dipakai untuk proses penerimaan murid baru.
-          </p>
-          <ul className={styles.fakta}>
-            <li>4 program keahlian</li>
-            <li>2 pilihan jurusan</li>
-            <li>Sekitar 5 menit</li>
-          </ul>
-        </div>
       </section>
 
       <section className={styles.stage}>

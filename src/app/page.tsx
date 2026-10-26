@@ -13,6 +13,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  MessagesSquare,
   UserRound,
   UsersRound,
   X,
@@ -23,6 +24,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import HeroSection from "@/components/HeroSection";
+import GlobeBackground from "@/components/GlobeBackground";
 import Chatbot from "@/components/Chatbot";
 import ModalKirimNisn from '@/components/ModalKirimNisn';
 import { ringkasKonten } from '@/lib/ringkasTeks';
@@ -67,6 +69,9 @@ function Nav({
   }, []);
 
   const active = hovered ?? activeSection;
+  const activeLabel =
+    nav.find(([, href]) => href === activeSection)?.[0] ??
+    "SMK TELEKOMUNIKASI TUNAS HARAPAN";
 
   return (
     <header className="fixed inset-x-0 top-0 z-50 px-4 pt-4 sm:px-6">
@@ -84,6 +89,21 @@ function Nav({
           </span>
         </a>
 
+        <div className="min-w-0 flex-1 px-3 text-center md:hidden">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={activeLabel}
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              transition={{ duration: 0.2 }}
+              className="block truncate text-[9px] font-bold uppercase tracking-[.12em] text-white/75"
+            >
+              {activeLabel}
+            </motion.span>
+          </AnimatePresence>
+        </div>
+
         <nav
           className="hidden gap-1 md:flex"
           onMouseLeave={() => setHovered(null)}
@@ -96,11 +116,10 @@ function Nav({
                 href={h}
                 onMouseEnter={() => setHovered(h)}
                 onClick={() => setActiveSection(h)}
-                className={`relative rounded-full px-4 py-2 text-xs transition-colors duration-200 ${
-                  isSelected
+                className={`relative rounded-full px-4 py-2 text-xs transition-colors duration-200 ${isSelected
                     ? "text-white font-medium"
                     : "text-white/65 hover:text-white"
-                }`}
+                  }`}
               >
                 {isSelected && (
                   <motion.div
@@ -201,7 +220,7 @@ function Nav({
   );
 }
 
-function Profile() {  
+function Profile() {
   return (
     <section
       id="profil"
@@ -871,7 +890,7 @@ function News() {
         if (d?.ok && Array.isArray(d.data) && d.data.length > 0)
           setDaftar(d.data);
       })
-      .catch(() => {});
+      .catch(() => { });
     return () => {
       batal = true;
     };
@@ -880,13 +899,13 @@ function News() {
     (daftar ?? []).length > 0
       ? (daftar as BeritaPublik[])
       : newsFallback.map(([title, desc, _date, img, slug]) => ({
-          id: slug,
-          judul: title,
-          subjudul: desc,
-          konten: desc,
-          gambar_url: img,
-          created_at: null,
-        }));
+        id: slug,
+        judul: title,
+        subjudul: desc,
+        konten: desc,
+        gambar_url: img,
+        created_at: null,
+      }));
   const tanggalFallback: Record<string, string> = Object.fromEntries(
     newsFallback.map(([, , date, , slug]) => [slug, date]),
   );
@@ -1493,11 +1512,11 @@ function Facilities() {
                       ? { y: -6, scale: 1.015 }
                       : isPeekable
                         ? {
-                            x: x + peekX,
-                            y: y - 6,
-                            scale: baseScale + 0.03,
-                            filter: "brightness(1)",
-                          }
+                          x: x + peekX,
+                          y: y - 6,
+                          scale: baseScale + 0.03,
+                          filter: "brightness(1)",
+                        }
                         : undefined
                   }
                   whileTap={pos <= 2 ? { scale: baseScale - 0.015 } : undefined}
@@ -1724,9 +1743,10 @@ function Facilities() {
 
 function LocationSection() {
   return (
-    <section id="lokasi" className="bg-[#021024] px-6 py-24 text-white sm:py-32">
-      <div className="mx-auto grid max-w-7xl gap-8 lg:grid-cols-[.8fr_1.2fr] lg:items-stretch">
-        <div className="flex flex-col justify-between rounded-[2rem] border border-white/10 bg-[#021024] p-7 sm:p-10">
+    <section id="lokasi" className="relative overflow-hidden bg-[#021024] px-6 py-24 text-white sm:py-32">
+      <GlobeBackground />
+      <div className="relative z-10 mx-auto grid max-w-7xl gap-8 lg:grid-cols-[.8fr_1.2fr] lg:items-stretch">
+        <div className="flex flex-col justify-between rounded-[2rem] border border-white/25 bg-[#021024]/75 p-7 backdrop-blur-[2px] sm:p-10">
           <div>
             <p className="eyebrow text-[#C1E8FF]/70">04 / LOKASI SEKOLAH</p>
             <h2 className="display mt-5 max-w-lg text-4xl sm:text-6xl">Temui kami di sekolah.</h2>
@@ -1860,7 +1880,7 @@ function Achievements() {
       <div className="mx-auto max-w-7xl">
         <div className="flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
           <div>
-        <p className="eyebrow text-[#2F5F8F]">07 / PRESTASI</p>
+            <p className="eyebrow text-[#2F5F8F]">07 / PRESTASI</p>
             <h2 className="display mt-5 max-w-3xl text-4xl sm:text-6xl">
               Karya siswa yang
               <br />
@@ -1871,55 +1891,55 @@ function Achievements() {
         </div>
         <div className="mt-12 grid gap-5 lg:grid-cols-[1.15fr_.85fr]">
           <div className="relative overflow-hidden rounded-[1.75rem] bg-[#021024]">
-             <AnimatePresence mode="wait" initial={false}>
-               <motion.img
-                 key={achievementImages[activeAchievementImage]}
-                 src={achievementImages[activeAchievementImage]}
-                 alt={`Prestasi siswa ${activeAchievementImage + 1}`}
-                 initial={{ opacity: 0 }}
-                 animate={{ opacity: 0.9 }}
-                 exit={{ opacity: 0 }}
-                 transition={{ duration: 0.8, ease: "easeInOut" }}
-                 className="h-[330px] w-full object-cover sm:h-[470px]"
-               />
-             </AnimatePresence>
-             <div className="absolute inset-x-5 bottom-5 flex items-center justify-between gap-4">
-               <div className="flex items-center gap-2 rounded-full border border-white/15 bg-[#021024]/55 px-3 py-2 backdrop-blur-md">
-                 {achievementImages.map((image, index) => (
-                   <button
-                     key={image}
-                     type="button"
-                     onClick={() => setActiveAchievementImage(index)}
-                     aria-label={`Tampilkan foto prestasi ${index + 1}`}
-                     aria-pressed={activeAchievementImage === index}
-                     className="group flex items-center gap-2"
-                   >
-                     <span
-                       className={`block h-1 rounded-full transition-all duration-300 ${activeAchievementImage === index ? "w-8 bg-white" : "w-4 bg-white/40 group-hover:bg-white/75"}`}
-                     />
-                     <span className="sr-only">Foto {index + 1}</span>
-                   </button>
-                 ))}
-               </div>
-               <div className="flex items-center gap-2">
-                 <button
-                   type="button"
-                   onClick={() => changeAchievement(-1)}
-                   aria-label="Foto prestasi sebelumnya"
-                   className="grid size-9 place-items-center rounded-full border border-white/20 bg-[#021024]/55 text-white backdrop-blur-md transition hover:bg-[#021024]/80"
-                 >
-                   <ChevronLeft size={17} />
-                 </button>
-                 <button
-                   type="button"
-                   onClick={() => changeAchievement(1)}
-                   aria-label="Foto prestasi berikutnya"
-                   className="grid size-9 place-items-center rounded-full border border-white/20 bg-[#021024]/55 text-white backdrop-blur-md transition hover:bg-[#021024]/80"
-                 >
-                   <ChevronRight size={17} />
-                 </button>
-               </div>
-             </div>
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.img
+                key={achievementImages[activeAchievementImage]}
+                src={achievementImages[activeAchievementImage]}
+                alt={`Prestasi siswa ${activeAchievementImage + 1}`}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 0.9 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.8, ease: "easeInOut" }}
+                className="h-[330px] w-full object-cover sm:h-[470px]"
+              />
+            </AnimatePresence>
+            <div className="absolute inset-x-5 bottom-5 flex items-center justify-between gap-4">
+              <div className="flex items-center gap-2 rounded-full border border-white/15 bg-[#021024]/55 px-3 py-2 backdrop-blur-md">
+                {achievementImages.map((image, index) => (
+                  <button
+                    key={image}
+                    type="button"
+                    onClick={() => setActiveAchievementImage(index)}
+                    aria-label={`Tampilkan foto prestasi ${index + 1}`}
+                    aria-pressed={activeAchievementImage === index}
+                    className="group flex items-center gap-2"
+                  >
+                    <span
+                      className={`block h-1 rounded-full transition-all duration-300 ${activeAchievementImage === index ? "w-8 bg-white" : "w-4 bg-white/40 group-hover:bg-white/75"}`}
+                    />
+                    <span className="sr-only">Foto {index + 1}</span>
+                  </button>
+                ))}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => changeAchievement(-1)}
+                  aria-label="Foto prestasi sebelumnya"
+                  className="grid size-9 place-items-center rounded-full border border-white/20 bg-[#021024]/55 text-white backdrop-blur-md transition hover:bg-[#021024]/80"
+                >
+                  <ChevronLeft size={17} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => changeAchievement(1)}
+                  aria-label="Foto prestasi berikutnya"
+                  className="grid size-9 place-items-center rounded-full border border-white/20 bg-[#021024]/55 text-white backdrop-blur-md transition hover:bg-[#021024]/80"
+                >
+                  <ChevronRight size={17} />
+                </button>
+              </div>
+            </div>
           </div>
           <div className="grid gap-3">
             {[
@@ -2229,7 +2249,8 @@ function Future() {
 }
 type AuthStatus = "loading" | "loggedIn" | "loggedOut";
 
-function Aurora(){return <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+function Aurora() {
+  return <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
     <motion.img
       src="/images/footer/aurora-tr.png"
       alt=""
@@ -2337,9 +2358,8 @@ function WelcomeCard({
 
       {perluVerifikasi && (belumKirim || menunggu || ditolak || terverifikasi) && (
         <div
-          className={`mt-4 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between ${
-            terverifikasi ? 'border-emerald-200' : 'border-[#021024]/10'
-          }`}
+          className={`mt-4 flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between ${terverifikasi ? 'border-emerald-200' : 'border-[#021024]/10'
+            }`}
         >
           {belumKirim && (
             <div className="min-w-0">
@@ -2486,12 +2506,24 @@ function Footer() {
               <a className="block hover:text-white" href="#jurusan">
                 Jurusan
               </a>
+              <a className="block hover:text-white" href="/berita">
+                Berita
+              </a>
+              <a className="block hover:text-white" href="#lokasi">
+                Lokasi
+              </a>
+              <a className="block hover:text-white" href="#fasilitas">
+                Fasilitas
+              </a>
               <a className="block hover:text-white" href="#industri">
                 Mitra Industri
               </a>
-              <Link className="block hover:text-white" href="/berita">
-                Berita
+              <Link className="block hover:text-white" href="#prestasi">
+                Prestasi
               </Link>
+              <a className="block hover:text-white" href="/forum">
+                Forum Siswa
+              </a>
             </div>
           </div>
           <div>
@@ -2512,7 +2544,7 @@ function Footer() {
   );
 }
 
-export default function Home(){
+export default function Home() {
   const [status, setStatus] = useState<AuthStatus>('loading');
   const [nama, setNama] = useState('');
   const [role, setRole] = useState<string | null>(null);
@@ -2576,28 +2608,28 @@ export default function Home(){
     <main id="top" className="relative overflow-x-hidden">
       <Nav role={role} status={status} onLogout={handleLogout} />
 
-    <AnimatePresence>
-      {status === 'loggedIn' && showWelcome && (
-        <motion.section
-          key="welcome-card"
-          initial={{ opacity: 0, y: -16 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -16 }}
-          transition={{ duration: 0.35, ease: 'easeOut' }}
-          className="fixed inset-x-0 top-20 z-40 pointer-events-none px-4 sm:top-24 sm:px-6"
-        >
-          <div className="pointer-events-auto">
-            <WelcomeCard
-              nama={nama}
-              verificationStatus={verifikasi}
-              perluVerifikasi={role !== 'admin' && role !== 'guru'}
-              onKirimNisn={() => setModalNisn(true)}
-              onClose={() => setShowWelcome(false)}
-            />
-          </div>
-        </motion.section>
-      )}
-    </AnimatePresence>
+      <AnimatePresence>
+        {status === 'loggedIn' && showWelcome && (
+          <motion.section
+            key="welcome-card"
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -16 }}
+            transition={{ duration: 0.35, ease: 'easeOut' }}
+            className="fixed inset-x-0 top-20 z-40 pointer-events-none px-4 sm:top-24 sm:px-6"
+          >
+            <div className="pointer-events-auto">
+              <WelcomeCard
+                nama={nama}
+                verificationStatus={verifikasi}
+                perluVerifikasi={role !== 'admin' && role !== 'guru'}
+                onKirimNisn={() => setModalNisn(true)}
+                onClose={() => setShowWelcome(false)}
+              />
+            </div>
+          </motion.section>
+        )}
+      </AnimatePresence>
 
     <HeroSection/>
     <Profile/><SambutanKepalaSekolah/><Majors/><News/><LocationSection/><Facilities/><Partners/><Achievements/><Future/>
@@ -2614,31 +2646,38 @@ export default function Home(){
       </div>
     </section>
     <Footer/>
+    <Link
+      href="/forum"
+      aria-label="Buka forum siswa"
+      className="fixed right-[max(1rem,env(safe-area-inset-right))] bottom-[calc(max(1rem,env(safe-area-inset-bottom))+4.25rem)] z-[70] grid size-14 place-items-center rounded-full border border-[#C1E8FF]/50 bg-white text-[#052659] shadow-[0_8px_30px_rgba(125,160,202,0.35)] transition hover:scale-105 hover:border-[#052659]/40 hover:bg-[#F4F9FF] sm:bottom-[calc(max(1rem,env(safe-area-inset-bottom))+4.75rem)] sm:size-16"
+    >
+      <MessagesSquare className="size-6 sm:size-7" aria-hidden="true" />
+    </Link>
     <Chatbot/>
 
-    <AnimatePresence>
-      {pesanNisn && (
-        <motion.div
-          initial={{ opacity: 0, y: -12 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -12 }}
-          role="status"
-          className="fixed right-4 top-20 z-[96] max-w-xs rounded-2xl border border-emerald-300/30 bg-[#021024]/95 px-4 py-3 text-sm text-emerald-200 shadow-2xl backdrop-blur-xl sm:right-6"
-        >
-          {pesanNisn}
-        </motion.div>
-      )}
-    </AnimatePresence>
+      <AnimatePresence>
+        {pesanNisn && (
+          <motion.div
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -12 }}
+            role="status"
+            className="fixed right-4 top-20 z-[96] max-w-xs rounded-2xl border border-emerald-300/30 bg-[#021024]/95 px-4 py-3 text-sm text-emerald-200 shadow-2xl backdrop-blur-xl sm:right-6"
+          >
+            {pesanNisn}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-    <ModalKirimNisn
-      terbuka={modalNisn}
-      onTutup={() => setModalNisn(false)}
-      onSukses={(pesan) => {
-        setVerifikasi('menunggu');
-        setPesanNisn(pesan);
-        window.setTimeout(() => setPesanNisn(null), 4000);
-      }}
-    />
-  </main>
+      <ModalKirimNisn
+        terbuka={modalNisn}
+        onTutup={() => setModalNisn(false)}
+        onSukses={(pesan) => {
+          setVerifikasi('menunggu');
+          setPesanNisn(pesan);
+          window.setTimeout(() => setPesanNisn(null), 4000);
+        }}
+      />
+    </main>
   )
 }

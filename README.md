@@ -64,6 +64,7 @@
 /reset-password         - Isi kata sandi baru (dibuka dari tautan email)
 /dashboard              - Ringkasan panel admin & guru (sidebar biru di kiri)
 /dashboard/pengguna     - Kelola data pengguna (khusus admin)
+/dashboard/spmb         - Terima / tolak pendaftar SPMB (khusus admin)
 /dashboard/verifikasi   - Terima / tolak pengajuan NISN
 /dashboard/berita       - Tambah, edit, & hapus berita (popup yang sama)
 /admin/berita           - Rute lama, dialihkan ke /dashboard/berita
@@ -205,9 +206,10 @@ Tombol **Buka SPMB** di footer beranda, **PPDB / SPMB** di hero, dan **PPDB** di
 jurusan sekarang mengarah ke `/spmb`.
 
 Jalankan migrasi berikut sekali di Supabase SQL Editor (atau `supabase db push`):
-`supabase/migrations/20261025000000_add_spmb_pendaftar.sql`. Isinya membuat tabel
+`supabase/migrations/20261025000000_add_spmb_pendaftar.sql` (tabel
 `public.spmb_pendaftar` beserta constraint pilihan jurusan, nomor HP, dan indeks unik
-`lower(email)`.
+`lower(email)`) lalu `supabase/migrations/20261025000001_add_spmb_status.sql` (kolom
+`status` + `status_diubah_at` untuk keputusan panitia).
 
 Cara kerjanya:
 
@@ -217,8 +219,8 @@ Cara kerjanya:
 2. `POST /api/spmb` menjalankan validasi yang sama lalu menyimpan ke `spmb_pendaftar`
    memakai service role. Satu email hanya boleh mendaftar sekali (ditolak dengan 409).
 3. RLS aktif tanpa policy, jadi anon/authenticated tidak bisa membaca atau menulis
-   langsung — data pendaftar hanya terlihat lewat Supabase Table Editor (atau panel
-   admin yang dibuat kemudian).
+   langsung — data pendaftar hanya terlihat lewat panel admin `/dashboard/spmb`
+   (khusus admin).
 
 ---
 
@@ -262,6 +264,7 @@ menjaga akses di server: belum login → `/login`, role siswa → beranda.
 |---|---|---|
 | `/dashboard` | admin, guru | Ringkasan jumlah pengguna, pengajuan NISN, dan berita |
 | `/dashboard/pengguna` | **admin** | Daftar pengguna, pencarian, dialog filter, urutan, paginasi |
+| `/dashboard/spmb` | **admin** | Daftar pendaftar SPMB, filter, terima / tolak |
 | `/dashboard/verifikasi` | admin, guru | Verifikasi / tolak NISN siswa |
 | `/dashboard/berita` | admin, guru | CRUD berita lewat popup yang sudah ada |
 
@@ -285,6 +288,59 @@ menjaga akses di server: belum login → `/login`, role siswa → beranda.
 Endpoint yang dipakai: `src/app/api/admin/pengguna/route.ts`
 (`GET` daftar + paginasi, `PATCH` edit satu pengguna, `POST` aksi massal
 `naikkan-kelas` / `hapus`). Hanya role admin yang lolos (401/403 untuk lainnya).
+
+### Pendaftar SPMB (`/dashboard/spmb`)
+
+- Halaman dibagi menjadi **tabel per jurusan**: tab **Semua**, **PPLG**, **TJKT**,
+  **DKV**, dan **TKR**, masing-masing dengan jumlah pendaftarnya. Tab jurusan memakai
+  **pilihan jurusan 1** pendaftar (pilihan utama); pilihan jurusan 2 tetap tampil di kolom
+  tabel dan modal detail.
+- Di dalam tab, chip status **Semua / Menunggu / Diterima / Ditolak** menyaring tabel
+  beserta jumlahnya. Pencarian mencakup nama, email, asal sekolah, dan nomor HP pendaftar
+  maupun wali, dan juga mempersempit angka pada tab serta chip.
+- Tombol **Ekspor Excel** mengunduh tabel tab yang sedang dibuka (mengikuti kata pencarian)
+  sebagai file `.xlsx`, dengan pilihan isi **Hanya diterima**, **Hanya ditolak**, atau
+  **Semua status**. File berisi 16 kolom (data siswa, asal sekolah, kontak, kedua pilihan
+  jurusan, wali, status, tanggal daftar/keputusan), header beku + autofilter, tanggal
+  `dd/mm/yyyy`, dan jam WIB.
+- Tiap baris punya tombol **Terima**, **Tolak**, **Batalkan keputusan** (kembali ke
+  menunggu), dan **Detail** (modal berisi seluruh isian formulir). Checkbox dipakai untuk
+  **Terima** / **Tolak** massal; pilihan dikosongkan saat pindah halaman, tab, atau status.
+- Pendaftar baru otomatis berstatus `menunggu`. Keputusan hanya mengubah status — tidak
+  mengirim email/WhatsApp otomatis.
+
+Endpoint: `src/app/api/admin/spmb/route.ts` (`GET` daftar per tab + status + pencarian +
+rekap per jurusan, `POST { aksi: "terima" | "tolak" | "menunggu", ids }` untuk satu atau
+banyak pendaftar) dan `src/app/api/admin/spmb/ekspor/route.ts` (`GET` file `.xlsx`).
+Keduanya hanya meloloskan role admin; data dibaca dengan service role karena RLS tabelnya
+tanpa policy. File Excel dibuat dengan `exceljs` di server (runtime Node.js).
+
+---
+
+## 💬 Forum (Siswa & Guru)
+
+Forum menyimpan diskusi di Supabase, bukan lagi data contoh di browser.
+
+| Halaman | Akses | Isi |
+|---|---|---|
+| `/forum` | publik | Landing yang mengarahkan siswa terverifikasi ke forum kelasnya |
+| `/forum/X`, `/forum/XI`, `/forum/XII` | siswa terverifikasi | Daftar topik kelasnya, form **Mulai Diskusi**, dan modal utas untuk membaca/menulis balasan |
+| `/forum-guru` | guru, admin | Forum lintas kelas (`kelas` kosong) dengan kategori kurikulum/kesiswaan/teknologi/berbagi praktik |
+
+- Topik siswa otomatis memakai kelas dari profilnya; permintaan ke kelas lain ditolak 403.
+  Hanya siswa berstatus `terverifikasi` yang boleh membaca maupun menulis.
+- Setiap balasan menyegarkan `forum_topik.balasan_count`; balasan bertingkat memakai
+  `forum_balasan.parent_id`.
+
+Endpoint: `src/app/api/forum/topik/route.ts` (`GET` daftar per kelas / `?lingkup=guru`,
+`POST` topik baru), `src/app/api/forum/topik/[id]/route.ts` (`GET` satu utas + balasan),
+dan `src/app/api/forum/balasan/route.ts` (`POST` balasan). Semua memakai sesi cookie +
+service role karena RLS tabel forum tanpa policy.
+
+Tabel: `forum_topik`, `forum_balasan`, `forum_like`. Migrasi
+`supabase/migrations/20261026000000_forum_guru.sql` (sudah dijalankan) membuat
+`forum_topik.kelas` boleh NULL untuk topik guru dan menambahkan empat nilai kategori guru
+ke enum `forum_kategori`.
 
 ---
 
